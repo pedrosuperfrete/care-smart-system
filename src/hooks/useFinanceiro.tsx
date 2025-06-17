@@ -3,31 +3,76 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
+import { useAuth } from './useAuth';
 
 type Pagamento = Tables<'pagamentos'>;
 type UpdatePagamento = Partial<Pagamento>;
 
-export function usePagamentos() {
+export function usePagamentos(startDate?: Date, endDate?: Date) {
+  const { user } = useAuth();
+  
   return useQuery({
-    queryKey: ['pagamentos'],
+    queryKey: ['pagamentos', startDate, endDate],
     queryFn: async () => {
-      const { data, error } = await supabase
+      console.log('Buscando pagamentos com user:', user);
+      
+      if (!user?.id) {
+        console.error('User não disponível para buscar pagamentos');
+        return [];
+      }
+
+      let query = supabase
         .from('pagamentos')
         .select(`
-          *,
-          agendamentos(
+          id,
+          valor_total,
+          valor_pago,
+          status,
+          data_pagamento,
+          data_vencimento,
+          forma_pagamento,
+          criado_em,
+          agendamento_id,
+          agendamentos!fk_pagamento_agendamento (
             id,
             tipo_servico,
             data_inicio,
-            pacientes(id, nome, email, telefone),
-            profissionais(id, nome, especialidade)
+            paciente_id,
+            profissional_id,
+            pacientes (
+              id,
+              nome,
+              email,
+              telefone
+            ),
+            profissionais (
+              id,
+              nome,
+              especialidade
+            )
           )
         `)
         .order('criado_em', { ascending: false });
+
+      // Filtrar por data se fornecido
+      if (startDate) {
+        query = query.gte('criado_em', startDate.toISOString());
+      }
+      if (endDate) {
+        query = query.lte('criado_em', endDate.toISOString());
+      }
       
-      if (error) throw error;
+      const { data, error } = await query;
+      
+      if (error) {
+        console.error('Erro ao buscar pagamentos:', error);
+        throw error;
+      }
+      
+      console.log('Pagamentos carregados:', data);
       return data || [];
     },
+    enabled: !!user?.id,
   });
 }
 
@@ -36,6 +81,8 @@ export function useUpdatePagamento() {
   
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: UpdatePagamento }) => {
+      console.log('Atualizando pagamento:', id, data);
+      
       const { data: updated, error } = await supabase
         .from('pagamentos')
         .update(data)
@@ -43,7 +90,12 @@ export function useUpdatePagamento() {
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao atualizar pagamento:', error);
+        throw error;
+      }
+      
+      console.log('Pagamento atualizado:', updated);
       return updated;
     },
     onSuccess: () => {
@@ -52,20 +104,52 @@ export function useUpdatePagamento() {
       toast.success('Pagamento atualizado com sucesso!');
     },
     onError: (error: any) => {
+      console.error('Erro na mutação de pagamento:', error);
       toast.error('Erro ao atualizar pagamento: ' + error.message);
     },
   });
 }
 
-export function useFinanceiroStats() {
+export function useMarcarPago() {
+  return useUpdatePagamento();
+}
+
+export function useFinanceiroStats(startDate?: Date, endDate?: Date) {
+  const { user } = useAuth();
+  
   return useQuery({
-    queryKey: ['financeiro-stats'],
+    queryKey: ['financeiro-stats', startDate, endDate],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('pagamentos')
-        .select('valor_total, valor_pago, status, data_pagamento, data_vencimento');
+      console.log('Calculando estatísticas financeiras com user:', user);
       
-      if (error) throw error;
+      if (!user?.id) {
+        console.error('User não disponível para calcular estatísticas');
+        return {
+          totalRecebido: 0,
+          totalPendente: 0,
+          totalVencido: 0,
+          receitaMensal: 0,
+        };
+      }
+
+      let query = supabase
+        .from('pagamentos')
+        .select('valor_total, valor_pago, status, data_pagamento, data_vencimento, criado_em');
+      
+      // Filtrar por data se fornecido
+      if (startDate) {
+        query = query.gte('criado_em', startDate.toISOString());
+      }
+      if (endDate) {
+        query = query.lte('criado_em', endDate.toISOString());
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) {
+        console.error('Erro ao buscar dados para estatísticas:', error);
+        throw error;
+      }
 
       const agora = new Date();
       const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
@@ -99,12 +183,16 @@ export function useFinanceiroStats() {
         }
       });
 
-      return {
+      const stats = {
         totalRecebido,
         totalPendente,
         totalVencido,
         receitaMensal,
       };
+      
+      console.log('Estatísticas calculadas:', stats);
+      return stats;
     },
+    enabled: !!user?.id,
   });
 }

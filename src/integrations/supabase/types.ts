@@ -67,13 +67,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "agendamentos_pagamento_id_fkey"
-            columns: ["pagamento_id"]
-            isOneToOne: false
-            referencedRelation: "pagamentos"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "agendamentos_profissional_id_fkey"
             columns: ["profissional_id"]
             isOneToOne: false
@@ -453,6 +446,13 @@ export type Database = {
           valor_total?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_pagamento_agendamento"
+            columns: ["agendamento_id"]
+            isOneToOne: false
+            referencedRelation: "agendamentos"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "pagamentos_agendamento_id_fkey"
             columns: ["agendamento_id"]

@@ -6,49 +6,70 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { DollarSign, TrendingUp, Calendar, Search, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { DollarSign, TrendingUp, Calendar, Search, CheckCircle, Clock, XCircle, Receipt, CreditCard, MessageSquare } from 'lucide-react';
+import { usePagamentos, useFinanceiroStats, useMarcarPago } from '@/hooks/useFinanceiro';
+import { useAuth } from '@/hooks/useAuth';
+import { ReciboModal } from '@/components/financeiro/ReciboModal';
+import { CobrancaModal } from '@/components/financeiro/CobrancaModal';
+import { DateFilter } from '@/components/financeiro/DateFilter';
+import { toast } from 'sonner';
 
 export default function Financeiro() {
+  const { user, loading: authLoading } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
+  const [startDate, setStartDate] = useState<Date | undefined>();
+  const [endDate, setEndDate] = useState<Date | undefined>();
+  
+  // Estados dos modais
+  const [reciboModal, setReciboModal] = useState<{ open: boolean; pagamento: any }>({
+    open: false,
+    pagamento: null
+  });
+  const [cobrancaModal, setCobrancaModal] = useState<{ open: boolean; pagamento: any }>({
+    open: false,
+    pagamento: null
+  });
 
-  // Mock data - substituir por hooks reais
-  const pagamentos = [
-    {
-      id: '1',
-      paciente: 'Maria Silva',
-      servico: 'Consulta Cardiológica',
-      valor: 250.00,
-      status: 'pago',
-      data: '2024-06-15',
-      forma: 'cartao'
-    },
-    {
-      id: '2',
-      paciente: 'José Santos',
-      servico: 'Exame de Rotina',
-      valor: 180.00,
-      status: 'pendente',
-      data: '2024-06-14',
-      forma: 'pix'
-    },
-    {
-      id: '3',
-      paciente: 'Ana Costa',
-      servico: 'Consulta de Retorno',
-      valor: 120.00,
-      status: 'vencido',
-      data: '2024-06-10',
-      forma: 'dinheiro'
-    }
-  ];
+  console.log('User carregado:', user);
+  console.log('Status do loading:', authLoading);
 
-  const stats = {
-    totalRecebido: pagamentos.filter(p => p.status === 'pago').reduce((acc, p) => acc + p.valor, 0),
-    totalPendente: pagamentos.filter(p => p.status === 'pendente').reduce((acc, p) => acc + p.valor, 0),
-    totalVencido: pagamentos.filter(p => p.status === 'vencido').reduce((acc, p) => acc + p.valor, 0),
-  };
+  // Hooks para dados
+  const { data: pagamentos = [], isLoading: pagamentosLoading, error: pagamentosError } = usePagamentos(startDate, endDate);
+  const { data: stats, isLoading: statsLoading } = useFinanceiroStats(startDate, endDate);
+  const marcarPagoMutation = useMarcarPago();
+
+  // Verificações de segurança
+  if (authLoading) {
+    return (
+      <div className="p-8">
+        <div className="text-center">
+          <p>Carregando dados do usuário...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="p-8">
+        <div className="text-center">
+          <p className="text-red-600">Você precisa estar logado para acessar esta página.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (pagamentosError) {
+    console.error('Erro ao carregar pagamentos:', pagamentosError);
+    return (
+      <div className="p-8">
+        <div className="text-center">
+          <p className="text-red-600">Não foi possível carregar os pagamentos. Verifique o console para mais detalhes.</p>
+        </div>
+      </div>
+    );
+  }
 
   const getStatusBadge = (status: string) => {
     const variants = {
@@ -57,7 +78,7 @@ export default function Financeiro() {
       vencido: { variant: 'destructive' as const, icon: XCircle, text: 'Vencido' }
     };
     
-    const config = variants[status as keyof typeof variants];
+    const config = variants[status as keyof typeof variants] || variants.pendente;
     const Icon = config.icon;
     
     return (
@@ -69,11 +90,44 @@ export default function Financeiro() {
   };
 
   const filteredPagamentos = pagamentos.filter(pagamento => {
-    const matchesSearch = pagamento.paciente.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         pagamento.servico.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'todos' || pagamento.status === statusFilter;
+    const pacienteNome = pagamento?.agendamentos?.pacientes?.nome || '';
+    const tipoServico = pagamento?.agendamentos?.tipo_servico || '';
+    
+    const matchesSearch = pacienteNome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         tipoServico.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'todos' || pagamento?.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  const handleMarcarPago = async (pagamentoId: string) => {
+    try {
+      await marcarPagoMutation.mutateAsync({
+        id: pagamentoId,
+        data: {
+          status: 'pago',
+          data_pagamento: new Date().toISOString(),
+        }
+      });
+      console.log('Pagamento marcado como pago:', pagamentoId);
+    } catch (error) {
+      console.error('Erro ao marcar pagamento como pago:', error);
+    }
+  };
+
+  const handleOpenRecibo = (pagamento: any) => {
+    setReciboModal({ open: true, pagamento });
+  };
+
+  const handleOpenCobranca = (pagamento: any) => {
+    setCobrancaModal({ open: true, pagamento });
+  };
+
+  const handleDateChange = (start?: Date, end?: Date) => {
+    setStartDate(start);
+    setEndDate(end);
+  };
+
+  const statsData = stats || { totalRecebido: 0, totalPendente: 0, totalVencido: 0, receitaMensal: 0 };
 
   return (
     <div className="p-8 space-y-6">
@@ -86,8 +140,15 @@ export default function Financeiro() {
         </div>
       </div>
 
+      {/* Filtro de Datas */}
+      <DateFilter 
+        startDate={startDate}
+        endDate={endDate}
+        onDateChange={handleDateChange}
+      />
+
       {/* Cards de Resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -97,7 +158,7 @@ export default function Financeiro() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              R$ {stats.totalRecebido.toFixed(2)}
+              R$ {statsLoading ? '...' : statsData.totalRecebido.toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground">
               Pagamentos confirmados
@@ -114,7 +175,7 @@ export default function Financeiro() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-yellow-600">
-              R$ {stats.totalPendente.toFixed(2)}
+              R$ {statsLoading ? '...' : statsData.totalPendente.toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground">
               Pagamentos pendentes
@@ -131,10 +192,27 @@ export default function Financeiro() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
-              R$ {stats.totalVencido.toFixed(2)}
+              R$ {statsLoading ? '...' : statsData.totalVencido.toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground">
               Pagamentos vencidos
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Receita Mensal
+            </CardTitle>
+            <TrendingUp className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">
+              R$ {statsLoading ? '...' : statsData.receitaMensal.toFixed(2)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Recebido este mês
             </p>
           </CardContent>
         </Card>
@@ -179,83 +257,105 @@ export default function Financeiro() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Paciente</TableHead>
-                <TableHead>Serviço</TableHead>
-                <TableHead>Valor</TableHead>
-                <TableHead>Data</TableHead>
-                <TableHead>Forma</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredPagamentos.map((pagamento) => (
-                <TableRow key={pagamento.id}>
-                  <TableCell className="font-medium">
-                    {pagamento.paciente}
-                  </TableCell>
-                  <TableCell>{pagamento.servico}</TableCell>
-                  <TableCell>R$ {pagamento.valor.toFixed(2)}</TableCell>
-                  <TableCell>
-                    {new Date(pagamento.data).toLocaleDateString('pt-BR')}
-                  </TableCell>
-                  <TableCell className="capitalize">{pagamento.forma}</TableCell>
-                  <TableCell>
-                    {getStatusBadge(pagamento.status)}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      {pagamento.status === 'pendente' && (
-                        <Button size="sm" variant="outline">
-                          Marcar Pago
-                        </Button>
-                      )}
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button size="sm" variant="outline">
-                            Recibo
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Recibo de Pagamento</DialogTitle>
-                            <DialogDescription>
-                              Detalhes do pagamento de {pagamento.paciente}
-                            </DialogDescription>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <strong>Paciente:</strong> {pagamento.paciente}
-                              </div>
-                              <div>
-                                <strong>Serviço:</strong> {pagamento.servico}
-                              </div>
-                              <div>
-                                <strong>Valor:</strong> R$ {pagamento.valor.toFixed(2)}
-                              </div>
-                              <div>
-                                <strong>Data:</strong> {new Date(pagamento.data).toLocaleDateString('pt-BR')}
-                              </div>
-                            </div>
-                            <div className="flex justify-end space-x-2">
-                              <Button variant="outline">Imprimir</Button>
-                              <Button>Enviar por Email</Button>
-                            </div>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-                  </TableCell>
+          {pagamentosLoading ? (
+            <div className="text-center py-8">
+              <p>Carregando pagamentos...</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Paciente</TableHead>
+                  <TableHead>Serviço</TableHead>
+                  <TableHead>Valor</TableHead>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Forma</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Ações</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredPagamentos.map((pagamento) => {
+                  const pacienteNome = pagamento?.agendamentos?.pac
+
+
+ientes?.nome || 'Nome não disponível';
+                  const tipoServico = pagamento?.agendamentos?.tipo_servico || 'Serviço não especificado';
+                  const valorTotal = Number(pagamento?.valor_total) || 0;
+                  const dataCriacao = pagamento?.criado_em ? new Date(pagamento.criado_em).toLocaleDateString('pt-BR') : 'Data não disponível';
+                  const formaPagamento = pagamento?.forma_pagamento || 'Não especificada';
+                  const status = pagamento?.status || 'pendente';
+
+                  return (
+                    <TableRow key={pagamento?.id}>
+                      <TableCell className="font-medium">
+                        {pacienteNome}
+                      </TableCell>
+                      <TableCell>{tipoServico}</TableCell>
+                      <TableCell>R$ {valorTotal.toFixed(2)}</TableCell>
+                      <TableCell>{dataCriacao}</TableCell>
+                      <TableCell className="capitalize">{formaPagamento}</TableCell>
+                      <TableCell>
+                        {getStatusBadge(status)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          {status === 'pendente' && (
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleMarcarPago(pagamento.id)}
+                              disabled={marcarPagoMutation.isPending}
+                            >
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Marcar Pago
+                            </Button>
+                          )}
+                          
+                          {status === 'pago' && (
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleOpenRecibo(pagamento)}
+                            >
+                              <Receipt className="h-4 w-4 mr-1" />
+                              Recibo
+                            </Button>
+                          )}
+                          
+                          {(status === 'pendente' || status === 'vencido') && (
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleOpenCobranca(pagamento)}
+                            >
+                              <CreditCard className="h-4 w-4 mr-1" />
+                              Cobrar
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
+
+      {/* Modais */}
+      <ReciboModal
+        open={reciboModal.open}
+        onOpenChange={(open) => setReciboModal({ open, pagamento: open ? reciboModal.pagamento : null })}
+        pagamento={reciboModal.pagamento}
+      />
+      
+      <CobrancaModal
+        open={cobrancaModal.open}
+        onOpenChange={(open) => setCobrancaModal({ open, pagamento: open ? cobrancaModal.pagamento : null })}
+        pagamento={cobrancaModal.pagamento}
+      />
     </div>
   );
 }
