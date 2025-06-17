@@ -468,8 +468,16 @@ export type Database = {
           criado_em: string
           crm_cro: string
           especialidade: string
+          formas_pagamento: Json | null
+          horarios_atendimento: Json | null
           id: string
+          mini_bio: string | null
           nome: string
+          nome_clinica: string | null
+          onboarding_completo: boolean | null
+          planos_saude: Json | null
+          servicos_oferecidos: Json | null
+          servicos_precos: Json | null
           telefone: string | null
           user_id: string | null
         }
@@ -481,8 +489,16 @@ export type Database = {
           criado_em?: string
           crm_cro: string
           especialidade: string
+          formas_pagamento?: Json | null
+          horarios_atendimento?: Json | null
           id?: string
+          mini_bio?: string | null
           nome: string
+          nome_clinica?: string | null
+          onboarding_completo?: boolean | null
+          planos_saude?: Json | null
+          servicos_oferecidos?: Json | null
+          servicos_precos?: Json | null
           telefone?: string | null
           user_id?: string | null
         }
@@ -494,8 +510,16 @@ export type Database = {
           criado_em?: string
           crm_cro?: string
           especialidade?: string
+          formas_pagamento?: Json | null
+          horarios_atendimento?: Json | null
           id?: string
+          mini_bio?: string | null
           nome?: string
+          nome_clinica?: string | null
+          onboarding_completo?: boolean | null
+          planos_saude?: Json | null
+          servicos_oferecidos?: Json | null
+          servicos_precos?: Json | null
           telefone?: string | null
           user_id?: string | null
         }

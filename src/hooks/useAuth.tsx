@@ -1,4 +1,3 @@
-
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
@@ -35,7 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isProfissional = userProfile?.tipo_usuario === 'profissional';
   const isRecepcionista = userProfile?.tipo_usuario === 'recepcionista';
 
-  const needsOnboarding = isProfissional && (!profissional || !profissional.nome || !profissional.especialidade || !profissional.crm_cro);
+  const needsOnboarding = isProfissional && (!profissional || !profissional.onboarding_completo);
 
   const fetchUserProfile = async (userId: string) => {
     try {
@@ -139,7 +138,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               clinica_id: clinica.id,
               nome: '',
               especialidade: '',
-              crm_cro: ''
+              crm_cro: '',
+              onboarding_completo: false
             });
         }
       }

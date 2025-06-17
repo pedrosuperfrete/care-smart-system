@@ -2,104 +2,86 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { OnboardingStep1 } from '@/components/onboarding/OnboardingStep1';
+import { OnboardingStep2 } from '@/components/onboarding/OnboardingStep2';
 
 export default function Onboarding() {
   const { profissional, updateProfissional } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
+  const [currentStep, setCurrentStep] = useState(1);
+
+  const [step1Data, setStep1Data] = useState({
     nome: profissional?.nome || '',
-    especialidade: profissional?.especialidade || '',
-    crm_cro: profissional?.crm_cro || '',
-    telefone: profissional?.telefone || '',
+    mini_bio: profissional?.mini_bio || '',
+    servicos_oferecidos: (profissional?.servicos_oferecidos as string[]) || [],
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const [step2Data, setStep2Data] = useState({
+    nome_clinica: profissional?.nome_clinica || '',
+    horarios_atendimento: typeof profissional?.horarios_atendimento === 'string' 
+      ? profissional.horarios_atendimento 
+      : '',
+    servicos_precos: (profissional?.servicos_precos as Array<{nome: string, preco: string}>) || [],
+    formas_pagamento: (profissional?.formas_pagamento as string[]) || [],
+    planos_saude: typeof profissional?.planos_saude === 'string' 
+      ? profissional.planos_saude 
+      : (profissional?.planos_saude as string[])?.join(', ') || '',
+  });
+
+  const handleStep1Next = () => {
+    setCurrentStep(2);
+  };
+
+  const handleStep2Back = () => {
+    setCurrentStep(1);
+  };
+
+  const handleFinalSubmit = async () => {
     setLoading(true);
 
     try {
-      await updateProfissional(formData);
-      toast.success('Perfil completado com sucesso!');
+      const completeData = {
+        nome: step1Data.nome,
+        mini_bio: step1Data.mini_bio,
+        servicos_oferecidos: step1Data.servicos_oferecidos,
+        nome_clinica: step2Data.nome_clinica,
+        horarios_atendimento: step2Data.horarios_atendimento,
+        servicos_precos: step2Data.servicos_precos,
+        formas_pagamento: step2Data.formas_pagamento,
+        planos_saude: step2Data.planos_saude.split(',').map(p => p.trim()).filter(p => p),
+        onboarding_completo: true,
+      };
+
+      await updateProfissional(completeData);
+      toast.success('Onboarding completado com sucesso!');
       navigate('/');
     } catch (error) {
-      toast.error('Erro ao salvar perfil. Tente novamente.');
+      toast.error('Erro ao salvar dados. Tente novamente.');
+      console.error('Erro no onboarding:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl text-center">
-            Complete seu Perfil
-          </CardTitle>
-          <CardDescription className="text-center">
-            Preencha seus dados profissionais para continuar
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="nome">Nome Completo *</Label>
-              <Input
-                id="nome"
-                value={formData.nome}
-                onChange={(e) => handleChange('nome', e.target.value)}
-                placeholder="Seu nome completo"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="especialidade">Especialidade *</Label>
-              <Input
-                id="especialidade"
-                value={formData.especialidade}
-                onChange={(e) => handleChange('especialidade', e.target.value)}
-                placeholder="Ex: Cardiologia, Odontologia"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="crm_cro">CRM/CRO *</Label>
-              <Input
-                id="crm_cro"
-                value={formData.crm_cro}
-                onChange={(e) => handleChange('crm_cro', e.target.value)}
-                placeholder="Ex: CRM 12345"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="telefone">Telefone</Label>
-              <Input
-                id="telefone"
-                value={formData.telefone}
-                onChange={(e) => handleChange('telefone', e.target.value)}
-                placeholder="(11) 99999-9999"
-              />
-            </div>
-
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Salvando...' : 'Completar Cadastro'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+      {currentStep === 1 ? (
+        <OnboardingStep1
+          data={step1Data}
+          onDataChange={setStep1Data}
+          onNext={handleStep1Next}
+        />
+      ) : (
+        <OnboardingStep2
+          data={step2Data}
+          onDataChange={setStep2Data}
+          onSubmit={handleFinalSubmit}
+          onBack={handleStep2Back}
+          loading={loading}
+        />
+      )}
     </div>
   );
 }
