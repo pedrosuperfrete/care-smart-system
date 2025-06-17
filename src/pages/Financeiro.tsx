@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DollarSign, TrendingUp, Calendar, Search, CheckCircle, Clock, XCircle, Receipt, CreditCard, MessageSquare } from 'lucide-react';
-import { usePagamentos, useFinanceiroStats, useMarcarPago, useCreatePagamento } from '@/hooks/useFinanceiro';
+import { usePagamentos, useFinanceiroStats, useMarcarPago } from '@/hooks/useFinanceiro';
+import { useCreatePagamento } from '@/hooks/useCreatePagamento';
 import { useAuth } from '@/hooks/useAuth';
 import { ReciboModal } from '@/components/financeiro/ReciboModal';
 import { CobrancaModal } from '@/components/financeiro/CobrancaModal';

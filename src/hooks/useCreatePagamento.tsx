@@ -26,7 +26,7 @@ export function useCreatePagamento() {
         tipo_servico: data.servico_prestado,
         data_inicio: new Date().toISOString(),
         data_fim: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // 1 hora depois
-        status: 'concluido' as const,
+        status: 'realizado' as const, // Usando 'realizado' em vez de 'concluido'
         confirmado_pelo_paciente: true,
         valor: data.valor_total,
         observacoes: `Pagamento manual - Paciente: ${data.paciente_nome}`,
