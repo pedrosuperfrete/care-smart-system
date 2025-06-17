@@ -1,5 +1,4 @@
-
-import { Calendar, Users, FileText, DollarSign, Home, Settings, User, Clock, CreditCard } from "lucide-react";
+import { Calendar, Users, FileText, DollarSign, Home, Settings, User, Clock, CreditCard, LogOut, ChevronDown } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -12,12 +11,18 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useLocation, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 
 export function AppSidebar() {
   const location = useLocation();
-  const { userProfile, profissional, isAdmin, isProfissional, isRecepcionista } = useAuth();
+  const { userProfile, profissional, isAdmin, isProfissional, isRecepcionista, signOut } = useAuth();
 
   const baseMenuItems = [
     {
@@ -83,6 +88,14 @@ export function AppSidebar() {
 
   const userInfo = getUserDisplayInfo();
 
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+    }
+  };
+
   return (
     <Sidebar className="border-r border-gray-200">
       <SidebarHeader className="p-6 border-b border-gray-200">
@@ -127,15 +140,26 @@ export function AppSidebar() {
       </SidebarContent>
       
       <SidebarFooter className="p-4 border-t border-gray-200">
-        <div className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50">
-          <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-            <span className="text-xs font-medium text-gray-600">{userInfo.initials}</span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">{userInfo.name}</p>
-            <p className="text-xs text-gray-500 truncate">{userInfo.role}</p>
-          </div>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <div className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors">
+              <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                <span className="text-xs font-medium text-gray-600">{userInfo.initials}</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 truncate">{userInfo.name}</p>
+                <p className="text-xs text-gray-500 truncate">{userInfo.role}</p>
+              </div>
+              <ChevronDown className="w-4 h-4 text-gray-400" />
+            </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem onClick={handleLogout} className="text-red-600 hover:text-red-700 hover:bg-red-50">
+              <LogOut className="w-4 h-4 mr-2" />
+              Sair
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </SidebarFooter>
     </Sidebar>
   );
