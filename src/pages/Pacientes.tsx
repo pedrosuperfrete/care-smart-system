@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,9 +9,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { PacienteForm } from '@/components/forms/PacienteForm';
 import { usePacientes } from '@/hooks/usePacientes';
 import { Users, Plus, Search, MoreVertical, Eye, Edit, Calendar, History, Phone, Mail, MapPin } from 'lucide-react';
-import { Tables } from '@/integrations/supa
-
-base/types';
+import { Tables } from '@/integrations/supabase/types';
 
 type Paciente = Tables<'pacientes'>;
 
