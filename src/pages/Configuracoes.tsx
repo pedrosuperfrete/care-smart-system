@@ -9,13 +9,52 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/useAuth';
-import { User, Building, Users, Save, Trash2, UserPlus } from 'lucide-react';
+import { User, Building, Users, Save, Trash2, UserPlus, Plus } from 'lucide-react';
 import { toast } from 'sonner';
+
+const servicosDisponiveis = [
+  'Consulta presencial',
+  'Teleconsulta',
+  'Psicologia',
+  'Nutricionista',
+  'Atendimento domiciliar',
+  'Retorno',
+  'Exames clínicos',
+  'Sessões de psicoterapia'
+];
+
+const formasPagamentoDisponiveis = [
+  'PIX',
+  'Cartão de Crédito',
+  'Cartão de Débito',
+  'Dinheiro',
+  'Transferência Bancária'
+];
 
 export default function Configuracoes() {
   const { userProfile, profissional, isAdmin, updateProfile, updateProfissional } = useAuth();
   const [loading, setLoading] = useState(false);
+
+  // Estado para dados do perfil profissional
+  const [profileData, setProfileData] = useState({
+    nome: profissional?.nome || '',
+    especialidade: profissional?.especialidade || '',
+    crm_cro: profissional?.crm_cro || '',
+    telefone: profissional?.telefone || '',
+    mini_bio: profissional?.mini_bio || '',
+    servicos_oferecidos: (profissional?.servicos_oferecidos as string[]) || [],
+    nome_clinica: profissional?.nome_clinica || '',
+    horarios_atendimento: typeof profissional?.horarios_atendimento === 'string' 
+      ? profissional.horarios_atendimento 
+      : '',
+    servicos_precos: (profissional?.servicos_precos as Array<{nome: string, preco: string}>) || [],
+    formas_pagamento: (profissional?.formas_pagamento as string[]) || [],
+    planos_saude: typeof profissional?.planos_saude === 'string' 
+      ? profissional.planos_saude 
+      : (profissional?.planos_saude as string[])?.join(', ') || '',
+  });
 
   // Mock data para usuários (para admin)
   const usuarios = [
@@ -37,13 +76,15 @@ export default function Configuracoes() {
     }
   ];
 
-  const handleSaveProfile = async (data: any) => {
+  const handleSaveProfile = async () => {
     setLoading(true);
     try {
       if (profissional) {
-        await updateProfissional(data);
-      } else {
-        await updateProfile(data);
+        const updateData = {
+          ...profileData,
+          planos_saude: profileData.planos_saude.split(',').map(p => p.trim()).filter(p => p),
+        };
+        await updateProfissional(updateData);
       }
       toast.success('Perfil atualizado com sucesso!');
     } catch (error) {
@@ -51,6 +92,40 @@ export default function Configuracoes() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleServicoChange = (servico: string, checked: boolean) => {
+    const newServicos = checked 
+      ? [...profileData.servicos_oferecidos, servico]
+      : profileData.servicos_oferecidos.filter(s => s !== servico);
+    
+    setProfileData({ ...profileData, servicos_oferecidos: newServicos });
+  };
+
+  const handleFormaPagamentoChange = (forma: string, checked: boolean) => {
+    const newFormas = checked 
+      ? [...profileData.formas_pagamento, forma]
+      : profileData.formas_pagamento.filter(f => f !== forma);
+    
+    setProfileData({ ...profileData, formas_pagamento: newFormas });
+  };
+
+  const addServicoPreco = () => {
+    setProfileData({
+      ...profileData,
+      servicos_precos: [...profileData.servicos_precos, { nome: '', preco: '' }]
+    });
+  };
+
+  const removeServicoPreco = (index: number) => {
+    const newServicos = profileData.servicos_precos.filter((_, i) => i !== index);
+    setProfileData({ ...profileData, servicos_precos: newServicos });
+  };
+
+  const updateServicoPreco = (index: number, field: 'nome' | 'preco', value: string) => {
+    const newServicos = [...profileData.servicos_precos];
+    newServicos[index][field] = value;
+    setProfileData({ ...profileData, servicos_precos: newServicos });
   };
 
   return (
@@ -85,70 +160,220 @@ export default function Configuracoes() {
 
         {/* Aba Perfil */}
         <TabsContent value="perfil">
-          <Card>
-            <CardHeader>
-              <CardTitle>Meu Perfil</CardTitle>
-              <CardDescription>
-                Atualize suas informações pessoais e profissionais
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Email</Label>
-                  <Input value={userProfile?.email || ''} disabled />
+          <div className="space-y-6">
+            {/* Informações Básicas */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Informações Básicas</CardTitle>
+                <CardDescription>
+                  Suas informações pessoais e de conta
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Email</Label>
+                    <Input value={userProfile?.email || ''} disabled />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Tipo de Usuário</Label>
+                    <Input value={userProfile?.tipo_usuario || ''} disabled />
+                  </div>
+
+                  {profissional && (
+                    <>
+                      <div className="space-y-2">
+                        <Label>Nome Completo</Label>
+                        <Input 
+                          value={profileData.nome}
+                          onChange={(e) => setProfileData({ ...profileData, nome: e.target.value })}
+                          placeholder="Seu nome completo"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Especialidade</Label>
+                        <Input 
+                          value={profileData.especialidade}
+                          onChange={(e) => setProfileData({ ...profileData, especialidade: e.target.value })}
+                          placeholder="Sua especialidade"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>CRM/CRO</Label>
+                        <Input 
+                          value={profileData.crm_cro}
+                          onChange={(e) => setProfileData({ ...profileData, crm_cro: e.target.value })}
+                          placeholder="Seu registro profissional"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Telefone</Label>
+                        <Input 
+                          value={profileData.telefone}
+                          onChange={(e) => setProfileData({ ...profileData, telefone: e.target.value })}
+                          placeholder="Seu telefone"
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
-                
-                <div className="space-y-2">
-                  <Label>Tipo de Usuário</Label>
-                  <Input value={userProfile?.tipo_usuario || ''} disabled />
-                </div>
+              </CardContent>
+            </Card>
 
-                {profissional && (
-                  <>
+            {/* Informações Profissionais */}
+            {profissional && (
+              <>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Informações Profissionais</CardTitle>
+                    <CardDescription>
+                      Suas informações profissionais e de apresentação
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
                     <div className="space-y-2">
-                      <Label>Nome Completo</Label>
-                      <Input 
-                        defaultValue={profissional.nome || ''}
-                        placeholder="Seu nome completo"
+                      <Label>Mini Bio</Label>
+                      <Textarea
+                        value={profileData.mini_bio}
+                        onChange={(e) => setProfileData({ ...profileData, mini_bio: e.target.value })}
+                        placeholder="Conte um pouco sobre você e sua experiência profissional..."
+                        rows={4}
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Especialidade</Label>
-                      <Input 
-                        defaultValue={profissional.especialidade || ''}
-                        placeholder="Sua especialidade"
+                      <Label>Nome da Clínica</Label>
+                      <Input
+                        value={profileData.nome_clinica}
+                        onChange={(e) => setProfileData({ ...profileData, nome_clinica: e.target.value })}
+                        placeholder="Nome que será exibido aos pacientes"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label>CRM/CRO</Label>
-                      <Input 
-                        defaultValue={profissional.crm_cro || ''}
-                        placeholder="Seu registro profissional"
+                      <Label>Horários de Atendimento</Label>
+                      <Textarea
+                        value={profileData.horarios_atendimento}
+                        onChange={(e) => setProfileData({ ...profileData, horarios_atendimento: e.target.value })}
+                        placeholder="Ex: Segunda a Sexta: 8h às 18h&#10;Sábado: 8h às 12h"
+                        rows={3}
                       />
+                    </div>
+
+                    <div className="space-y-4">
+                      <Label>Serviços Oferecidos</Label>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {servicosDisponiveis.map((servico) => (
+                          <div key={servico} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={servico}
+                              checked={profileData.servicos_oferecidos.includes(servico)}
+                              onCheckedChange={(checked) => handleServicoChange(servico, !!checked)}
+                            />
+                            <Label
+                              htmlFor={servico}
+                              className="text-sm font-normal cursor-pointer"
+                            >
+                              {servico}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Serviços e Preços</CardTitle>
+                    <CardDescription>
+                      Configure os serviços que você oferece e seus respectivos preços
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <Label>Serviços com Preços</Label>
+                        <Button type="button" onClick={addServicoPreco} size="sm" variant="outline">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Adicionar
+                        </Button>
+                      </div>
+                      
+                      {profileData.servicos_precos.map((servico, index) => (
+                        <div key={index} className="flex gap-2 items-start">
+                          <div className="flex-1">
+                            <Input
+                              placeholder="Nome do serviço"
+                              value={servico.nome}
+                              onChange={(e) => updateServicoPreco(index, 'nome', e.target.value)}
+                            />
+                          </div>
+                          <div className="w-32">
+                            <Input
+                              placeholder="R$ 0,00"
+                              value={servico.preco}
+                              onChange={(e) => updateServicoPreco(index, 'preco', e.target.value)}
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            onClick={() => removeServicoPreco(index)}
+                            size="sm"
+                            variant="outline"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="space-y-4">
+                      <Label>Formas de Pagamento Aceitas</Label>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {formasPagamentoDisponiveis.map((forma) => (
+                          <div key={forma} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={forma}
+                              checked={profileData.formas_pagamento.includes(forma)}
+                              onCheckedChange={(checked) => handleFormaPagamentoChange(forma, !!checked)}
+                            />
+                            <Label
+                              htmlFor={forma}
+                              className="text-sm font-normal cursor-pointer"
+                            >
+                              {forma}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Telefone</Label>
-                      <Input 
-                        defaultValue={profissional.telefone || ''}
-                        placeholder="Seu telefone"
+                      <Label>Planos de Saúde Aceitos</Label>
+                      <Textarea
+                        value={profileData.planos_saude}
+                        onChange={(e) => setProfileData({ ...profileData, planos_saude: e.target.value })}
+                        placeholder="Lista os planos de saúde que você aceita (separados por vírgula)"
+                        rows={3}
                       />
                     </div>
-                  </>
-                )}
-              </div>
+                  </CardContent>
+                </Card>
+              </>
+            )}
 
-              <div className="flex justify-end">
-                <Button onClick={() => handleSaveProfile({})} disabled={loading}>
-                  <Save className="mr-2 h-4 w-4" />
-                  {loading ? 'Salvando...' : 'Salvar Alterações'}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+            <div className="flex justify-end">
+              <Button onClick={handleSaveProfile} disabled={loading}>
+                <Save className="mr-2 h-4 w-4" />
+                {loading ? 'Salvando...' : 'Salvar Alterações'}
+              </Button>
+            </div>
+          </div>
         </TabsContent>
 
         {/* Aba Clínica (apenas para admin) */}
