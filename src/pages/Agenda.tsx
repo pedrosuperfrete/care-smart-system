@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -49,7 +48,9 @@ export default function Agenda() {
         tipo_servico: newConsulta.tipo_servico,
         valor: newConsulta.valor ? parseFloat(newConsulta.valor) : null,
         observacoes: newConsulta.observacoes || null,
-        status: 'pendente'
+        status: 'pendente',
+        confirmado_pelo_paciente: false,
+        pagamento_id: null,
       });
 
       setIsNewConsultaOpen(false);

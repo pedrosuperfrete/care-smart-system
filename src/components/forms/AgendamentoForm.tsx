@@ -63,6 +63,8 @@ export function AgendamentoForm({ agendamento, pacienteId, onSuccess }: Agendame
       valor: formData.valor ? parseFloat(formData.valor) : null,
       observacoes: formData.observacoes || null,
       status: formData.status as any,
+      confirmado_pelo_paciente: false,
+      pagamento_id: null,
     };
 
     try {

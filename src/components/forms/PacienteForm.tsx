@@ -80,10 +80,14 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
         endereco: data.endereco || null,
         observacoes: data.observacoes || null,
         risco: data.risco || 'baixo' as const,
+        ativo: true,
       };
 
       if (paciente) {
-        await updatePaciente.mutateAsync({ id: paciente.id, ...pacienteData });
+        await updatePaciente.mutateAsync({ 
+          id: paciente.id, 
+          data: pacienteData 
+        });
       } else {
         await createPaciente.mutateAsync(pacienteData);
       }
