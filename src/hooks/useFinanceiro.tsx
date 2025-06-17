@@ -57,13 +57,50 @@ export function useUpdatePagamento() {
   });
 }
 
-export function useFinanceiroStats() {
+export function useMarcarPago() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data: updated, error } = await supabase
+        .from('pagamentos')
+        .update({ 
+          status: 'pago',
+          data_pagamento: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return updated;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pagamentos'] });
+      queryClient.invalidateQueries({ queryKey: ['financeiro-stats'] });
+      toast.success('Pagamento marcado como pago!');
+    },
+    onError: (error: any) => {
+      toast.error('Erro ao marcar pagamento como pago: ' + error.message);
+    },
+  });
+}
+
+export function useFinanceiroStats(startDate?: Date, endDate?: Date) {
   return useQuery({
-    queryKey: ['financeiro-stats'],
+    queryKey: ['financeiro-stats', startDate, endDate],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('pagamentos')
         .select('valor_total, valor_pago, status, data_pagamento, data_vencimento');
+
+      if (startDate && endDate) {
+        query = query
+          .gte('criado_em', startDate.toISOString())
+          .lte('criado_em', endDate.toISOString());
+      }
+
+      const { data, error } = await query;
       
       if (error) throw error;
 
