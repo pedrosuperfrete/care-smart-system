@@ -6,12 +6,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DollarSign, TrendingUp, Calendar, Search, CheckCircle, Clock, XCircle, Receipt, CreditCard, MessageSquare } from 'lucide-react';
-import { usePagamentos, useFinanceiroStats, useMarcarPago } from '@/hooks/useFinanceiro';
+import { usePagamentos, useFinanceiroStats, useMarcarPago, useCreatePagamento } from '@/hooks/useFinanceiro';
 import { useAuth } from '@/hooks/useAuth';
 import { ReciboModal } from '@/components/financeiro/ReciboModal';
 import { CobrancaModal } from '@/components/financeiro/CobrancaModal';
 import { DateFilter } from '@/components/financeiro/DateFilter';
 import { toast } from 'sonner';
+import { NovoPagamentoModal } from '@/components/financeiro/NovoPagamentoModal';
 
 export default function Financeiro() {
   const { user, loading: authLoading } = useAuth();
@@ -29,6 +30,7 @@ export default function Financeiro() {
     open: false,
     pagamento: null
   });
+  const [novoPagamentoModal, setNovoPagamentoModal] = useState(false);
 
   console.log('User carregado:', user);
   console.log('Status do loading:', authLoading);
@@ -37,6 +39,7 @@ export default function Financeiro() {
   const { data: pagamentos = [], isLoading: pagamentosLoading, error: pagamentosError } = usePagamentos(startDate, endDate);
   const { data: stats, isLoading: statsLoading } = useFinanceiroStats(startDate, endDate);
   const marcarPagoMutation = useMarcarPago();
+  const createPagamentoMutation = useCreatePagamento();
 
   // Verificações de segurança
   if (authLoading) {
@@ -111,6 +114,10 @@ export default function Financeiro() {
     } catch (error) {
       console.error('Erro ao marcar pagamento como pago:', error);
     }
+  };
+
+  const handleCreatePagamento = async (data: any) => {
+    await createPagamentoMutation.mutateAsync(data);
   };
 
   const handleOpenRecibo = (pagamento: any) => {
@@ -243,6 +250,9 @@ export default function Financeiro() {
                 <SelectItem value="vencido">Vencido</SelectItem>
               </SelectContent>
             </Select>
+            <Button onClick={() => setNovoPagamentoModal(true)}>
+              Novo Pagamento
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -351,6 +361,12 @@ export default function Financeiro() {
         open={cobrancaModal.open}
         onOpenChange={(open) => setCobrancaModal({ open, pagamento: open ? cobrancaModal.pagamento : null })}
         pagamento={cobrancaModal.pagamento}
+      />
+
+      <NovoPagamentoModal
+        open={novoPagamentoModal}
+        onOpenChange={setNovoPagamentoModal}
+        onSave={handleCreatePagamento}
       />
     </div>
   );
