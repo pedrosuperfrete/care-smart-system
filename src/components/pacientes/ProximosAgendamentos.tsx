@@ -31,33 +31,35 @@ export function ProximosAgendamentos({ agendamentos, pacienteNome, pacienteId, o
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader>
         <div>
-          <CardTitle className="text-xl">Próximos Agendamentos</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-xl font-bold">Próximos Agendamentos</CardTitle>
+          <CardDescription className="text-sm text-gray-500">
             Consultas agendadas para este paciente
           </CardDescription>
+          <div className="mt-4">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button className="bg-blue-600 hover:bg-blue-700">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Nova Consulta
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Agendar Nova Consulta</DialogTitle>
+                  <DialogDescription>
+                    Criar um novo agendamento para {pacienteNome}
+                  </DialogDescription>
+                </DialogHeader>
+                <AgendamentoForm 
+                  pacienteId={pacienteId} 
+                  onSuccess={onClose}
+                />
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="mr-2 h-4 w-4" />
-              Nova Consulta
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Agendar Nova Consulta</DialogTitle>
-              <DialogDescription>
-                Criar um novo agendamento para {pacienteNome}
-              </DialogDescription>
-            </DialogHeader>
-            <AgendamentoForm 
-              pacienteId={pacienteId} 
-              onSuccess={onClose}
-            />
-          </DialogContent>
-        </Dialog>
       </CardHeader>
       <CardContent>
         {agendamentos.length === 0 ? (

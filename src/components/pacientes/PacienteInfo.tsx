@@ -39,15 +39,10 @@ export function PacienteInfo({ paciente, onClose }: PacienteInfoProps) {
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <div className="flex items-center justify-between mb-4">
-              <CardTitle className="text-3xl font-bold text-gray-900">{paciente.nome}</CardTitle>
-              <Badge className={getRiscoColor(paciente.risco)}>
-                Risco {getRiscoText(paciente.risco)}
-              </Badge>
-            </div>
-            <CardDescription className="text-base">
-              Informações gerais do paciente
-            </CardDescription>
+            <CardTitle className="text-2xl font-bold text-gray-900 mb-2">{paciente.nome}</CardTitle>
+            <Badge className={`${getRiscoColor(paciente.risco)} mb-4`}>
+              Risco {getRiscoText(paciente.risco)}
+            </Badge>
           </div>
           <Dialog>
             <DialogTrigger asChild>
@@ -69,59 +64,60 @@ export function PacienteInfo({ paciente, onClose }: PacienteInfoProps) {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm font-medium text-gray-500 mb-1">CPF</p>
-              <p className="text-base">{paciente.cpf}</p>
-            </div>
-            {paciente.data_nascimento && (
-              <div>
-                <p className="text-sm font-medium text-gray-500 mb-1">Data de Nascimento</p>
-                <p className="text-base">{new Date(paciente.data_nascimento).toLocaleDateString('pt-BR')}</p>
-              </div>
-            )}
-            {paciente.telefone && (
-              <div>
-                <p className="text-sm font-medium text-gray-500 mb-1">Telefone</p>
-                <div className="flex items-center space-x-2">
-                  <Phone className="h-4 w-4 text-gray-400" />
-                  <span className="text-base">{paciente.telefone}</span>
-                </div>
-              </div>
-            )}
+        <div className="space-y-4">
+          <div>
+            <p className="text-sm font-medium text-gray-500 mb-1">CPF</p>
+            <p className="text-base text-gray-900">{paciente.cpf}</p>
           </div>
           
-          <div className="space-y-4">
-            {paciente.email && (
-              <div>
-                <p className="text-sm font-medium text-gray-500 mb-1">E-mail</p>
-                <div className="flex items-center space-x-2">
-                  <Mail className="h-4 w-4 text-gray-400" />
-                  <span className="text-base break-all">{paciente.email}</span>
-                </div>
+          {paciente.email && (
+            <div>
+              <p className="text-sm font-medium text-gray-500 mb-1">E-mail</p>
+              <div className="flex items-center space-x-2">
+                <Mail className="h-4 w-4 text-gray-400" />
+                <span className="text-base text-gray-900">{paciente.email}</span>
               </div>
-            )}
-            {paciente.endereco && (
-              <div>
-                <p className="text-sm font-medium text-gray-500 mb-1">Endereço</p>
-                <div className="flex items-start space-x-2">
-                  <MapPin className="h-4 w-4 text-gray-400 mt-1" />
-                  <span className="text-base leading-relaxed">{paciente.endereco}</span>
-                </div>
+            </div>
+          )}
+          
+          {paciente.data_nascimento && (
+            <div>
+              <p className="text-sm font-medium text-gray-500 mb-1">Data de Nascimento</p>
+              <p className="text-base text-gray-900">{new Date(paciente.data_nascimento).toLocaleDateString('pt-BR')}</p>
+            </div>
+          )}
+          
+          {paciente.endereco && (
+            <div>
+              <p className="text-sm font-medium text-gray-500 mb-1">Endereço</p>
+              <div className="flex items-start space-x-2">
+                <MapPin className="h-4 w-4 text-gray-400 mt-1 flex-shrink-0" />
+                <span className="text-base text-gray-900 leading-relaxed">{paciente.endereco}</span>
               </div>
-            )}
-          </div>
+            </div>
+          )}
+          
+          {paciente.telefone && (
+            <div>
+              <p className="text-sm font-medium text-gray-500 mb-1">Telefone</p>
+              <div className="flex items-center space-x-2">
+                <Phone className="h-4 w-4 text-gray-400" />
+                <span className="text-base text-gray-900">{paciente.telefone}</span>
+              </div>
+            </div>
+          )}
         </div>
         
         {paciente.observacoes && (
           <>
             <Separator className="my-6" />
             <div>
-              <h4 className="text-lg font-semibold text-gray-900 mb-3">Observações</h4>
-              <p className="text-base text-gray-700 leading-relaxed bg-gray-50 p-4 rounded-lg">
-                {paciente.observacoes}
-              </p>
+              <h4 className="text-lg font-bold text-gray-900 mb-3">Observações</h4>
+              <div className="bg-muted p-4 rounded-lg border">
+                <p className="text-base text-gray-700 leading-relaxed">
+                  {paciente.observacoes}
+                </p>
+              </div>
             </div>
           </>
         )}
