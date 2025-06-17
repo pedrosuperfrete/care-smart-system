@@ -14,9 +14,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { usePacientes } from '@/hooks/usePacientes';
 
 const formSchema = z.object({
-  paciente_nome: z.string().min(1, 'Nome do paciente é obrigatório'),
+  paciente_id: z.string().min(1, 'Paciente é obrigatório'),
   servico_prestado: z.string().min(1, 'Serviço prestado é obrigatório'),
   valor_total: z.number().min(0.01, 'Valor total deve ser maior que zero'),
   forma_pagamento: z.enum(['dinheiro', 'cartao', 'pix', 'link']),
@@ -44,11 +45,12 @@ interface NovoPagamentoModalProps {
 
 export function NovoPagamentoModal({ open, onOpenChange, onSave }: NovoPagamentoModalProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const { data: pacientes = [], isLoading: pacientesLoading } = usePacientes();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      paciente_nome: '',
+      paciente_id: '',
       servico_prestado: '',
       valor_total: 0,
       forma_pagamento: 'dinheiro',
@@ -85,12 +87,23 @@ export function NovoPagamentoModal({ open, onOpenChange, onSave }: NovoPagamento
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="paciente_nome"
+              name="paciente_id"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Paciente</FormLabel>
                   <FormControl>
-                    <Input placeholder="Nome do paciente" {...field} />
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={pacientesLoading ? "Carregando..." : "Selecione o paciente"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {pacientes.map((paciente) => (
+                          <SelectItem key={paciente.id} value={paciente.id}>
+                            {paciente.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

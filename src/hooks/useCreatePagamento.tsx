@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface CreatePagamentoData {
-  paciente_nome: string;
+  paciente_id: string;
   servico_prestado: string;
   valor_total: number;
   forma_pagamento: 'dinheiro' | 'cartao' | 'pix' | 'link';
@@ -21,18 +21,17 @@ export function useCreatePagamento() {
     mutationFn: async (data: CreatePagamentoData) => {
       console.log('Criando pagamento manual:', data);
       
-      // Para pagamentos manuais, vamos criar um agendamento fictício primeiro
+      // Primeiro, vamos criar um agendamento
       const agendamentoData = {
+        paciente_id: data.paciente_id,
+        profissional_id: '00000000-0000-0000-0000-000000000000', // UUID temporário para pagamentos manuais
         tipo_servico: data.servico_prestado,
-        data_inicio: new Date().toISOString(),
-        data_fim: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // 1 hora depois
-        status: 'realizado' as const, // Usando 'realizado' em vez de 'concluido'
+        data_inicio: data.data_vencimento ? data.data_vencimento.toISOString() : new Date().toISOString(),
+        data_fim: data.data_vencimento ? new Date(data.data_vencimento.getTime() + 60 * 60 * 1000).toISOString() : new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+        status: data.status === 'pago' ? 'realizado' as const : 'pendente' as const,
         confirmado_pelo_paciente: true,
         valor: data.valor_total,
-        observacoes: `Pagamento manual - Paciente: ${data.paciente_nome}`,
-        // Estes campos são obrigatórios mas para pagamentos manuais usaremos valores padrão
-        paciente_id: '00000000-0000-0000-0000-000000000000', // UUID temporário
-        profissional_id: '00000000-0000-0000-0000-000000000000', // UUID temporário
+        observacoes: `Pagamento manual - Serviço: ${data.servico_prestado}`,
       };
 
       const { data: agendamento, error: agendamentoError } = await supabase
