@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -5,9 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { PacienteForm } from '@/components/forms/PacienteForm';
-import { usePacientes } from '@/hooks/usePacientes';
+import { PacienteDetalhes } from '@/components/PacienteDetalhes';
+import { AgendamentoForm } from '@/components/forms/AgendamentoForm';
+import { usePacientes, usePacientesStats } from '@/hooks/usePacientes';
 import { Users, Plus, Search, MoreVertical, Eye, Edit, Calendar, History, Phone, Mail, MapPin } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 
@@ -15,17 +18,26 @@ type Paciente = Tables<'pacientes'>;
 
 export default function Pacientes() {
   const { data: pacientes = [], isLoading } = usePacientes();
+  const { data: stats } = usePacientesStats();
   const [searchTerm, setSearchTerm] = useState('');
+  const [filtroStatus, setFiltroStatus] = useState<'todos' | 'adimplentes' | 'inadimplentes'>('todos');
   const [selectedPaciente, setSelectedPaciente] = useState<Paciente | null>(null);
   const [isNewPacienteOpen, setIsNewPacienteOpen] = useState(false);
   const [isEditPacienteOpen, setIsEditPacienteOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isAgendamentoOpen, setIsAgendamentoOpen] = useState(false);
 
-  const filteredPacientes = pacientes.filter(paciente =>
-    paciente.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    paciente.cpf.includes(searchTerm.replace(/\D/g, '')) ||
-    (paciente.email && paciente.email.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredPacientes = pacientes.filter(paciente => {
+    const matchesSearch = paciente.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      paciente.cpf.includes(searchTerm.replace(/\D/g, '')) ||
+      (paciente.email && paciente.email.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    // Simplificado: assumir que todos são adimplentes por enquanto
+    // TODO: Implementar lógica real baseada em pagamentos
+    const matchesStatus = filtroStatus === 'todos' || filtroStatus === 'adimplentes';
+    
+    return matchesSearch && matchesStatus;
+  });
 
   const getRiscoColor = (risco: string | null) => {
     const colors = {
@@ -82,20 +94,47 @@ export default function Pacientes() {
         </Dialog>
       </div>
 
-      {/* Filtros */}
+      {/* Filtros e Estatísticas */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex space-x-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Buscar por nome, CPF ou email..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+          <div className="flex flex-col space-y-4">
+            <div className="flex space-x-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Buscar por nome, CPF ou email..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
               </div>
+            </div>
+            
+            {/* Contadores de Status */}
+            <div className="flex space-x-4">
+              <Button
+                variant={filtroStatus === 'todos' ? 'default' : 'outline'}
+                onClick={() => setFiltroStatus('todos')}
+                className="flex items-center space-x-2"
+              >
+                <span>Todos ({stats?.total || 0})</span>
+              </Button>
+              <Button
+                variant={filtroStatus === 'adimplentes' ? 'default' : 'outline'}
+                onClick={() => setFiltroStatus('adimplentes')}
+                className="flex items-center space-x-2"
+              >
+                <span>Adimplentes ({stats?.adimplentes || 0})</span>
+              </Button>
+              <Button
+                variant={filtroStatus === 'inadimplentes' ? 'default' : 'outline'}
+                onClick={() => setFiltroStatus('inadimplentes')}
+                className="flex items-center space-x-2"
+              >
+                <span>Inadimplentes ({stats?.inadimplentes || 0})</span>
+              </Button>
             </div>
           </div>
         </CardContent>
@@ -202,11 +241,17 @@ export default function Pacientes() {
                         <Edit className="mr-2 h-4 w-4" />
                         Editar
                       </DropdownMenuItem>
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => {
+                        setSelectedPaciente(paciente);
+                        setIsAgendamentoOpen(true);
+                      }}>
                         <Calendar className="mr-2 h-4 w-4" />
                         Novo Atendimento
                       </DropdownMenuItem>
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => {
+                        setSelectedPaciente(paciente);
+                        setIsDetailsOpen(true);
+                      }}>
                         <History className="mr-2 h-4 w-4" />
                         Histórico
                       </DropdownMenuItem>
@@ -221,7 +266,7 @@ export default function Pacientes() {
 
       {/* Sheet de Detalhes do Paciente */}
       <Sheet open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-        <SheetContent className="w-[400px] sm:w-[540px]">
+        <SheetContent className="w-[400px] sm:w-[800px] overflow-y-auto">
           <SheetHeader>
             <SheetTitle>Detalhes do Paciente</SheetTitle>
             <SheetDescription>
@@ -230,77 +275,11 @@ export default function Pacientes() {
           </SheetHeader>
           
           {selectedPaciente && (
-            <div className="mt-6 space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center space-x-3">
-                  <h3 className="text-xl font-semibold">{selectedPaciente.nome}</h3>
-                  <Badge className={getRiscoColor(selectedPaciente.risco)}>
-                    Risco {getRiscoText(selectedPaciente.risco)}
-                  </Badge>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <strong>CPF:</strong>
-                    <p>{selectedPaciente.cpf}</p>
-                  </div>
-                  {selectedPaciente.data_nascimento && (
-                    <div>
-                      <strong>Data de Nascimento:</strong>
-                      <p>{new Date(selectedPaciente.data_nascimento).toLocaleDateString('pt-BR')}</p>
-                    </div>
-                  )}
-                  {selectedPaciente.telefone && (
-                    <div>
-                      <strong>Telefone:</strong>
-                      <p>{selectedPaciente.telefone}</p>
-                    </div>
-                  )}
-                  {selectedPaciente.email && (
-                    <div>
-                      <strong>Email:</strong>
-                      <p>{selectedPaciente.email}</p>
-                    </div>
-                  )}
-                </div>
-                
-                {selectedPaciente.endereco && (
-                  <div>
-                    <strong>Endereço:</strong>
-                    <p className="text-sm">{selectedPaciente.endereco}</p>
-                  </div>
-                )}
-                
-                {selectedPaciente.observacoes && (
-                  <div>
-                    <strong>Observações:</strong>
-                    <p className="text-sm">{selectedPaciente.observacoes}</p>
-                  </div>
-                )}
-              </div>
-              
-              <div className="border-t pt-4">
-                <h4 className="font-semibold mb-3">Histórico de Atendimentos</h4>
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-600">
-                    Nenhum atendimento encontrado para este paciente.
-                  </p>
-                </div>
-              </div>
-              
-              <div className="border-t pt-4 space-y-2">
-                <Button className="w-full" onClick={() => {
-                  setIsDetailsOpen(false);
-                  setIsEditPacienteOpen(true);
-                }}>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Editar Paciente
-                </Button>
-                <Button variant="outline" className="w-full">
-                  <Calendar className="mr-2 h-4 w-4" />
-                  Agendar Consulta
-                </Button>
-              </div>
+            <div className="mt-6">
+              <PacienteDetalhes 
+                pacienteId={selectedPaciente.id} 
+                onClose={() => setIsDetailsOpen(false)}
+              />
             </div>
           )}
         </SheetContent>
@@ -320,6 +299,27 @@ export default function Pacientes() {
               paciente={selectedPaciente}
               onSuccess={() => {
                 setIsEditPacienteOpen(false);
+                setSelectedPaciente(null);
+              }} 
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Novo Agendamento */}
+      <Dialog open={isAgendamentoOpen} onOpenChange={setIsAgendamentoOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Novo Agendamento</DialogTitle>
+            <DialogDescription>
+              Agendar nova consulta para {selectedPaciente?.nome}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedPaciente && (
+            <AgendamentoForm 
+              pacienteId={selectedPaciente.id}
+              onSuccess={() => {
+                setIsAgendamentoOpen(false);
                 setSelectedPaciente(null);
               }} 
             />

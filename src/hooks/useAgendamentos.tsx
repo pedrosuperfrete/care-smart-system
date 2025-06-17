@@ -1,72 +1,115 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
+import { Tables } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 
 type Agendamento = Tables<'agendamentos'>;
-type AgendamentoInsert = TablesInsert<'agendamentos'>;
-type AgendamentoUpdate = TablesUpdate<'agendamentos'>;
+type InsertAgendamento = Omit<Agendamento, 'id' | 'criado_em' | 'atualizado_em'>;
+type UpdateAgendamento = Partial<InsertAgendamento>;
 
 export function useAgendamentos() {
   return useQuery({
     queryKey: ['agendamentos'],
-    queryFn: async (): Promise<Agendamento[]> => {
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('agendamentos')
         .select(`
           *,
-          pacientes!inner(nome, telefone),
-          profissionais!inner(nome, especialidade)
+          pacientes(id, nome, telefone, email),
+          profissionais(id, nome, especialidade)
         `)
-        .order('data_inicio');
-
+        .order('data_inicio', { ascending: true });
+      
       if (error) throw error;
       return data || [];
     },
   });
 }
 
-export function useAgendamento(id: string) {
+export function useAgendamentosHoje() {
   return useQuery({
-    queryKey: ['agendamento', id],
-    queryFn: async (): Promise<Agendamento | null> => {
+    queryKey: ['agendamentos-hoje'],
+    queryFn: async () => {
+      const hoje = new Date().toISOString().split('T')[0];
       const { data, error } = await supabase
         .from('agendamentos')
         .select(`
           *,
-          pacientes!inner(nome, telefone, email),
-          profissionais!inner(nome, especialidade)
+          pacientes(id, nome, telefone, email),
+          profissionais(id, nome, especialidade)
         `)
-        .eq('id', id)
-        .maybeSingle();
-
+        .gte('data_inicio', `${hoje}T00:00:00`)
+        .lt('data_inicio', `${hoje}T23:59:59`)
+        .order('data_inicio', { ascending: true });
+      
       if (error) throw error;
-      return data;
+      return data || [];
     },
-    enabled: !!id,
+  });
+}
+
+export function useProximosAgendamentos(limit = 5) {
+  return useQuery({
+    queryKey: ['proximos-agendamentos', limit],
+    queryFn: async () => {
+      const agora = new Date().toISOString();
+      const { data, error } = await supabase
+        .from('agendamentos')
+        .select(`
+          *,
+          pacientes(id, nome, telefone, email),
+          profissionais(id, nome, especialidade)
+        `)
+        .gte('data_inicio', agora)
+        .order('data_inicio', { ascending: true })
+        .limit(limit);
+      
+      if (error) throw error;
+      return data || [];
+    },
   });
 }
 
 export function useCreateAgendamento() {
   const queryClient = useQueryClient();
-
+  
   return useMutation({
-    mutationFn: async (agendamento: AgendamentoInsert): Promise<Agendamento> => {
+    mutationFn: async (agendamento: InsertAgendamento) => {
+      // Verificar conflito de horário
+      const { data: conflito, error: conflitoError } = await supabase
+        .from('agendamentos')
+        .select('id')
+        .eq('profissional_id', agendamento.profissional_id)
+        .gte('data_inicio', agendamento.data_inicio)
+        .lt('data_inicio', agendamento.data_fim);
+
+      if (conflitoError) throw conflitoError;
+      
+      if (conflito && conflito.length > 0) {
+        throw new Error('Já existe um agendamento neste horário para este profissional');
+      }
+
       const { data, error } = await supabase
         .from('agendamentos')
         .insert(agendamento)
-        .select()
+        .select(`
+          *,
+          pacientes(id, nome, telefone, email),
+          profissionais(id, nome, especialidade)
+        `)
         .single();
-
+      
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agendamentos'] });
+      queryClient.invalidateQueries({ queryKey: ['agendamentos-hoje'] });
+      queryClient.invalidateQueries({ queryKey: ['proximos-agendamentos'] });
       toast.success('Agendamento criado com sucesso!');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error('Erro ao criar agendamento: ' + error.message);
     },
   });
@@ -74,26 +117,66 @@ export function useCreateAgendamento() {
 
 export function useUpdateAgendamento() {
   const queryClient = useQueryClient();
-
+  
   return useMutation({
-    mutationFn: async ({ id, ...updates }: AgendamentoUpdate & { id: string }): Promise<Agendamento> => {
-      const { data, error } = await supabase
+    mutationFn: async ({ id, data }: { id: string; data: UpdateAgendamento }) => {
+      const { data: updated, error } = await supabase
         .from('agendamentos')
-        .update(updates)
+        .update(data)
         .eq('id', id)
-        .select()
+        .select(`
+          *,
+          pacientes(id, nome, telefone, email),
+          profissionais(id, nome, especialidade)
+        `)
         .single();
-
+      
       if (error) throw error;
-      return data;
+      return updated;
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agendamentos'] });
-      queryClient.invalidateQueries({ queryKey: ['agendamento', data.id] });
+      queryClient.invalidateQueries({ queryKey: ['agendamentos-hoje'] });
+      queryClient.invalidateQueries({ queryKey: ['proximos-agendamentos'] });
       toast.success('Agendamento atualizado com sucesso!');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error('Erro ao atualizar agendamento: ' + error.message);
+    },
+  });
+}
+
+export function useAgendamentosStats() {
+  return useQuery({
+    queryKey: ['agendamentos-stats'],
+    queryFn: async () => {
+      const hoje = new Date().toISOString().split('T')[0];
+      
+      // Consultas hoje
+      const { data: consultasHoje, error: hojeError } = await supabase
+        .from('agendamentos')
+        .select('status, confirmado_pelo_paciente')
+        .gte('data_inicio', `${hoje}T00:00:00`)
+        .lt('data_inicio', `${hoje}T23:59:59`);
+      
+      if (hojeError) throw hojeError;
+
+      // Consultas pendentes (geral)
+      const { count: pendentes, error: pendentesError } = await supabase
+        .from('agendamentos')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pendente');
+      
+      if (pendentesError) throw pendentesError;
+
+      const totalHoje = consultasHoje?.length || 0;
+      const confirmadasHoje = consultasHoje?.filter(c => c.confirmado_pelo_paciente === true).length || 0;
+
+      return {
+        consultasHoje: totalHoje,
+        confirmadasHoje,
+        pendentes: pendentes || 0,
+      };
     },
   });
 }

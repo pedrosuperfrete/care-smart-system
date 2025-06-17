@@ -2,45 +2,47 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import { usePacientes } from '@/hooks/usePacientes';
-import { useAgendamentos } from '@/hooks/useAgendamentos';
+import { usePacientesStats } from '@/hooks/usePacientes';
+import { useAgendamentosStats, useProximosAgendamentos } from '@/hooks/useAgendamentos';
+import { useFinanceiroStats } from '@/hooks/useFinanceiro';
+import { useAtividadesRecentes } from '@/hooks/useAtividades';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Users, FileText, DollarSign, Plus, BarChart3 } from 'lucide-react';
+import { Calendar, Users, FileText, DollarSign, Plus, BarChart3, Clock } from 'lucide-react';
 
 export default function Dashboard() {
   const { userProfile, isAdmin, isProfissional } = useAuth();
-  const { data: pacientes = [] } = usePacientes();
-  const { data: agendamentos = [] } = useAgendamentos();
+  const { data: pacientesStats } = usePacientesStats();
+  const { data: agendamentosStats } = useAgendamentosStats();
+  const { data: financeiroStats } = useFinanceiroStats();
+  const { data: proximosAgendamentos = [] } = useProximosAgendamentos();
+  const { data: atividadesRecentes = [] } = useAtividadesRecentes();
   const navigate = useNavigate();
-
-  const agendamentosHoje = agendamentos.filter(
-    ag => new Date(ag.data_inicio).toDateString() === new Date().toDateString()
-  );
-
-  const agendamentosPendentes = agendamentos.filter(ag => ag.status === 'pendente');
 
   const stats = [
     {
       title: 'Total de Pacientes',
-      value: pacientes.length,
+      value: pacientesStats?.total || 0,
       icon: Users,
       description: 'Pacientes cadastrados',
     },
     {
       title: 'Consultas Hoje',
-      value: agendamentosHoje.length,
+      value: `${agendamentosStats?.consultasHoje || 0} (${agendamentosStats?.confirmadasHoje || 0} confirmadas)`,
       icon: Calendar,
       description: 'Agendamentos para hoje',
     },
     {
       title: 'Consultas Pendentes',
-      value: agendamentosPendentes.length,
+      value: agendamentosStats?.pendentes || 0,
       icon: FileText,
       description: 'Aguardando confirmação',
     },
     {
       title: 'Receita do Mês',
-      value: 'R$ 15.420',
+      value: new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+      }).format(financeiroStats?.receitaMensal || 0),
       icon: DollarSign,
       description: 'Faturamento atual',
       hidden: !isAdmin && !isProfissional,
@@ -137,31 +139,48 @@ export default function Dashboard() {
           <CardHeader>
             <CardTitle>Próximas Consultas</CardTitle>
             <CardDescription>
-              Consultas agendadas para hoje
+              Consultas agendadas para os próximos dias
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {agendamentosHoje.length === 0 ? (
+            {proximosAgendamentos.length === 0 ? (
               <p className="text-gray-500 text-center py-4">
-                Nenhuma consulta agendada para hoje
+                Nenhuma consulta agendada
               </p>
             ) : (
               <div className="space-y-3">
-                {agendamentosHoje.slice(0, 5).map((agendamento) => (
+                {proximosAgendamentos.map((agendamento) => (
                   <div key={agendamento.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <div className="font-medium">
-                        {(agendamento as any).pacientes?.nome}
+                    <div className="flex items-center space-x-3">
+                      <div className="text-lg">
+                        {agendamento.confirmado_pelo_paciente ? '✅' : '⏳'}
                       </div>
-                      <div className="text-sm text-gray-500">
-                        {new Date(agendamento.data_inicio).toLocaleTimeString('pt-BR', {
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
+                      <div>
+                        <div className="font-medium">
+                          {(agendamento as any).pacientes?.nome}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {new Date(agendamento.data_inicio).toLocaleString('pt-BR', {
+                            weekday: 'short',
+                            day: '2-digit',
+                            month: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </div>
                       </div>
                     </div>
-                    <div className="text-sm text-gray-500">
-                      {agendamento.tipo_servico}
+                    <div className="text-right">
+                      <div className="text-sm text-gray-500">
+                        {agendamento.tipo_servico}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(`/pacientes`)}
+                      >
+                        Ver
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -172,31 +191,25 @@ export default function Dashboard() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Pacientes Recentes</CardTitle>
+            <CardTitle>Atividades Recentes</CardTitle>
             <CardDescription>
-              Últimos pacientes cadastrados
+              Últimas atividades do sistema
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {pacientes.length === 0 ? (
+            {atividadesRecentes.length === 0 ? (
               <p className="text-gray-500 text-center py-4">
-                Nenhum paciente cadastrado
+                Nenhuma atividade recente
               </p>
             ) : (
               <div className="space-y-3">
-                {pacientes.slice(0, 5).map((paciente) => (
-                  <div key={paciente.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <div className="font-medium">{paciente.nome}</div>
-                      <div className="text-sm text-gray-500">{paciente.email}</div>
+                {atividadesRecentes.map((atividade) => (
+                  <div key={atividade.id} className="flex items-center space-x-3 p-3 border rounded-lg">
+                    <div className="text-lg">{atividade.icone}</div>
+                    <div className="flex-1">
+                      <div className="text-sm">{atividade.descricao}</div>
+                      <div className="text-xs text-gray-500">{atividade.data}</div>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => navigate('/pacientes')}
-                    >
-                      Ver
-                    </Button>
                   </div>
                 ))}
               </div>
