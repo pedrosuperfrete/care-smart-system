@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -276,10 +275,7 @@ export default function Financeiro() {
               </TableHeader>
               <TableBody>
                 {filteredPagamentos.map((pagamento) => {
-                  const pacienteNome = pagamento?.agendamentos?.pac
-
-
-ientes?.nome || 'Nome não disponível';
+                  const pacienteNome = pagamento?.agendamentos?.pacientes?.nome || 'Nome não disponível';
                   const tipoServico = pagamento?.agendamentos?.tipo_servico || 'Serviço não especificado';
                   const valorTotal = Number(pagamento?.valor_total) || 0;
                   const dataCriacao = pagamento?.criado_em ? new Date(pagamento.criado_em).toLocaleDateString('pt-BR') : 'Data não disponível';
