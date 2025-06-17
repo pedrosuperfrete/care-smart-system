@@ -20,9 +20,14 @@ export default function Financeiro() {
   const [statusFilter, setStatusFilter] = useState('todos');
   const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
   const [cobrancaModal, setCobrancaModal] = useState<{ isOpen: boolean; pagamento: any }>({ isOpen: false, pagamento: null });
+  const [hasError, setHasError] = useState(false);
 
-  // Verificar se o usuário está carregando ou não existe
+  console.log('Financeiro - User carregado:', user);
+  console.log('Financeiro - Status do loading:', authLoading);
+
+  // Verificar se o usuário está carregando
   if (authLoading) {
+    console.log('Financeiro - Exibindo loading...');
     return (
       <div className="p-8 flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -30,7 +35,9 @@ export default function Financeiro() {
     );
   }
 
+  // Verificar se o usuário não existe
   if (!user) {
+    console.log('Financeiro - Usuário não encontrado, redirecionando...');
     return (
       <div className="p-8 flex items-center justify-center">
         <div className="text-center">
@@ -41,20 +48,49 @@ export default function Financeiro() {
     );
   }
 
-  // Agora é seguro chamar os hooks - user existe e está carregado
-  return <FinanceiroContent 
-    searchTerm={searchTerm}
-    setSearchTerm={setSearchTerm}
-    statusFilter={statusFilter}
-    setStatusFilter={setStatusFilter}
-    dateRange={dateRange}
-    setDateRange={setDateRange}
-    cobrancaModal={cobrancaModal}
-    setCobrancaModal={setCobrancaModal}
-  />;
+  // Se houve erro, renderizar fallback
+  if (hasError) {
+    console.error('Financeiro - Renderizando fallback devido a erro');
+    return (
+      <div className="p-8 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4 text-red-600">Erro ao carregar dados financeiros</h2>
+          <p className="text-gray-600 mb-4">Verifique o console para mais detalhes.</p>
+          <Button onClick={() => {
+            setHasError(false);
+            window.location.reload();
+          }}>
+            Tentar Novamente
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  try {
+    console.log('Financeiro - Renderizando conteúdo principal...');
+    // Agora é seguro chamar os hooks - user existe e está carregado
+    return <FinanceiroContent 
+      user={user}
+      searchTerm={searchTerm}
+      setSearchTerm={setSearchTerm}
+      statusFilter={statusFilter}
+      setStatusFilter={setStatusFilter}
+      dateRange={dateRange}
+      setDateRange={setDateRange}
+      cobrancaModal={cobrancaModal}
+      setCobrancaModal={setCobrancaModal}
+      onError={() => setHasError(true)}
+    />;
+  } catch (error) {
+    console.error('Financeiro - Erro ao renderizar:', error);
+    setHasError(true);
+    return null;
+  }
 }
 
 function FinanceiroContent({
+  user,
   searchTerm,
   setSearchTerm,
   statusFilter,
@@ -62,8 +98,10 @@ function FinanceiroContent({
   dateRange,
   setDateRange,
   cobrancaModal,
-  setCobrancaModal
+  setCobrancaModal,
+  onError
 }: {
+  user: any;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   statusFilter: string;
@@ -72,26 +110,54 @@ function FinanceiroContent({
   setDateRange: (range: { start: Date | null; end: Date | null }) => void;
   cobrancaModal: { isOpen: boolean; pagamento: any };
   setCobrancaModal: (modal: { isOpen: boolean; pagamento: any }) => void;
+  onError: () => void;
 }) {
-  const { data: pagamentos = [], isLoading } = usePagamentos();
-  const { data: stats = { totalRecebido: 0, totalPendente: 0, totalVencido: 0, receitaMensal: 0 } } = useFinanceiroStats(dateRange.start, dateRange.end);
-  const marcarPagoMutation = useMarcarPago();
+  console.log('FinanceiroContent - Iniciando com user:', user?.id);
+
+  let pagamentos: any[] = [];
+  let stats = { totalRecebido: 0, totalPendente: 0, totalVencido: 0, receitaMensal: 0 };
+  let isLoading = true;
+  let marcarPagoMutation: any;
+
+  try {
+    const pagamentosQuery = usePagamentos();
+    const statsQuery = useFinanceiroStats(dateRange.start, dateRange.end);
+    marcarPagoMutation = useMarcarPago();
+
+    pagamentos = pagamentosQuery.data || [];
+    stats = statsQuery.data || stats;
+    isLoading = pagamentosQuery.isLoading || statsQuery.isLoading;
+
+    console.log('FinanceiroContent - Dados carregados:', {
+      pagamentos: pagamentos.length,
+      stats,
+      isLoading
+    });
+  } catch (error) {
+    console.error('FinanceiroContent - Erro ao usar hooks:', error);
+    onError();
+    return null;
+  }
 
   const handleDateRangeChange = (startDate: Date | null, endDate: Date | null) => {
+    console.log('FinanceiroContent - Alterando range de datas:', { startDate, endDate });
     setDateRange({ start: startDate, end: endDate });
   };
 
   const handleMarcarPago = async (pagamentoId: string) => {
     try {
+      console.log('FinanceiroContent - Marcando pagamento como pago:', pagamentoId);
       await marcarPagoMutation.mutateAsync(pagamentoId);
     } catch (error) {
-      console.error('Erro ao marcar pagamento como pago:', error);
+      console.error('FinanceiroContent - Erro ao marcar pagamento como pago:', error);
     }
   };
 
   const handleSendWhatsAppRecibo = (pagamento: any) => {
-    const telefone = pagamento.agendamentos?.pacientes?.telefone?.replace(/\D/g, '') || '';
-    const mensagem = `Olá ${pagamento.agendamentos?.pacientes?.nome}!
+    try {
+      console.log('FinanceiroContent - Enviando recibo por WhatsApp:', pagamento.id);
+      const telefone = pagamento.agendamentos?.pacientes?.telefone?.replace(/\D/g, '') || '';
+      const mensagem = `Olá ${pagamento.agendamentos?.pacientes?.nome}!
 
 Seu recibo referente ao serviço: ${pagamento.agendamentos?.tipo_servico}
 Valor pago: R$ ${Number(pagamento.valor_pago).toFixed(2)}
@@ -99,8 +165,11 @@ Data do pagamento: ${new Date(pagamento.data_pagamento).toLocaleDateString('pt-B
 
 Obrigado pela preferência!`;
 
-    const url = `https://wa.me/55${telefone}?text=${encodeURIComponent(mensagem)}`;
-    window.open(url, '_blank');
+      const url = `https://wa.me/55${telefone}?text=${encodeURIComponent(mensagem)}`;
+      window.open(url, '_blank');
+    } catch (error) {
+      console.error('FinanceiroContent - Erro ao enviar WhatsApp:', error);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -136,12 +205,15 @@ Obrigado pela preferência!`;
   });
 
   if (isLoading) {
+    console.log('FinanceiroContent - Exibindo loading...');
     return (
       <div className="p-8 flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
+
+  console.log('FinanceiroContent - Renderizando interface completa');
 
   return (
     <div className="p-8 space-y-6">
@@ -284,7 +356,7 @@ Obrigado pela preferência!`;
                           size="sm" 
                           variant="outline"
                           onClick={() => handleMarcarPago(pagamento.id)}
-                          disabled={marcarPagoMutation.isPending}
+                          disabled={marcarPagoMutation?.isPending}
                         >
                           <CheckCircle className="h-4 w-4 mr-1" />
                           Marcar Pago
