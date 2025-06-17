@@ -5,10 +5,11 @@ import { ReactNode } from 'react';
 
 interface ProtectedRouteProps {
   children: ReactNode;
+  allowedRoles?: ('admin' | 'profissional' | 'recepcionista')[];
 }
 
-export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, loading } = useAuth();
+export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
+  const { user, userProfile, loading, needsOnboarding } = useAuth();
 
   if (loading) {
     return (
@@ -19,7 +20,15 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/auth" replace />;
+  }
+
+  if (needsOnboarding) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  if (allowedRoles && userProfile && !allowedRoles.includes(userProfile.tipo_usuario)) {
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;

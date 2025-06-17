@@ -1,244 +1,209 @@
 
-import { Calendar, Users, DollarSign, FileText, TrendingUp, Clock, AlertCircle, CheckCircle } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
+import { usePacientes } from '@/hooks/usePacientes';
+import { useAgendamentos } from '@/hooks/useAgendamentos';
+import { useNavigate } from 'react-router-dom';
+import { Calendar, Users, FileText, DollarSign, Plus, BarChart3 } from 'lucide-react';
 
-const Dashboard = () => {
+export default function Dashboard() {
+  const { userProfile, isAdmin, isProfissional } = useAuth();
+  const { data: pacientes = [] } = usePacientes();
+  const { data: agendamentos = [] } = useAgendamentos();
+  const navigate = useNavigate();
+
+  const agendamentosHoje = agendamentos.filter(
+    ag => new Date(ag.data_inicio).toDateString() === new Date().toDateString()
+  );
+
+  const agendamentosPendentes = agendamentos.filter(ag => ag.status === 'pendente');
+
   const stats = [
     {
-      title: "Total de Pacientes",
-      value: "1,247",
-      change: "+12% este mês",
+      title: 'Total de Pacientes',
+      value: pacientes.length,
       icon: Users,
-      color: "text-blue-600",
-      bgColor: "bg-blue-50"
+      description: 'Pacientes cadastrados',
     },
     {
-      title: "Consultas Hoje",
-      value: "18",
-      change: "6 confirmadas",
+      title: 'Consultas Hoje',
+      value: agendamentosHoje.length,
       icon: Calendar,
-      color: "text-green-600",
-      bgColor: "bg-green-50"
+      description: 'Agendamentos para hoje',
     },
     {
-      title: "Receita Mensal",
-      value: "R$ 85.420",
-      change: "+8% vs mês anterior",
-      icon: DollarSign,
-      color: "text-purple-600",
-      bgColor: "bg-purple-50"
-    },
-    {
-      title: "Prontuários",
-      value: "892",
-      change: "24 novos esta semana",
+      title: 'Consultas Pendentes',
+      value: agendamentosPendentes.length,
       icon: FileText,
-      color: "text-orange-600",
-      bgColor: "bg-orange-50"
-    }
+      description: 'Aguardando confirmação',
+    },
+    {
+      title: 'Receita do Mês',
+      value: 'R$ 15.420',
+      icon: DollarSign,
+      description: 'Faturamento atual',
+      hidden: !isAdmin && !isProfissional,
+    },
   ];
 
-  const upcomingAppointments = [
+  const quickActions = [
     {
-      time: "09:00",
-      patient: "Maria Silva",
-      type: "Consulta",
-      doctor: "Dr. João",
-      status: "confirmed"
+      title: 'Nova Consulta',
+      description: 'Agendar nova consulta',
+      icon: Plus,
+      onClick: () => navigate('/agenda'),
+      color: 'bg-blue-500 hover:bg-blue-600',
     },
     {
-      time: "10:30",
-      patient: "Pedro Santos",
-      type: "Retorno",
-      doctor: "Dra. Ana",
-      status: "pending"
+      title: 'Novo Paciente',
+      description: 'Cadastrar paciente',
+      icon: Users,
+      onClick: () => navigate('/pacientes'),
+      color: 'bg-green-500 hover:bg-green-600',
     },
     {
-      time: "14:00",
-      patient: "Luiza Costa",
-      type: "Primeira Consulta",
-      doctor: "Dr. João",
-      status: "confirmed"
+      title: 'Relatórios',
+      description: 'Ver relatórios',
+      icon: BarChart3,
+      onClick: () => navigate('/relatorios'),
+      color: 'bg-purple-500 hover:bg-purple-600',
     },
-    {
-      time: "15:30",
-      patient: "Carlos Oliveira",
-      type: "Consulta",
-      doctor: "Dra. Maria",
-      status: "pending"
-    }
-  ];
-
-  const recentActivities = [
-    {
-      action: "Novo paciente cadastrado",
-      patient: "Ana Beatriz",
-      time: "há 2 horas",
-      type: "patient"
-    },
-    {
-      action: "Consulta realizada",
-      patient: "João Pedro",
-      time: "há 3 horas",
-      type: "appointment"
-    },
-    {
-      action: "Pagamento recebido",
-      patient: "Maria José",
-      time: "há 4 horas",
-      type: "payment"
-    },
-    {
-      action: "Prontuário atualizado",
-      patient: "Carlos Silva",
-      time: "há 5 horas",
-      type: "record"
-    }
   ];
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600">Visão geral da sua clínica</p>
-        </div>
-        <div className="mt-4 sm:mt-0 flex space-x-3">
-          <Button variant="outline" size="sm">
-            <TrendingUp className="w-4 h-4 mr-2" />
-            Relatórios
-          </Button>
-          <Button size="sm">
-            <Calendar className="w-4 h-4 mr-2" />
-            Nova Consulta
-          </Button>
-        </div>
+    <div className="p-8 space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold">
+          Bem-vindo, {userProfile?.email?.split('@')[0]}!
+        </h1>
+        <p className="text-gray-600 mt-1">
+          Aqui está um resumo da sua clínica hoje.
+        </p>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
-          <Card key={index} className="hover:shadow-lg transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-2">{stat.value}</p>
-                  <p className="text-sm text-gray-500 mt-1">{stat.change}</p>
-                </div>
-                <div className={`w-12 h-12 ${stat.bgColor} rounded-lg flex items-center justify-center`}>
-                  <stat.icon className={`w-6 h-6 ${stat.color}`} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        {stats.map((stat, index) =>
+          !stat.hidden ? (
+            <Card key={index}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  {stat.title}
+                </CardTitle>
+                <stat.icon className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stat.value}</div>
+                <p className="text-xs text-muted-foreground">
+                  {stat.description}
+                </p>
+              </CardContent>
+            </Card>
+          ) : null
+        )}
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Upcoming Appointments */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Clock className="w-5 h-5 mr-2" />
-                Próximas Consultas
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {upcomingAppointments.map((appointment, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                    <div className="flex items-center space-x-4">
-                      <div className="text-sm font-medium text-gray-900 w-16">
-                        {appointment.time}
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Ações Rápidas</CardTitle>
+          <CardDescription>
+            Acesse rapidamente as principais funcionalidades
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {quickActions.map((action, index) => (
+              <Button
+                key={index}
+                onClick={action.onClick}
+                className={`h-24 flex flex-col items-center justify-center space-y-2 ${action.color}`}
+              >
+                <action.icon className="h-6 w-6" />
+                <div className="text-center">
+                  <div className="font-semibold">{action.title}</div>
+                  <div className="text-xs opacity-90">{action.description}</div>
+                </div>
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Recent Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Próximas Consultas</CardTitle>
+            <CardDescription>
+              Consultas agendadas para hoje
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {agendamentosHoje.length === 0 ? (
+              <p className="text-gray-500 text-center py-4">
+                Nenhuma consulta agendada para hoje
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {agendamentosHoje.slice(0, 5).map((agendamento) => (
+                  <div key={agendamento.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div>
+                      <div className="font-medium">
+                        {(agendamento as any).pacientes?.nome}
                       </div>
-                      <div>
-                        <p className="font-medium text-gray-900">{appointment.patient}</p>
-                        <p className="text-sm text-gray-500">{appointment.type} • {appointment.doctor}</p>
+                      <div className="text-sm text-gray-500">
+                        {new Date(agendamento.data_inicio).toLocaleTimeString('pt-BR', {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      {appointment.status === 'confirmed' ? (
-                        <CheckCircle className="w-5 h-5 text-green-500" />
-                      ) : (
-                        <AlertCircle className="w-5 h-5 text-yellow-500" />
-                      )}
-                      <Button variant="ghost" size="sm">
-                        Ver
-                      </Button>
+                    <div className="text-sm text-gray-500">
+                      {agendamento.tipo_servico}
                     </div>
                   </div>
                 ))}
               </div>
-              <div className="mt-4">
-                <Button variant="outline" className="w-full">
-                  Ver Todas as Consultas
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            )}
+          </CardContent>
+        </Card>
 
-        {/* Recent Activities */}
-        <div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Atividades Recentes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recentActivities.map((activity, index) => (
-                  <div key={index} className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900">{activity.action}</p>
-                      <p className="text-sm text-gray-600">{activity.patient}</p>
-                      <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
+        <Card>
+          <CardHeader>
+            <CardTitle>Pacientes Recentes</CardTitle>
+            <CardDescription>
+              Últimos pacientes cadastrados
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {pacientes.length === 0 ? (
+              <p className="text-gray-500 text-center py-4">
+                Nenhum paciente cadastrado
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {pacientes.slice(0, 5).map((paciente) => (
+                  <div key={paciente.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div>
+                      <div className="font-medium">{paciente.nome}</div>
+                      <div className="text-sm text-gray-500">{paciente.email}</div>
                     </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate('/pacientes')}
+                    >
+                      Ver
+                    </Button>
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Quick Stats */}
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle>Estatísticas Rápidas</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <div className="flex justify-between text-sm mb-2">
-                  <span>Taxa de Ocupação</span>
-                  <span>87%</span>
-                </div>
-                <Progress value={87} className="h-2" />
-              </div>
-              <div>
-                <div className="flex justify-between text-sm mb-2">
-                  <span>Satisfação dos Pacientes</span>
-                  <span>92%</span>
-                </div>
-                <Progress value={92} className="h-2" />
-              </div>
-              <div>
-                <div className="flex justify-between text-sm mb-2">
-                  <span>Meta Mensal</span>
-                  <span>68%</span>
-                </div>
-                <Progress value={68} className="h-2" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
-};
-
-export default Dashboard;
+}
