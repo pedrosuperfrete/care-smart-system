@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -55,7 +54,7 @@ export default function Financeiro() {
       <div className="p-8 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-4 text-red-600">Erro ao carregar dados financeiros</h2>
-          <p className="text-gray-600 mb-4">Verifique o console para mais detalhes.</p>
+          <p className="text-gray-600 mb-4">Não foi possível carregar os pagamentos. Verifique o console para mais detalhes.</p>
           <Button onClick={() => {
             setHasError(false);
             window.location.reload();
@@ -118,11 +117,22 @@ function FinanceiroContent({
   let stats = { totalRecebido: 0, totalPendente: 0, totalVencido: 0, receitaMensal: 0 };
   let isLoading = true;
   let marcarPagoMutation: any;
+  let hasDataError = false;
 
   try {
     const pagamentosQuery = usePagamentos();
     const statsQuery = useFinanceiroStats(dateRange.start, dateRange.end);
     marcarPagoMutation = useMarcarPago();
+
+    // Check for query errors
+    if (pagamentosQuery.error) {
+      console.error('FinanceiroContent - Erro na query de pagamentos:', pagamentosQuery.error);
+      hasDataError = true;
+    }
+
+    if (statsQuery.error) {
+      console.error('FinanceiroContent - Erro na query de stats:', statsQuery.error);
+    }
 
     pagamentos = pagamentosQuery.data || [];
     stats = statsQuery.data || stats;
@@ -131,12 +141,27 @@ function FinanceiroContent({
     console.log('FinanceiroContent - Dados carregados:', {
       pagamentos: pagamentos.length,
       stats,
-      isLoading
+      isLoading,
+      hasDataError
     });
   } catch (error) {
     console.error('FinanceiroContent - Erro ao usar hooks:', error);
-    onError();
-    return null;
+    hasDataError = true;
+  }
+
+  // Show error state if there's a data loading error
+  if (hasDataError && !isLoading) {
+    return (
+      <div className="p-8 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4 text-red-600">Erro ao carregar dados financeiros</h2>
+          <p className="text-gray-600 mb-4">Não foi possível carregar os pagamentos. Verifique o console para mais detalhes.</p>
+          <Button onClick={() => window.location.reload()}>
+            Tentar Novamente
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   const handleDateRangeChange = (startDate: Date | null, endDate: Date | null) => {
@@ -191,8 +216,8 @@ Obrigado pela preferência!`;
   };
 
   const filteredPagamentos = pagamentos.filter(pagamento => {
-    const matchesSearch = pagamento.agendamentos?.pacientes?.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         pagamento.agendamentos?.tipo_servico.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = pagamento.agendamentos?.pacientes?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         pagamento.agendamentos?.tipo_servico?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'todos' || pagamento.status === statusFilter;
     
     let matchesDate = true;

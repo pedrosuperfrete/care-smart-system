@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
@@ -25,27 +24,55 @@ export function usePagamentos() {
       }
 
       try {
-        const { data, error } = await supabase
+        // First, get pagamentos with agendamento_id
+        const { data: pagamentosData, error: pagamentosError } = await supabase
           .from('pagamentos')
-          .select(`
-            *,
-            agendamentos(
-              id,
-              tipo_servico,
-              data_inicio,
-              pacientes(id, nome, email, telefone),
-              profissionais(id, nome, especialidade)
-            )
-          `)
+          .select('*')
           .order('criado_em', { ascending: false });
         
-        if (error) {
-          console.error('usePagamentos - Erro na query:', error);
-          throw error;
+        if (pagamentosError) {
+          console.error('usePagamentos - Erro na query de pagamentos:', pagamentosError);
+          throw pagamentosError;
+        }
+
+        console.log('usePagamentos - Pagamentos carregados:', pagamentosData?.length || 0);
+
+        // If we have pagamentos, get the related agendamentos data
+        if (pagamentosData && pagamentosData.length > 0) {
+          const agendamentoIds = pagamentosData
+            .map(p => p.agendamento_id)
+            .filter(id => id !== null);
+
+          if (agendamentoIds.length > 0) {
+            const { data: agendamentosData, error: agendamentosError } = await supabase
+              .from('agendamentos')
+              .select(`
+                id,
+                tipo_servico,
+                data_inicio,
+                pacientes(id, nome, email, telefone),
+                profissionais(id, nome, especialidade)
+              `)
+              .in('id', agendamentoIds);
+
+            if (agendamentosError) {
+              console.error('usePagamentos - Erro na query de agendamentos:', agendamentosError);
+              // Continue without agendamentos data rather than failing completely
+            }
+
+            // Combine the data
+            const combinedData = pagamentosData.map(pagamento => ({
+              ...pagamento,
+              agendamentos: agendamentosData?.find(a => a.id === pagamento.agendamento_id) || null
+            }));
+
+            console.log('usePagamentos - Dados combinados:', combinedData.length, 'pagamentos');
+            return combinedData;
+          }
         }
         
-        console.log('usePagamentos - Dados carregados:', data?.length || 0, 'pagamentos');
-        return data || [];
+        console.log('usePagamentos - Retornando pagamentos sem agendamentos:', pagamentosData?.length || 0);
+        return pagamentosData?.map(p => ({ ...p, agendamentos: null })) || [];
       } catch (error) {
         console.error('usePagamentos - Erro ao acessar dados:', error);
         throw error;
