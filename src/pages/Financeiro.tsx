@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,10 +21,6 @@ export default function Financeiro() {
   const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
   const [cobrancaModal, setCobrancaModal] = useState<{ isOpen: boolean; pagamento: any }>({ isOpen: false, pagamento: null });
 
-  const { data: pagamentos = [], isLoading } = usePagamentos();
-  const { data: stats = { totalRecebido: 0, totalPendente: 0, totalVencido: 0, receitaMensal: 0 } } = useFinanceiroStats(dateRange.start, dateRange.end);
-  const marcarPagoMutation = useMarcarPago();
-
   // Verificar se o usuário está carregando ou não existe
   if (authLoading) {
     return (
@@ -43,6 +40,42 @@ export default function Financeiro() {
       </div>
     );
   }
+
+  // Agora é seguro chamar os hooks - user existe e está carregado
+  return <FinanceiroContent 
+    searchTerm={searchTerm}
+    setSearchTerm={setSearchTerm}
+    statusFilter={statusFilter}
+    setStatusFilter={setStatusFilter}
+    dateRange={dateRange}
+    setDateRange={setDateRange}
+    cobrancaModal={cobrancaModal}
+    setCobrancaModal={setCobrancaModal}
+  />;
+}
+
+function FinanceiroContent({
+  searchTerm,
+  setSearchTerm,
+  statusFilter,
+  setStatusFilter,
+  dateRange,
+  setDateRange,
+  cobrancaModal,
+  setCobrancaModal
+}: {
+  searchTerm: string;
+  setSearchTerm: (term: string) => void;
+  statusFilter: string;
+  setStatusFilter: (filter: string) => void;
+  dateRange: { start: Date | null; end: Date | null };
+  setDateRange: (range: { start: Date | null; end: Date | null }) => void;
+  cobrancaModal: { isOpen: boolean; pagamento: any };
+  setCobrancaModal: (modal: { isOpen: boolean; pagamento: any }) => void;
+}) {
+  const { data: pagamentos = [], isLoading } = usePagamentos();
+  const { data: stats = { totalRecebido: 0, totalPendente: 0, totalVencido: 0, receitaMensal: 0 } } = useFinanceiroStats(dateRange.start, dateRange.end);
+  const marcarPagoMutation = useMarcarPago();
 
   const handleDateRangeChange = (startDate: Date | null, endDate: Date | null) => {
     setDateRange({ start: startDate, end: endDate });
@@ -70,7 +103,6 @@ Obrigado pela preferência!`;
     window.open(url, '_blank');
   };
 
-  // ... keep existing code (getStatusBadge function)
   const getStatusBadge = (status: string) => {
     const variants = {
       pago: { variant: 'default' as const, icon: CheckCircle, text: 'Pago' },
@@ -89,7 +121,6 @@ Obrigado pela preferência!`;
     );
   };
 
-  // ... keep existing code (filteredPagamentos logic)
   const filteredPagamentos = pagamentos.filter(pagamento => {
     const matchesSearch = pagamento.agendamentos?.pacientes?.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          pagamento.agendamentos?.tipo_servico.toLowerCase().includes(searchTerm.toLowerCase());
