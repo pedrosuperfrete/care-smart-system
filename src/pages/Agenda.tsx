@@ -6,23 +6,32 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Plus, Clock, User, Filter } from 'lucide-react';
-import { useAgendamentos, useCreateAgendamento } from '@/hooks/useAgendamentos';
+import { Calendar, Plus, Clock, User, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useAgendamentos, useCreateAgendamento, useConfirmarAgendamento, useDesmarcarAgendamento } from '@/hooks/useAgendamentos';
 import { usePacientes } from '@/hooks/usePacientes';
 import { useProfissionais } from '@/hooks/useProfissionais';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { VisaoSemanal } from '@/components/agenda/VisaoSemanal';
+import { VisaoMensal } from '@/components/agenda/VisaoMensal';
+import { EditarAgendamentoDialog } from '@/components/agenda/EditarAgendamentoDialog';
+import { Tables } from '@/integrations/supabase/types';
+
+type Agendamento = Tables<'agendamentos'>;
 
 export default function Agenda() {
   const { data: agendamentos = [] } = useAgendamentos();
   const { data: pacientes = [] } = usePacientes();
   const { data: profissionais = [] } = useProfissionais();
   const createAgendamento = useCreateAgendamento();
+  const confirmarAgendamento = useConfirmarAgendamento();
+  const desmarcarAgendamento = useDesmarcarAgendamento();
   const { profissional: currentProfissional, isAdmin } = useAuth();
 
   const [viewMode, setViewMode] = useState<'dia' | 'semana' | 'mes'>('dia');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isNewConsultaOpen, setIsNewConsultaOpen] = useState(false);
+  const [agendamentoParaEditar, setAgendamentoParaEditar] = useState<Agendamento | null>(null);
   const [newConsulta, setNewConsulta] = useState({
     paciente_id: '',
     profissional_id: currentProfissional?.id || '',
@@ -51,6 +60,7 @@ export default function Agenda() {
         status: 'pendente',
         confirmado_pelo_paciente: false,
         pagamento_id: null,
+        desmarcada: false,
       });
 
       setIsNewConsultaOpen(false);
@@ -65,6 +75,78 @@ export default function Agenda() {
       });
     } catch (error) {
       toast.error('Erro ao criar agendamento');
+    }
+  };
+
+  const handleConfirmar = async (id: string) => {
+    await confirmarAgendamento.mutateAsync(id);
+  };
+
+  const handleDesmarcar = async (id: string) => {
+    await desmarcarAgendamento.mutateAsync(id);
+  };
+
+  const handleEditarAgendamento = (agendamento: Agendamento) => {
+    setAgendamentoParaEditar(agendamento);
+  };
+
+  const navegarData = (direction: 'prev' | 'next') => {
+    const newDate = new Date(selectedDate);
+    
+    if (viewMode === 'dia') {
+      newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1));
+    } else if (viewMode === 'semana') {
+      newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
+    } else if (viewMode === 'mes') {
+      newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1));
+    }
+    
+    setSelectedDate(newDate);
+  };
+
+  const getDateRangeText = () => {
+    if (viewMode === 'dia') {
+      return selectedDate.toLocaleDateString('pt-BR', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+    } else if (viewMode === 'semana') {
+      const startOfWeek = new Date(selectedDate);
+      startOfWeek.setDate(selectedDate.getDate() - selectedDate.getDay());
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      
+      return `${startOfWeek.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })} - ${endOfWeek.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+    } else {
+      return selectedDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    }
+  };
+
+  const getAgendamentosCount = () => {
+    if (viewMode === 'dia') {
+      return agendamentos.filter(ag => 
+        new Date(ag.data_inicio).toDateString() === selectedDate.toDateString()
+      ).length;
+    } else if (viewMode === 'semana') {
+      const startOfWeek = new Date(selectedDate);
+      startOfWeek.setDate(selectedDate.getDate() - selectedDate.getDay());
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      
+      return agendamentos.filter(ag => {
+        const agendamentoDate = new Date(ag.data_inicio);
+        return agendamentoDate >= startOfWeek && agendamentoDate <= endOfWeek;
+      }).length;
+    } else {
+      const startOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+      const endOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
+      
+      return agendamentos.filter(ag => {
+        const agendamentoDate = new Date(ag.data_inicio);
+        return agendamentoDate >= startOfMonth && agendamentoDate <= endOfMonth;
+      }).length;
     }
   };
 
@@ -91,6 +173,12 @@ export default function Agenda() {
   const todayAgendamentos = agendamentos.filter(ag => 
     new Date(ag.data_inicio).toDateString() === selectedDate.toDateString()
   );
+
+  const getStartOfWeek = () => {
+    const date = new Date(selectedDate);
+    date.setDate(selectedDate.getDate() - selectedDate.getDay());
+    return date;
+  };
 
   return (
     <div className="p-8 space-y-6">
@@ -135,6 +223,7 @@ export default function Agenda() {
                   Agende uma nova consulta para o paciente
                 </DialogDescription>
               </DialogHeader>
+              
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -251,123 +340,157 @@ export default function Agenda() {
       <Card>
         <CardContent className="pt-6">
           <div className="flex items-center justify-between">
-            <Button variant="outline" onClick={() => {
-              const newDate = new Date(selectedDate);
-              newDate.setDate(newDate.getDate() - 1);
-              setSelectedDate(newDate);
-            }}>
-              ← Anterior
+            <Button variant="outline" onClick={() => navegarData('prev')}>
+              <ChevronLeft className="h-4 w-4 mr-2" />
+              Anterior
             </Button>
             
             <div className="text-center">
               <h2 className="text-xl font-semibold">
-                {selectedDate.toLocaleDateString('pt-BR', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                })}
+                {getDateRangeText()}
               </h2>
               <p className="text-gray-600">
-                {todayAgendamentos.length} consulta(s) agendada(s)
+                {getAgendamentosCount()} consulta(s) agendada(s)
               </p>
             </div>
             
-            <Button variant="outline" onClick={() => {
-              const newDate = new Date(selectedDate);
-              newDate.setDate(newDate.getDate() + 1);
-              setSelectedDate(newDate);
-            }}>
-              Próximo →
+            <Button variant="outline" onClick={() => navegarData('next')}>
+              Próximo
+              <ChevronRight className="h-4 w-4 ml-2" />
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Lista de Agendamentos */}
-      <div className="space-y-4">
-        {todayAgendamentos.length === 0 ? (
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center py-8">
-                <Calendar className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Nenhuma consulta agendada
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  Não há consultas agendadas para esta data.
-                </p>
-                <Button onClick={() => setIsNewConsultaOpen(true)}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Agendar Nova Consulta
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          todayAgendamentos
-            .sort((a, b) => new Date(a.data_inicio).getTime() - new Date(b.data_inicio).getTime())
-            .map((agendamento) => (
-              <Card key={agendamento.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="pt-6">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <Clock className="h-5 w-5 text-gray-500" />
-                        <span className="font-semibold">
-                          {new Date(agendamento.data_inicio).toLocaleTimeString('pt-BR', {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })} - {new Date(agendamento.data_fim).toLocaleTimeString('pt-BR', {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </span>
-                        <Badge className={getStatusColor(agendamento.status || 'pendente')}>
-                          {getStatusText(agendamento.status || 'pendente')}
-                        </Badge>
+      {/* Conteúdo baseado na visualização */}
+      {viewMode === 'dia' && (
+        <div className="space-y-4">
+          {todayAgendamentos.length === 0 ? (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center py-8">
+                  <Calendar className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    Nenhuma consulta agendada
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    Não há consultas agendadas para esta data.
+                  </p>
+                  <Button onClick={() => setIsNewConsultaOpen(true)}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Agendar Nova Consulta
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            todayAgendamentos
+              .sort((a, b) => new Date(a.data_inicio).getTime() - new Date(b.data_inicio).getTime())
+              .map((agendamento) => (
+                <Card key={agendamento.id} className={`hover:shadow-md transition-shadow ${agendamento.desmarcada ? 'opacity-50' : ''}`}>
+                  <CardContent className="pt-6">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <Clock className="h-5 w-5 text-gray-500" />
+                          <span className={`font-semibold ${agendamento.desmarcada ? 'line-through' : ''}`}>
+                            {new Date(agendamento.data_inicio).toLocaleTimeString('pt-BR', {
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })} - {new Date(agendamento.data_fim).toLocaleTimeString('pt-BR', {
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </span>
+                          <Badge className={agendamento.desmarcada ? 'bg-gray-100 text-gray-600' : getStatusColor(agendamento.status || 'pendente')}>
+                            {agendamento.desmarcada ? 'Desmarcada' : getStatusText(agendamento.status || 'pendente')}
+                          </Badge>
+                        </div>
+                        
+                        <div className="flex items-center space-x-3 mb-2">
+                          <User className="h-4 w-4 text-gray-500" />
+                          <span className={`font-medium ${agendamento.desmarcada ? 'line-through' : ''}`}>
+                            {(agendamento as any).pacientes?.nome}
+                          </span>
+                        </div>
+                        
+                        <div className={`text-sm text-gray-600 space-y-1 ${agendamento.desmarcada ? 'line-through' : ''}`}>
+                          <p><strong>Tipo:</strong> {agendamento.tipo_servico}</p>
+                          <p><strong>Profissional:</strong> {(agendamento as any).profissionais?.nome}</p>
+                          {agendamento.valor && (
+                            <p><strong>Valor:</strong> R$ {agendamento.valor.toFixed(2)}</p>
+                          )}
+                          {agendamento.observacoes && (
+                            <p><strong>Obs:</strong> {agendamento.observacoes}</p>
+                          )}
+                        </div>
                       </div>
                       
-                      <div className="flex items-center space-x-3 mb-2">
-                        <User className="h-4 w-4 text-gray-500" />
-                        <span className="font-medium">
-                          {(agendamento as any).pacientes?.nome}
-                        </span>
-                      </div>
-                      
-                      <div className="text-sm text-gray-600 space-y-1">
-                        <p><strong>Tipo:</strong> {agendamento.tipo_servico}</p>
-                        <p><strong>Profissional:</strong> {(agendamento as any).profissionais?.nome}</p>
-                        {agendamento.valor && (
-                          <p><strong>Valor:</strong> R$ {agendamento.valor.toFixed(2)}</p>
+                      <div className="flex space-x-2">
+                        {!agendamento.desmarcada && (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleEditarAgendamento(agendamento)}
+                          >
+                            Editar
+                          </Button>
                         )}
-                        {agendamento.observacoes && (
-                          <p><strong>Obs:</strong> {agendamento.observacoes}</p>
+                        {!agendamento.desmarcada && agendamento.status === 'pendente' && (
+                          <Button 
+                            size="sm"
+                            onClick={() => handleConfirmar(agendamento.id)}
+                          >
+                            Confirmar
+                          </Button>
+                        )}
+                        {!agendamento.desmarcada && agendamento.status === 'confirmado' && (
+                          <Button 
+                            size="sm" 
+                            variant="destructive"
+                            onClick={() => handleDesmarcar(agendamento.id)}
+                          >
+                            Desmarcar
+                          </Button>
                         )}
                       </div>
                     </div>
-                    
-                    <div className="flex space-x-2">
-                      <Button variant="outline" size="sm">
-                        Editar
-                      </Button>
-                      {agendamento.status === 'pendente' && (
-                        <Button size="sm">
-                          Confirmar
-                        </Button>
-                      )}
-                      {agendamento.status === 'confirmado' && (
-                        <Button size="sm" variant="outline">
-                          Finalizar
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-        )}
-      </div>
+                  </CardContent>
+                </Card>
+              ))
+          )}
+        </div>
+      )}
+
+      {viewMode === 'semana' && (
+        <VisaoSemanal
+          agendamentos={agendamentos}
+          semanaInicio={getStartOfWeek()}
+          onEditarAgendamento={handleEditarAgendamento}
+          onConfirmarAgendamento={handleConfirmar}
+          onDesmarcarAgendamento={handleDesmarcar}
+        />
+      )}
+
+      {viewMode === 'mes' && (
+        <VisaoMensal
+          agendamentos={agendamentos}
+          mesAno={selectedDate}
+          onDiaClick={(data) => {
+            setSelectedDate(data);
+            setViewMode('dia');
+          }}
+        />
+      )}
+
+      {/* Dialog para editar agendamento */}
+      {agendamentoParaEditar && (
+        <EditarAgendamentoDialog
+          agendamento={agendamentoParaEditar}
+          isOpen={!!agendamentoParaEditar}
+          onClose={() => setAgendamentoParaEditar(null)}
+        />
+      )}
     </div>
   );
 }

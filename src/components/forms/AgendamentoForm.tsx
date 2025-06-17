@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -65,6 +64,7 @@ export function AgendamentoForm({ agendamento, pacienteId, onSuccess }: Agendame
       status: formData.status as any,
       confirmado_pelo_paciente: false,
       pagamento_id: null,
+      desmarcada: false,
     };
 
     try {
