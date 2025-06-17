@@ -71,10 +71,15 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
     setIsSubmitting(true);
     try {
       const pacienteData = {
-        ...data,
+        nome: data.nome,
+        cpf: data.cpf,
         clinica_id: clinica.id,
         email: data.email || null,
         data_nascimento: data.data_nascimento || null,
+        telefone: data.telefone || null,
+        endereco: data.endereco || null,
+        observacoes: data.observacoes || null,
+        risco: data.risco || 'baixo' as const,
       };
 
       if (paciente) {
