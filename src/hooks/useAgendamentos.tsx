@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
@@ -142,6 +141,68 @@ export function useUpdateAgendamento() {
     },
     onError: (error: any) => {
       toast.error('Erro ao atualizar agendamento: ' + error.message);
+    },
+  });
+}
+
+export function useConfirmarAgendamento() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data, error } = await supabase
+        .from('agendamentos')
+        .update({ status: 'confirmado' })
+        .eq('id', id)
+        .select(`
+          *,
+          pacientes(id, nome, telefone, email),
+          profissionais(id, nome, especialidade)
+        `)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agendamentos'] });
+      queryClient.invalidateQueries({ queryKey: ['agendamentos-hoje'] });
+      queryClient.invalidateQueries({ queryKey: ['proximos-agendamentos'] });
+      toast.success('Agendamento confirmado com sucesso!');
+    },
+    onError: (error: any) => {
+      toast.error('Erro ao confirmar agendamento: ' + error.message);
+    },
+  });
+}
+
+export function useDesmarcarAgendamento() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data, error } = await supabase
+        .from('agendamentos')
+        .update({ desmarcada: true })
+        .eq('id', id)
+        .select(`
+          *,
+          pacientes(id, nome, telefone, email),
+          profissionais(id, nome, especialidade)
+        `)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agendamentos'] });
+      queryClient.invalidateQueries({ queryKey: ['agendamentos-hoje'] });
+      queryClient.invalidateQueries({ queryKey: ['proximos-agendamentos'] });
+      toast.success('Agendamento desmarcado com sucesso!');
+    },
+    onError: (error: any) => {
+      toast.error('Erro ao desmarcar agendamento: ' + error.message);
     },
   });
 }

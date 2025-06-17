@@ -16,6 +16,7 @@ export type Database = {
           criado_em: string
           data_fim: string
           data_inicio: string
+          desmarcada: boolean
           id: string
           observacoes: string | null
           paciente_id: string
@@ -31,6 +32,7 @@ export type Database = {
           criado_em?: string
           data_fim: string
           data_inicio: string
+          desmarcada?: boolean
           id?: string
           observacoes?: string | null
           paciente_id: string
@@ -46,6 +48,7 @@ export type Database = {
           criado_em?: string
           data_fim?: string
           data_inicio?: string
+          desmarcada?: boolean
           id?: string
           observacoes?: string | null
           paciente_id?: string
