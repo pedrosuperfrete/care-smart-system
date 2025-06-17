@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tables } from '@/integrations/supabase/types';
 import { useProfissionais } from '@/hooks/useProfissionais';
+import { useUpdateAgendamento } from '@/hooks/useAgendamentos';
+import { toast } from 'sonner';
 
 type Agendamento = Tables<'agendamentos'>;
 
@@ -14,16 +16,15 @@ interface EditarAgendamentoDialogProps {
   agendamento: Agendamento | null;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (id: string, data: any) => void;
 }
 
 export function EditarAgendamentoDialog({ 
   agendamento, 
   isOpen, 
-  onClose, 
-  onSave 
+  onClose
 }: EditarAgendamentoDialogProps) {
   const { data: profissionais = [] } = useProfissionais();
+  const updateMutation = useUpdateAgendamento();
   const [formData, setFormData] = useState({
     data_inicio: '',
     data_fim: '',
@@ -46,20 +47,27 @@ export function EditarAgendamentoDialog({
     }
   }, [agendamento]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!agendamento) return;
     
-    const updateData = {
-      data_inicio: formData.data_inicio,
-      data_fim: formData.data_fim,
-      tipo_servico: formData.tipo_servico,
-      profissional_id: formData.profissional_id,
-      valor: formData.valor ? parseFloat(formData.valor) : null,
-      observacoes: formData.observacoes || null
-    };
-    
-    onSave(agendamento.id, updateData);
-    onClose();
+    try {
+      const updateData = {
+        data_inicio: formData.data_inicio,
+        data_fim: formData.data_fim,
+        tipo_servico: formData.tipo_servico,
+        profissional_id: formData.profissional_id,
+        valor: formData.valor ? parseFloat(formData.valor) : null,
+        observacoes: formData.observacoes || null
+      };
+      
+      await updateMutation.mutateAsync({ 
+        id: agendamento.id, 
+        data: updateData 
+      });
+      onClose();
+    } catch (error) {
+      console.error('Erro ao atualizar agendamento:', error);
+    }
   };
 
   return (
@@ -156,8 +164,11 @@ export function EditarAgendamentoDialog({
             <Button variant="outline" onClick={onClose}>
               Cancelar
             </Button>
-            <Button onClick={handleSave}>
-              Salvar Alterações
+            <Button 
+              onClick={handleSave}
+              disabled={updateMutation.isPending}
+            >
+              {updateMutation.isPending ? 'Salvando...' : 'Salvar Alterações'}
             </Button>
           </div>
         </div>
