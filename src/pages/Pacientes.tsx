@@ -28,15 +28,23 @@ export default function Pacientes() {
   const [isAgendamentoOpen, setIsAgendamentoOpen] = useState(false);
 
   const filteredPacientes = pacientes.filter(paciente => {
-    const matchesSearch = paciente.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      paciente.cpf.includes(searchTerm.replace(/\D/g, '')) ||
-      (paciente.email && paciente.email.toLowerCase().includes(searchTerm.toLowerCase()));
+    // Busca dinâmica por nome, CPF ou email (case-insensitive)
+    const searchLower = searchTerm.toLowerCase().trim();
+    if (searchLower) {
+      const nomeMatch = paciente.nome.toLowerCase().includes(searchLower);
+      const cpfMatch = paciente.cpf.replace(/\D/g, '').includes(searchTerm.replace(/\D/g, ''));
+      const emailMatch = paciente.email && paciente.email.toLowerCase().includes(searchLower);
+      
+      if (!nomeMatch && !cpfMatch && !emailMatch) {
+        return false;
+      }
+    }
     
     // Simplificado: assumir que todos são adimplentes por enquanto
     // TODO: Implementar lógica real baseada em pagamentos
     const matchesStatus = filtroStatus === 'todos' || filtroStatus === 'adimplentes';
     
-    return matchesSearch && matchesStatus;
+    return matchesStatus;
   });
 
   const getRiscoColor = (risco: string | null) => {
@@ -119,7 +127,7 @@ export default function Pacientes() {
                 onClick={() => setFiltroStatus('todos')}
                 className="flex items-center space-x-2"
               >
-                <span>Todos ({stats?.total || 0})</span>
+                <span>Todos ({filteredPacientes.length})</span>
               </Button>
               <Button
                 variant={filtroStatus === 'adimplentes' ? 'default' : 'outline'}
@@ -136,6 +144,13 @@ export default function Pacientes() {
                 <span>Inadimplentes ({stats?.inadimplentes || 0})</span>
               </Button>
             </div>
+            
+            {/* Resultado da busca */}
+            {searchTerm && (
+              <div className="text-sm text-gray-600">
+                Exibindo {filteredPacientes.length} de {pacientes.length} pacientes
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -152,7 +167,7 @@ export default function Pacientes() {
                 </h3>
                 <p className="text-gray-600 mb-4">
                   {searchTerm 
-                    ? 'Tente ajustar os filtros de busca.' 
+                    ? 'Tente ajustar os filtros de busca ou digite outro termo.' 
                     : 'Comece cadastrando o primeiro paciente da clínica.'
                   }
                 </p>
@@ -266,7 +281,7 @@ export default function Pacientes() {
 
       {/* Sheet de Detalhes do Paciente */}
       <Sheet open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-        <SheetContent className="w-[400px] sm:w-[800px] overflow-y-auto">
+        <SheetContent className="w-[400px] sm:w-[900px] overflow-y-auto">
           <SheetHeader>
             <SheetTitle>Detalhes do Paciente</SheetTitle>
             <SheetDescription>
