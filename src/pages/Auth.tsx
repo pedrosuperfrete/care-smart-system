@@ -28,8 +28,11 @@ export default function Auth() {
         if (error) {
           toast.error(error);
         } else {
-          toast.success('Conta criada com sucesso! Verifique seu email.');
-          setIsSignUp(false);
+          toast.success('Conta criada com sucesso! Redirecionando...');
+          // Aguarda um momento para mostrar o toast e depois redireciona
+          setTimeout(() => {
+            navigate('/');
+          }, 1500);
         }
       } else {
         const { error } = await signIn(email, password);
