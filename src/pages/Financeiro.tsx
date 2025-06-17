@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,11 +8,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { DollarSign, TrendingUp, Calendar, Search, CheckCircle, Clock, XCircle, MessageCircle, CreditCard, AlertCircle } from 'lucide-react';
 import { usePagamentos, useFinanceiroStats, useMarcarPago } from '@/hooks/useFinanceiro';
+import { useAuth } from '@/hooks/useAuth';
 import { FiltroData } from '@/components/financeiro/FiltroData';
 import { ModalCobranca } from '@/components/financeiro/ModalCobranca';
 import { toast } from 'sonner';
 
 export default function Financeiro() {
+  const { user, loading: authLoading } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
   const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
@@ -22,6 +23,26 @@ export default function Financeiro() {
   const { data: pagamentos = [], isLoading } = usePagamentos();
   const { data: stats = { totalRecebido: 0, totalPendente: 0, totalVencido: 0, receitaMensal: 0 } } = useFinanceiroStats(dateRange.start, dateRange.end);
   const marcarPagoMutation = useMarcarPago();
+
+  // Verificar se o usuário está carregando ou não existe
+  if (authLoading) {
+    return (
+      <div className="p-8 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="p-8 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Acesso Negado</h2>
+          <p className="text-gray-600">Você precisa estar logado para acessar esta página.</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleDateRangeChange = (startDate: Date | null, endDate: Date | null) => {
     setDateRange({ start: startDate, end: endDate });
@@ -49,6 +70,7 @@ Obrigado pela preferência!`;
     window.open(url, '_blank');
   };
 
+  // ... keep existing code (getStatusBadge function)
   const getStatusBadge = (status: string) => {
     const variants = {
       pago: { variant: 'default' as const, icon: CheckCircle, text: 'Pago' },
@@ -67,6 +89,7 @@ Obrigado pela preferência!`;
     );
   };
 
+  // ... keep existing code (filteredPagamentos logic)
   const filteredPagamentos = pagamentos.filter(pagamento => {
     const matchesSearch = pagamento.agendamentos?.pacientes?.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          pagamento.agendamentos?.tipo_servico.toLowerCase().includes(searchTerm.toLowerCase());

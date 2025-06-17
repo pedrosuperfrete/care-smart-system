@@ -3,14 +3,21 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
+import { useAuth } from './useAuth';
 
 type Pagamento = Tables<'pagamentos'>;
 type UpdatePagamento = Partial<Pagamento>;
 
 export function usePagamentos() {
+  const { user } = useAuth();
+  
   return useQuery({
     queryKey: ['pagamentos'],
     queryFn: async () => {
+      if (!user?.id) {
+        throw new Error('Usuário não autenticado');
+      }
+
       const { data, error } = await supabase
         .from('pagamentos')
         .select(`
@@ -28,14 +35,20 @@ export function usePagamentos() {
       if (error) throw error;
       return data || [];
     },
+    enabled: !!user?.id, // Só executa quando o usuário estiver carregado
   });
 }
 
 export function useUpdatePagamento() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: UpdatePagamento }) => {
+      if (!user?.id) {
+        throw new Error('Usuário não autenticado');
+      }
+
       const { data: updated, error } = await supabase
         .from('pagamentos')
         .update(data)
@@ -59,9 +72,14 @@ export function useUpdatePagamento() {
 
 export function useMarcarPago() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   
   return useMutation({
     mutationFn: async (id: string) => {
+      if (!user?.id) {
+        throw new Error('Usuário não autenticado');
+      }
+
       const { data: updated, error } = await supabase
         .from('pagamentos')
         .update({ 
@@ -87,9 +105,15 @@ export function useMarcarPago() {
 }
 
 export function useFinanceiroStats(startDate?: Date, endDate?: Date) {
+  const { user } = useAuth();
+  
   return useQuery({
     queryKey: ['financeiro-stats', startDate, endDate],
     queryFn: async () => {
+      if (!user?.id) {
+        throw new Error('Usuário não autenticado');
+      }
+
       let query = supabase
         .from('pagamentos')
         .select('valor_total, valor_pago, status, data_pagamento, data_vencimento');
@@ -143,5 +167,6 @@ export function useFinanceiroStats(startDate?: Date, endDate?: Date) {
         receitaMensal,
       };
     },
+    enabled: !!user?.id, // Só executa quando o usuário estiver carregado
   });
 }
