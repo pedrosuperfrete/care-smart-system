@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,16 +15,27 @@ import { Search } from 'lucide-react';
 import { usePacientes } from '@/hooks/usePacientes';
 import { Link } from 'react-router-dom';
 import { PacienteFormWithLimit } from '@/components/forms/PacienteFormWithLimit';
+import { useLimitePacientes } from '@/hooks/usePlanos';
 
 export default function Pacientes() {
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingPaciente, setEditingPaciente] = useState(null);
   const { data, refetch } = usePacientes(search);
+  const { podeAdicionarPaciente } = useLimitePacientes();
 
   useEffect(() => {
     refetch();
   }, [search, refetch]);
+
+  const handleNovoClick = () => {
+    if (!podeAdicionarPaciente) {
+      // O componente PacienteFormWithLimit vai mostrar o modal de limite
+      setShowForm(true);
+    } else {
+      setShowForm(true);
+    }
+  };
 
   return (
     <div className="p-8 space-y-6">
@@ -35,16 +47,17 @@ export default function Pacientes() {
       </div>
 
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
+        <div className="relative flex items-center space-x-2">
           <Input
             type="search"
             placeholder="Buscar paciente..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            className="w-80"
           />
-          <Search className="w-4 h-4 text-gray-500 absolute right-2 top-1/2 transform -translate-y-1/2" />
+          <Search className="w-4 h-4 text-gray-500 absolute right-3 top-1/2 transform -translate-y-1/2" />
         </div>
-        <Button onClick={() => setShowForm(true)}>
+        <Button onClick={handleNovoClick}>
           Novo Paciente
         </Button>
       </div>
@@ -81,7 +94,7 @@ export default function Pacientes() {
               <TableCell>{paciente.cpf}</TableCell>
               <TableCell>{paciente.telefone || 'N/A'}</TableCell>
               <TableCell>{paciente.email || 'N/A'}</TableCell>
-              <TableCell className="text-right">
+              <TableCell className="text-right space-x-2">
                 <Button
                   variant="secondary"
                   size="sm"

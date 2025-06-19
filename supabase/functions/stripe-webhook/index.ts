@@ -28,31 +28,49 @@ serve(async (req) => {
     return new Response(`Webhook Error: ${err.message}`, { status: 400 })
   }
 
+  console.log('Processing webhook event:', event.type)
+
   try {
     switch (event.type) {
       case 'checkout.session.completed':
         const session = event.data.object
-        const userId = session.metadata?.user_id
-
-        if (userId && session.mode === 'subscription') {
-          await supabaseClient
+        console.log('Checkout session completed:', session.id)
+        
+        // Buscar customer do Stripe para obter o email
+        const customer = await stripe.customers.retrieve(session.customer as string)
+        
+        if (customer && !customer.deleted && customer.email) {
+          console.log('Updating user plan for email:', customer.email)
+          
+          const { data: updateResult, error: updateError } = await supabaseClient
             .from('users')
             .update({
               plano: 'pro',
               subscription_id: session.subscription,
-              subscription_status: 'active'
+              subscription_status: 'active',
+              stripe_customer_id: session.customer
             })
-            .eq('id', userId)
+            .eq('email', customer.email)
+
+          if (updateError) {
+            console.error('Error updating user:', updateError)
+          } else {
+            console.log('User updated successfully:', updateResult)
+          }
         }
         break
 
       case 'customer.subscription.updated':
         const subscription = event.data.object
-        const customer = await stripe.customers.retrieve(subscription.customer as string)
+        console.log('Subscription updated:', subscription.id, 'status:', subscription.status)
         
-        if (customer && !customer.deleted && customer.metadata?.user_id) {
+        const subscriptionCustomer = await stripe.customers.retrieve(subscription.customer as string)
+        
+        if (subscriptionCustomer && !subscriptionCustomer.deleted && subscriptionCustomer.email) {
           const status = subscription.status === 'active' ? 'active' : 'inactive'
           const plano = status === 'active' ? 'pro' : 'free'
+
+          console.log('Updating subscription for email:', subscriptionCustomer.email, 'new plan:', plano)
 
           await supabaseClient
             .from('users')
@@ -61,15 +79,19 @@ serve(async (req) => {
               subscription_status: status,
               subscription_end_date: new Date(subscription.current_period_end * 1000).toISOString()
             })
-            .eq('id', customer.metadata.user_id)
+            .eq('email', subscriptionCustomer.email)
         }
         break
 
       case 'customer.subscription.deleted':
         const deletedSubscription = event.data.object
+        console.log('Subscription deleted:', deletedSubscription.id)
+        
         const deletedCustomer = await stripe.customers.retrieve(deletedSubscription.customer as string)
         
-        if (deletedCustomer && !deletedCustomer.deleted && deletedCustomer.metadata?.user_id) {
+        if (deletedCustomer && !deletedCustomer.deleted && deletedCustomer.email) {
+          console.log('Canceling subscription for email:', deletedCustomer.email)
+          
           await supabaseClient
             .from('users')
             .update({
@@ -77,27 +99,41 @@ serve(async (req) => {
               subscription_status: 'canceled',
               subscription_id: null
             })
-            .eq('id', deletedCustomer.metadata.user_id)
+            .eq('email', deletedCustomer.email)
         }
         break
 
       case 'payment_intent.succeeded':
         const paymentIntent = event.data.object
+        console.log('Payment succeeded:', paymentIntent.id)
+        
         const paymentCustomer = await stripe.customers.retrieve(paymentIntent.customer as string)
         
-        if (paymentCustomer && !paymentCustomer.deleted && paymentCustomer.metadata?.user_id) {
-          await supabaseClient
-            .from('payment_history')
-            .insert({
-              user_id: paymentCustomer.metadata.user_id,
-              stripe_payment_intent_id: paymentIntent.id,
-              amount: paymentIntent.amount / 100,
-              currency: paymentIntent.currency.toUpperCase(),
-              status: 'paid',
-              payment_method: paymentIntent.payment_method_types?.[0] || 'card'
-            })
+        if (paymentCustomer && !paymentCustomer.deleted && paymentCustomer.email) {
+          // Buscar user_id pelo email
+          const { data: userData } = await supabaseClient
+            .from('users')
+            .select('id')
+            .eq('email', paymentCustomer.email)
+            .single()
+
+          if (userData) {
+            await supabaseClient
+              .from('payment_history')
+              .insert({
+                user_id: userData.id,
+                stripe_payment_intent_id: paymentIntent.id,
+                amount: paymentIntent.amount / 100,
+                currency: paymentIntent.currency.toUpperCase(),
+                status: 'paid',
+                payment_method: paymentIntent.payment_method_types?.[0] || 'card'
+              })
+          }
         }
         break
+
+      default:
+        console.log('Unhandled event type:', event.type)
     }
 
     return new Response(JSON.stringify({ received: true }), {

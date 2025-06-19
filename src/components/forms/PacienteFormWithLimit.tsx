@@ -20,19 +20,9 @@ export function PacienteFormWithLimit({ isOpen, onClose, onSuccess, editingPacie
   const { createCheckoutSession } = usePlanos();
   const [showLimitDialog, setShowLimitDialog] = useState(false);
 
-  const handleFormSubmit = () => {
-    // Se está editando, permite sempre
-    if (editingPaciente) {
-      return true;
-    }
-
-    // Se não pode adicionar paciente, mostra dialog de limite
-    if (!podeAdicionarPaciente) {
-      setShowLimitDialog(true);
-      return false;
-    }
-
-    return true;
+  const handleFormSuccess = () => {
+    onSuccess?.();
+    onClose();
   };
 
   const handleUpgrade = () => {
@@ -40,10 +30,21 @@ export function PacienteFormWithLimit({ isOpen, onClose, onSuccess, editingPacie
     setShowLimitDialog(false);
   };
 
-  // Se atingiu o limite e está tentando criar novo paciente
-  if (!editingPaciente && atingiuLimite && showLimitDialog) {
+  // Interceptar tentativa de abrir o modal para criar paciente quando limite atingido
+  const handleOpen = () => {
+    if (!editingPaciente && !podeAdicionarPaciente) {
+      setShowLimitDialog(true);
+      return;
+    }
+  };
+
+  // Chamar verificação quando modal for aberto
+  if (isOpen && !editingPaciente && !podeAdicionarPaciente) {
     return (
-      <Dialog open={showLimitDialog} onOpenChange={setShowLimitDialog}>
+      <Dialog open={true} onOpenChange={() => {
+        setShowLimitDialog(false);
+        onClose();
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center">
@@ -82,7 +83,6 @@ export function PacienteFormWithLimit({ isOpen, onClose, onSuccess, editingPacie
                   <Button 
                     variant="outline" 
                     onClick={() => {
-                      setShowLimitDialog(false);
                       onClose();
                     }}
                   >
@@ -102,10 +102,7 @@ export function PacienteFormWithLimit({ isOpen, onClose, onSuccess, editingPacie
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <PacienteForm
           paciente={editingPaciente}
-          onSuccess={() => {
-            onSuccess?.();
-            onClose();
-          }}
+          onSuccess={handleFormSuccess}
         />
       </DialogContent>
     </Dialog>
