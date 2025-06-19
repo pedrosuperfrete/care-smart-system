@@ -8,15 +8,21 @@ type Paciente = Tables<'pacientes'>;
 type InsertPaciente = Omit<Paciente, 'id' | 'criado_em' | 'atualizado_em'>;
 type UpdatePaciente = Partial<InsertPaciente>;
 
-export function usePacientes() {
+export function usePacientes(search?: string) {
   return useQuery({
-    queryKey: ['pacientes'],
+    queryKey: ['pacientes', search],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('pacientes')
         .select('*')
         .eq('ativo', true)
         .order('criado_em', { ascending: false });
+
+      if (search && search.trim()) {
+        query = query.or(`nome.ilike.%${search}%,cpf.ilike.%${search}%,email.ilike.%${search}%`);
+      }
+      
+      const { data, error } = await query;
       
       if (error) throw error;
       return data || [];

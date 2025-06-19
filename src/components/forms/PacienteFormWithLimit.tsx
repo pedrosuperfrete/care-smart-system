@@ -41,7 +41,7 @@ export function PacienteFormWithLimit({ isOpen, onClose, onSuccess, editingPacie
   };
 
   // Se atingiu o limite e está tentando criar novo paciente
-  if (!editingPaciente && atingiuLimite && isOpen) {
+  if (!editingPaciente && atingiuLimite && showLimitDialog) {
     return (
       <Dialog open={showLimitDialog} onOpenChange={setShowLimitDialog}>
         <DialogContent>
@@ -98,12 +98,16 @@ export function PacienteFormWithLimit({ isOpen, onClose, onSuccess, editingPacie
   }
 
   return (
-    <PacienteForm
-      isOpen={isOpen}
-      onClose={onClose}
-      onSuccess={onSuccess}
-      editingPaciente={editingPaciente}
-      onBeforeSubmit={handleFormSubmit}
-    />
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <PacienteForm
+          paciente={editingPaciente}
+          onSuccess={() => {
+            onSuccess?.();
+            onClose();
+          }}
+        />
+      </DialogContent>
+    </Dialog>
   );
 }
