@@ -1,4 +1,3 @@
-
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
@@ -21,6 +20,7 @@ interface AuthContextType {
   isProfissional: boolean;
   isRecepcionista: boolean;
   needsOnboarding: boolean;
+  refreshUserProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -62,6 +62,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const refreshUserProfile = async () => {
+    if (user) {
+      await fetchUserProfile(user.id);
+    }
+  };
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
@@ -100,20 +106,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email,
       password,
       options: {
-        emailRedirectTo: undefined // Remove a necessidade de confirmação por email
+        emailRedirectTo: undefined
       }
     });
 
     if (error) return { error: error.message };
 
     if (data.user) {
-      // Criar perfil do usuário
       const { error: profileError } = await supabase
         .from('users')
         .insert({
           id: data.user.id,
           email,
-          senha_hash: '', // Será preenchido pelo trigger
+          senha_hash: '',
           tipo_usuario: tipoUsuario
         });
 
@@ -121,7 +126,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('Erro ao criar perfil:', profileError);
       }
 
-      // Se for profissional, criar registro inicial
       if (tipoUsuario === 'profissional') {
         const { data: clinica } = await supabase
           .from('clinicas')
@@ -190,7 +194,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAdmin,
       isProfissional,
       isRecepcionista,
-      needsOnboarding
+      needsOnboarding,
+      refreshUserProfile
     }}>
       {children}
     </AuthContext.Provider>

@@ -85,8 +85,9 @@ export function usePlanos() {
 
 export function useLimitePacientes() {
   const { user, userProfile } = useAuth();
+  const queryClient = useQueryClient();
 
-  const { data: contadorPacientes } = useQuery({
+  const { data: contadorPacientes, refetch: refetchContador } = useQuery({
     queryKey: ['contador-pacientes'],
     queryFn: async () => {
       if (!user) return 0;
@@ -111,7 +112,7 @@ export function useLimitePacientes() {
     enabled: !!user,
   });
 
-  const { data: planoAtual } = useQuery({
+  const { data: planoAtual, refetch: refetchPlano } = useQuery({
     queryKey: ['plano-atual', user?.id],
     queryFn: async () => {
       if (!user) return 'free';
@@ -128,6 +129,15 @@ export function useLimitePacientes() {
     enabled: !!user,
   });
 
+  // Função para atualizar o cache após mudanças de plano
+  const refreshPlanStatus = () => {
+    refetchPlano();
+    refetchContador();
+    queryClient.invalidateQueries({ queryKey: ['plano-info'] });
+    queryClient.invalidateQueries({ queryKey: ['plano-atual'] });
+    queryClient.invalidateQueries({ queryKey: ['contador-pacientes'] });
+  };
+
   const limitePacientes = planoAtual === 'free' ? 2 : Infinity;
   const atingiuLimite = planoAtual === 'free' && (contadorPacientes || 0) >= 2;
   const podeAdicionarPaciente = !atingiuLimite;
@@ -138,5 +148,6 @@ export function useLimitePacientes() {
     atingiuLimite,
     podeAdicionarPaciente,
     planoAtual: planoAtual || 'free',
+    refreshPlanStatus,
   };
 }

@@ -36,11 +36,9 @@ serve(async (req) => {
         const session = event.data.object
         console.log('Checkout session completed:', session.id)
         
-        // Buscar customer do Stripe para obter o email
-        const customer = await stripe.customers.retrieve(session.customer as string)
-        
-        if (customer && !customer.deleted && customer.email) {
-          console.log('Updating user plan for email:', customer.email)
+        // Primeiro, tentar usar o user_id dos metadados
+        if (session.metadata?.user_id) {
+          console.log('Updating user plan using metadata user_id:', session.metadata.user_id)
           
           const { data: updateResult, error: updateError } = await supabaseClient
             .from('users')
@@ -50,12 +48,38 @@ serve(async (req) => {
               subscription_status: 'active',
               stripe_customer_id: session.customer
             })
-            .eq('email', customer.email)
+            .eq('id', session.metadata.user_id)
 
           if (updateError) {
-            console.error('Error updating user:', updateError)
+            console.error('Error updating user by ID:', updateError)
           } else {
-            console.log('User updated successfully:', updateResult)
+            console.log('User updated successfully using metadata:', updateResult)
+            break;
+          }
+        }
+        
+        // Se não funcionou com metadata, tentar pelo email do customer
+        if (session.customer) {
+          const customer = await stripe.customers.retrieve(session.customer as string)
+          
+          if (customer && !customer.deleted && customer.email) {
+            console.log('Updating user plan for email:', customer.email)
+            
+            const { data: updateResult, error: updateError } = await supabaseClient
+              .from('users')
+              .update({
+                plano: 'pro',
+                subscription_id: session.subscription,
+                subscription_status: 'active',
+                stripe_customer_id: session.customer
+              })
+              .eq('email', customer.email)
+
+            if (updateError) {
+              console.error('Error updating user by email:', updateError)
+            } else {
+              console.log('User updated successfully by email:', updateResult)
+            }
           }
         }
         break
@@ -110,7 +134,6 @@ serve(async (req) => {
         const paymentCustomer = await stripe.customers.retrieve(paymentIntent.customer as string)
         
         if (paymentCustomer && !paymentCustomer.deleted && paymentCustomer.email) {
-          // Buscar user_id pelo email
           const { data: userData } = await supabaseClient
             .from('users')
             .select('id')
