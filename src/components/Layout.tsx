@@ -1,36 +1,44 @@
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbLink,
+} from "@/components/ui/breadcrumb"
+import { Separator } from "@/components/ui/separator"
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar"
+import { AppSidebar } from "./AppSidebar"
+import { LimiteAlert } from './LimiteAlert';
 
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "./AppSidebar";
-import { ReactNode } from "react";
-import { Menu } from "lucide-react";
-
-interface LayoutProps {
-  children: ReactNode;
-}
-
-export function Layout({ children }: LayoutProps) {
+export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gray-50">
         <AppSidebar />
-        <main className="flex-1 flex flex-col">
-          <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <SidebarTrigger className="md:hidden">
-                <Menu className="w-5 h-5" />
-              </SidebarTrigger>
-              <h1 className="text-xl font-semibold text-gray-900">Sistema de Gestão Clínica</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                <span className="text-white text-sm font-medium">JS</span>
-              </div>
-            </div>
-          </header>
-          <div className="flex-1 p-6 overflow-auto">
-            {children}
+        <SidebarInset className="flex-1">
+          <div className="flex flex-col min-h-screen">
+            <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+              <SidebarTrigger className="-ml-1" />
+              <Separator orientation="vertical" className="mr-2 h-4" />
+              <Breadcrumb>
+                <BreadcrumbList>
+                  <BreadcrumbItem className="hidden md:block">
+                    <BreadcrumbLink href="/">
+                      Dashboard
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
+            </header>
+            <main className="flex-1 p-4">
+              <LimiteAlert />
+              {children}
+            </main>
           </div>
-        </main>
+        </SidebarInset>
       </div>
     </SidebarProvider>
   );

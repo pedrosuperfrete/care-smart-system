@@ -1,346 +1,110 @@
-
-import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { PacienteForm } from '@/components/forms/PacienteForm';
-import { PacienteDetalhes } from '@/components/PacienteDetalhes';
-import { AgendamentoForm } from '@/components/forms/AgendamentoForm';
-import { usePacientes, usePacientesStats } from '@/hooks/usePacientes';
-import { Users, Plus, Search, MoreVertical, Eye, Edit, Calendar, History, Phone, Mail, MapPin } from 'lucide-react';
-import { Tables } from '@/integrations/supabase/types';
-
-type Paciente = Tables<'pacientes'>;
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { Search } from 'lucide-react';
+import { usePacientes } from '@/hooks/usePacientes';
+import { Link } from 'react-router-dom';
+import { PacienteFormWithLimit } from '@/components/forms/PacienteFormWithLimit';
 
 export default function Pacientes() {
-  const { data: pacientes = [], isLoading } = usePacientes();
-  const { data: stats } = usePacientesStats();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filtroStatus, setFiltroStatus] = useState<'todos' | 'adimplentes' | 'inadimplentes'>('todos');
-  const [selectedPaciente, setSelectedPaciente] = useState<Paciente | null>(null);
-  const [isNewPacienteOpen, setIsNewPacienteOpen] = useState(false);
-  const [isEditPacienteOpen, setIsEditPacienteOpen] = useState(false);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const [isAgendamentoOpen, setIsAgendamentoOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [editingPaciente, setEditingPaciente] = useState(null);
+  const { data, refetch } = usePacientes(search);
 
-  const filteredPacientes = pacientes.filter(paciente => {
-    // Busca dinâmica por nome, CPF ou email (case-insensitive)
-    const searchLower = searchTerm.toLowerCase().trim();
-    if (searchLower) {
-      const nomeMatch = paciente.nome.toLowerCase().includes(searchLower);
-      const cpfMatch = paciente.cpf.replace(/\D/g, '').includes(searchTerm.replace(/\D/g, ''));
-      const emailMatch = paciente.email && paciente.email.toLowerCase().includes(searchLower);
-      
-      if (!nomeMatch && !cpfMatch && !emailMatch) {
-        return false;
-      }
-    }
-    
-    // Simplificado: assumir que todos são adimplentes por enquanto
-    // TODO: Implementar lógica real baseada em pagamentos
-    const matchesStatus = filtroStatus === 'todos' || filtroStatus === 'adimplentes';
-    
-    return matchesStatus;
-  });
-
-  const getRiscoColor = (risco: string | null) => {
-    const colors = {
-      baixo: 'bg-green-100 text-green-800',
-      medio: 'bg-yellow-100 text-yellow-800',
-      alto: 'bg-red-100 text-red-800'
-    };
-    return colors[risco as keyof typeof colors] || colors.baixo;
-  };
-
-  const getRiscoText = (risco: string | null) => {
-    const texts = {
-      baixo: 'Baixo',
-      medio: 'Médio',
-      alto: 'Alto'
-    };
-    return texts[risco as keyof typeof texts] || 'Baixo';
-  };
-
-  if (isLoading) {
-    return (
-      <div className="p-8 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    refetch();
+  }, [search, refetch]);
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Pacientes</h1>
-          <p className="text-gray-600 mt-1">
-            Gerencie os pacientes cadastrados na clínica
-          </p>
+      <div>
+        <h1 className="text-3xl font-bold">Pacientes</h1>
+        <p className="text-gray-600 mt-1">
+          Gerencie seus pacientes e informações de contato
+        </p>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <Input
+            type="search"
+            placeholder="Buscar paciente..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <Search className="w-4 h-4 text-gray-500 absolute right-2 top-1/2 transform -translate-y-1/2" />
         </div>
-        
-        <Dialog open={isNewPacienteOpen} onOpenChange={setIsNewPacienteOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Novo Paciente
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Novo Paciente</DialogTitle>
-              <DialogDescription>
-                Cadastre um novo paciente na clínica
-              </DialogDescription>
-            </DialogHeader>
-            <PacienteForm onSuccess={() => setIsNewPacienteOpen(false)} />
-          </DialogContent>
-        </Dialog>
+        <Button onClick={() => setShowForm(true)}>
+          Novo Paciente
+        </Button>
       </div>
 
-      {/* Filtros e Estatísticas */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col space-y-4">
-            <div className="flex space-x-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="Buscar por nome, CPF ou email..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-            </div>
-            
-            {/* Contadores de Status */}
-            <div className="flex space-x-4">
-              <Button
-                variant={filtroStatus === 'todos' ? 'default' : 'outline'}
-                onClick={() => setFiltroStatus('todos')}
-                className="flex items-center space-x-2"
-              >
-                <span>Todos ({filteredPacientes.length})</span>
-              </Button>
-              <Button
-                variant={filtroStatus === 'adimplentes' ? 'default' : 'outline'}
-                onClick={() => setFiltroStatus('adimplentes')}
-                className="flex items-center space-x-2"
-              >
-                <span>Adimplentes ({stats?.adimplentes || 0})</span>
-              </Button>
-              <Button
-                variant={filtroStatus === 'inadimplentes' ? 'default' : 'outline'}
-                onClick={() => setFiltroStatus('inadimplentes')}
-                className="flex items-center space-x-2"
-              >
-                <span>Inadimplentes ({stats?.inadimplentes || 0})</span>
-              </Button>
-            </div>
-            
-            {/* Resultado da busca */}
-            {searchTerm && (
-              <div className="text-sm text-gray-600">
-                Exibindo {filteredPacientes.length} de {pacientes.length} pacientes
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      <PacienteFormWithLimit
+        isOpen={showForm}
+        onClose={() => {
+          setShowForm(false);
+          setEditingPaciente(null);
+        }}
+        onSuccess={() => {
+          setShowForm(false);
+          setEditingPaciente(null);
+          refetch();
+        }}
+        editingPaciente={editingPaciente}
+      />
 
-      {/* Lista de Pacientes */}
-      <div className="grid gap-4">
-        {filteredPacientes.length === 0 ? (
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center py-8">
-                <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  {searchTerm ? 'Nenhum paciente encontrado' : 'Nenhum paciente cadastrado'}
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  {searchTerm 
-                    ? 'Tente ajustar os filtros de busca ou digite outro termo.' 
-                    : 'Comece cadastrando o primeiro paciente da clínica.'
-                  }
-                </p>
-                {!searchTerm && (
-                  <Button onClick={() => setIsNewPacienteOpen(true)}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Cadastrar Primeiro Paciente
+      <Table>
+        <TableCaption>Lista de todos os seus pacientes.</TableCaption>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Nome</TableHead>
+            <TableHead>CPF</TableHead>
+            <TableHead>Telefone</TableHead>
+            <TableHead>Email</TableHead>
+            <TableHead className="text-right">Ações</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {data?.map((paciente) => (
+            <TableRow key={paciente.id}>
+              <TableCell>{paciente.nome}</TableCell>
+              <TableCell>{paciente.cpf}</TableCell>
+              <TableCell>{paciente.telefone || 'N/A'}</TableCell>
+              <TableCell>{paciente.email || 'N/A'}</TableCell>
+              <TableCell className="text-right">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    setEditingPaciente(paciente);
+                    setShowForm(true);
+                  }}
+                >
+                  Editar
+                </Button>
+                <Link to={`/pacientes/${paciente.id}`}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                  >
+                    Ver
                   </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          filteredPacientes.map((paciente) => (
-            <Card key={paciente.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="pt-6">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-3">
-                      <h3 className="text-lg font-semibold">{paciente.nome}</h3>
-                      <Badge className={getRiscoColor(paciente.risco)}>
-                        Risco {getRiscoText(paciente.risco)}
-                      </Badge>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
-                      <div className="space-y-2">
-                        <p><strong>CPF:</strong> {paciente.cpf}</p>
-                        {paciente.data_nascimento && (
-                          <p><strong>Nascimento:</strong> {new Date(paciente.data_nascimento).toLocaleDateString('pt-BR')}</p>
-                        )}
-                      </div>
-                      
-                      <div className="space-y-2">
-                        {paciente.telefone && (
-                          <div className="flex items-center space-x-2">
-                            <Phone className="h-4 w-4" />
-                            <span>{paciente.telefone}</span>
-                          </div>
-                        )}
-                        {paciente.email && (
-                          <div className="flex items-center space-x-2">
-                            <Mail className="h-4 w-4" />
-                            <span>{paciente.email}</span>
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="space-y-2">
-                        {paciente.endereco && (
-                          <div className="flex items-center space-x-2">
-                            <MapPin className="h-4 w-4" />
-                            <span className="line-clamp-2">{paciente.endereco}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    
-                    {paciente.observacoes && (
-                      <div className="mt-3 pt-3 border-t">
-                        <p className="text-sm text-gray-600">
-                          <strong>Observações:</strong> {paciente.observacoes}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => {
-                        setSelectedPaciente(paciente);
-                        setIsDetailsOpen(true);
-                      }}>
-                        <Eye className="mr-2 h-4 w-4" />
-                        Ver Detalhes
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => {
-                        setSelectedPaciente(paciente);
-                        setIsEditPacienteOpen(true);
-                      }}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Editar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => {
-                        setSelectedPaciente(paciente);
-                        setIsAgendamentoOpen(true);
-                      }}>
-                        <Calendar className="mr-2 h-4 w-4" />
-                        Novo Atendimento
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => {
-                        setSelectedPaciente(paciente);
-                        setIsDetailsOpen(true);
-                      }}>
-                        <History className="mr-2 h-4 w-4" />
-                        Histórico
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
-
-      {/* Sheet de Detalhes do Paciente */}
-      <Sheet open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-        <SheetContent className="w-[400px] sm:w-[900px] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>Detalhes do Paciente</SheetTitle>
-            <SheetDescription>
-              Informações completas e histórico do paciente
-            </SheetDescription>
-          </SheetHeader>
-          
-          {selectedPaciente && (
-            <div className="mt-6">
-              <PacienteDetalhes 
-                pacienteId={selectedPaciente.id} 
-                onClose={() => setIsDetailsOpen(false)}
-              />
-            </div>
-          )}
-        </SheetContent>
-      </Sheet>
-
-      {/* Dialog de Edição do Paciente */}
-      <Dialog open={isEditPacienteOpen} onOpenChange={setIsEditPacienteOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Editar Paciente</DialogTitle>
-            <DialogDescription>
-              Atualize as informações do paciente
-            </DialogDescription>
-          </DialogHeader>
-          {selectedPaciente && (
-            <PacienteForm 
-              paciente={selectedPaciente}
-              onSuccess={() => {
-                setIsEditPacienteOpen(false);
-                setSelectedPaciente(null);
-              }} 
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog de Novo Agendamento */}
-      <Dialog open={isAgendamentoOpen} onOpenChange={setIsAgendamentoOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Novo Agendamento</DialogTitle>
-            <DialogDescription>
-              Agendar nova consulta para {selectedPaciente?.nome}
-            </DialogDescription>
-          </DialogHeader>
-          {selectedPaciente && (
-            <AgendamentoForm 
-              pacienteId={selectedPaciente.id}
-              onSuccess={() => {
-                setIsAgendamentoOpen(false);
-                setSelectedPaciente(null);
-              }} 
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+                </Link>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }

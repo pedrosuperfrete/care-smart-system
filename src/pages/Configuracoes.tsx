@@ -1,9 +1,8 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
-import { User, Building, Users, Save } from 'lucide-react';
+import { User, Building, Users, Save, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
 import { PerfilBasico } from '@/components/configuracoes/PerfilBasico';
 import { InformacoesProfissionais } from '@/components/configuracoes/InformacoesProfissionais';
@@ -11,6 +10,7 @@ import { ServicosPrecos } from '@/components/configuracoes/ServicosPrecos';
 import { GerenciarEquipe } from '@/components/configuracoes/GerenciarEquipe';
 import { ConfiguracoesSistema } from '@/components/configuracoes/ConfiguracoesSistema';
 import { ConfiguracaoClinica } from '@/components/configuracoes/ConfiguracaoClinica';
+import { PagamentosConfig } from '@/components/configuracoes/PagamentosConfig';
 
 export default function Configuracoes() {
   const { userProfile, profissional, isAdmin, updateProfissional } = useAuth();
@@ -97,7 +97,7 @@ export default function Configuracoes() {
       </div>
 
       <Tabs defaultValue="perfil" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="perfil">
             <User className="mr-2 h-4 w-4" />
             Perfil
@@ -111,6 +111,10 @@ export default function Configuracoes() {
           <TabsTrigger value="equipe">
             <Users className="mr-2 h-4 w-4" />
             Equipe
+          </TabsTrigger>
+          <TabsTrigger value="pagamentos">
+            <CreditCard className="mr-2 h-4 w-4" />
+            Pagamentos
           </TabsTrigger>
           <TabsTrigger value="sistema">
             Sistema
@@ -165,6 +169,11 @@ export default function Configuracoes() {
         {/* Aba Equipe */}
         <TabsContent value="equipe">
           <GerenciarEquipe isAdmin={isAdmin} />
+        </TabsContent>
+
+        {/* Aba Pagamentos */}
+        <TabsContent value="pagamentos">
+          <PagamentosConfig />
         </TabsContent>
 
         {/* Aba Sistema */}
