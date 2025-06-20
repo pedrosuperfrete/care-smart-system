@@ -77,6 +77,7 @@ serve(async (req) => {
 
         // Atualizar usuário por ID primeiro, se disponível
         if (userId) {
+          logStep('Attempting to update user by ID', { userId })
           const { data: updateResult, error: updateError } = await supabaseClient
             .from('users')
             .update({
@@ -91,14 +92,17 @@ serve(async (req) => {
 
           if (updateError) {
             logStep('Error updating user by ID', { error: updateError })
-          } else {
+          } else if (updateResult && updateResult.length > 0) {
             logStep('Successfully updated user by ID', { result: updateResult })
             break; // Sucesso, não precisa tentar por email
+          } else {
+            logStep('No user found with this ID', { userId })
           }
         }
 
         // Se não conseguiu por ID, tentar por email
         if (customerEmail) {
+          logStep('Attempting to update user by email', { email: customerEmail })
           const { data: updateResult, error: updateError } = await supabaseClient
             .from('users')
             .update({
@@ -113,8 +117,10 @@ serve(async (req) => {
 
           if (updateError) {
             logStep('Error updating user by email', { error: updateError })
-          } else {
+          } else if (updateResult && updateResult.length > 0) {
             logStep('Successfully updated user by email', { result: updateResult })
+          } else {
+            logStep('No user found with this email', { email: customerEmail })
           }
         }
 
@@ -145,6 +151,7 @@ serve(async (req) => {
               endDate: subscriptionEndDate
             })
 
+            // Tentar atualizar por stripe_customer_id primeiro
             const { data: updateResult, error: updateError } = await supabaseClient
               .from('users')
               .update({
@@ -156,10 +163,32 @@ serve(async (req) => {
               .eq('stripe_customer_id', subscription.customer)
               .select()
 
-            if (updateError) {
-              logStep('Error updating subscription', { error: updateError })
+            if (updateError || !updateResult || updateResult.length === 0) {
+              logStep('Failed to update by stripe_customer_id, trying by email', { 
+                error: updateError,
+                resultLength: updateResult?.length 
+              })
+              
+              // Se falhou, tentar por email
+              const { data: emailUpdateResult, error: emailUpdateError } = await supabaseClient
+                .from('users')
+                .update({
+                  plano,
+                  subscription_status: status,
+                  subscription_end_date: subscriptionEndDate,
+                  subscription_id: subscription.id,
+                  stripe_customer_id: subscription.customer
+                })
+                .eq('email', customer.email)
+                .select()
+
+              if (emailUpdateError) {
+                logStep('Error updating subscription by email', { error: emailUpdateError })
+              } else {
+                logStep('Successfully updated subscription by email', { result: emailUpdateResult })
+              }
             } else {
-              logStep('Successfully updated subscription', { result: updateResult })
+              logStep('Successfully updated subscription by stripe_customer_id', { result: updateResult })
             }
           }
         } catch (error) {
@@ -175,6 +204,7 @@ serve(async (req) => {
         })
         
         try {
+          // Tentar atualizar por stripe_customer_id primeiro
           const { data: updateResult, error: updateError } = await supabaseClient
             .from('users')
             .update({
@@ -186,10 +216,35 @@ serve(async (req) => {
             .eq('stripe_customer_id', deletedSubscription.customer)
             .select()
 
-          if (updateError) {
-            logStep('Error canceling subscription', { error: updateError })
+          if (updateError || !updateResult || updateResult.length === 0) {
+            logStep('Failed to cancel by stripe_customer_id, trying by customer lookup')
+            
+            // Se falhou, buscar o customer e tentar por email
+            try {
+              const customer = await stripe.customers.retrieve(deletedSubscription.customer as string)
+              if (customer && !customer.deleted && customer.email) {
+                const { data: emailUpdateResult, error: emailUpdateError } = await supabaseClient
+                  .from('users')
+                  .update({
+                    plano: 'free',
+                    subscription_status: 'canceled',
+                    subscription_id: null,
+                    subscription_end_date: null
+                  })
+                  .eq('email', customer.email)
+                  .select()
+
+                if (emailUpdateError) {
+                  logStep('Error canceling subscription by email', { error: emailUpdateError })
+                } else {
+                  logStep('Successfully canceled subscription by email', { result: emailUpdateResult })
+                }
+              }
+            } catch (customerError) {
+              logStep('Error retrieving customer for cancellation', { error: customerError.message })
+            }
           } else {
-            logStep('Successfully canceled subscription', { result: updateResult })
+            logStep('Successfully canceled subscription by stripe_customer_id', { result: updateResult })
           }
         } catch (error) {
           logStep('Error processing subscription deletion', { error: error.message })
