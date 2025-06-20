@@ -12,7 +12,20 @@ const supabaseClient = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 )
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+const logStep = (step: string, data?: any) => {
+  console.log(`[WEBHOOK] ${step}`, data ? JSON.stringify(data, null, 2) : '');
+}
+
 serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders })
+  }
+
   const signature = req.headers.get('stripe-signature')
   const body = await req.text()
 
@@ -23,148 +36,217 @@ serve(async (req) => {
       signature!,
       Deno.env.get('STRIPE_WEBHOOK_SECRET') ?? ''
     )
+    logStep('Webhook signature verified', { type: event.type, id: event.id })
   } catch (err) {
-    console.error('Webhook signature verification failed.', err.message)
+    logStep('Webhook signature verification failed', { error: err.message })
     return new Response(`Webhook Error: ${err.message}`, { status: 400 })
   }
-
-  console.log('Processing webhook event:', event.type)
 
   try {
     switch (event.type) {
       case 'checkout.session.completed':
         const session = event.data.object
-        console.log('Checkout session completed:', session.id)
+        logStep('Processing checkout.session.completed', { 
+          sessionId: session.id,
+          customerId: session.customer,
+          subscriptionId: session.subscription,
+          metadata: session.metadata 
+        })
         
-        // Primeiro, tentar usar o user_id dos metadados
+        let userId = null
+        let customerEmail = null
+
+        // Primeiro, tentar usar user_id dos metadados
         if (session.metadata?.user_id) {
-          console.log('Updating user plan using metadata user_id:', session.metadata.user_id)
-          
+          userId = session.metadata.user_id
+          logStep('Found user_id in metadata', { userId })
+        }
+
+        // Buscar email do customer
+        if (session.customer) {
+          try {
+            const customer = await stripe.customers.retrieve(session.customer as string)
+            if (customer && !customer.deleted) {
+              customerEmail = customer.email
+              logStep('Retrieved customer email', { email: customerEmail })
+            }
+          } catch (error) {
+            logStep('Error retrieving customer', { error: error.message })
+          }
+        }
+
+        // Atualizar usuário por ID primeiro, se disponível
+        if (userId) {
           const { data: updateResult, error: updateError } = await supabaseClient
             .from('users')
             .update({
               plano: 'pro',
               subscription_id: session.subscription,
               subscription_status: 'active',
-              stripe_customer_id: session.customer
+              stripe_customer_id: session.customer,
+              subscription_end_date: null // Será atualizado quando a subscription for criada
             })
-            .eq('id', session.metadata.user_id)
+            .eq('id', userId)
+            .select()
 
           if (updateError) {
-            console.error('Error updating user by ID:', updateError)
+            logStep('Error updating user by ID', { error: updateError })
           } else {
-            console.log('User updated successfully using metadata:', updateResult)
-            break;
+            logStep('Successfully updated user by ID', { result: updateResult })
+            break; // Sucesso, não precisa tentar por email
           }
         }
+
+        // Se não conseguiu por ID, tentar por email
+        if (customerEmail) {
+          const { data: updateResult, error: updateError } = await supabaseClient
+            .from('users')
+            .update({
+              plano: 'pro',
+              subscription_id: session.subscription,
+              subscription_status: 'active',
+              stripe_customer_id: session.customer,
+              subscription_end_date: null
+            })
+            .eq('email', customerEmail)
+            .select()
+
+          if (updateError) {
+            logStep('Error updating user by email', { error: updateError })
+          } else {
+            logStep('Successfully updated user by email', { result: updateResult })
+          }
+        }
+
+        break
+
+      case 'customer.subscription.created':
+      case 'customer.subscription.updated':
+        const subscription = event.data.object
+        logStep('Processing subscription event', { 
+          type: event.type,
+          subscriptionId: subscription.id,
+          status: subscription.status,
+          customerId: subscription.customer,
+          currentPeriodEnd: subscription.current_period_end
+        })
         
-        // Se não funcionou com metadata, tentar pelo email do customer
-        if (session.customer) {
-          const customer = await stripe.customers.retrieve(session.customer as string)
-          
+        try {
+          const customer = await stripe.customers.retrieve(subscription.customer as string)
           if (customer && !customer.deleted && customer.email) {
-            console.log('Updating user plan for email:', customer.email)
-            
+            const status = subscription.status === 'active' ? 'active' : subscription.status
+            const plano = status === 'active' ? 'pro' : 'free'
+            const subscriptionEndDate = new Date(subscription.current_period_end * 1000).toISOString()
+
+            logStep('Updating subscription status', {
+              email: customer.email,
+              plano,
+              status,
+              endDate: subscriptionEndDate
+            })
+
             const { data: updateResult, error: updateError } = await supabaseClient
               .from('users')
               .update({
-                plano: 'pro',
-                subscription_id: session.subscription,
-                subscription_status: 'active',
-                stripe_customer_id: session.customer
+                plano,
+                subscription_status: status,
+                subscription_end_date: subscriptionEndDate,
+                subscription_id: subscription.id
               })
-              .eq('email', customer.email)
+              .eq('stripe_customer_id', subscription.customer)
+              .select()
 
             if (updateError) {
-              console.error('Error updating user by email:', updateError)
+              logStep('Error updating subscription', { error: updateError })
             } else {
-              console.log('User updated successfully by email:', updateResult)
+              logStep('Successfully updated subscription', { result: updateResult })
             }
           }
-        }
-        break
-
-      case 'customer.subscription.updated':
-        const subscription = event.data.object
-        console.log('Subscription updated:', subscription.id, 'status:', subscription.status)
-        
-        const subscriptionCustomer = await stripe.customers.retrieve(subscription.customer as string)
-        
-        if (subscriptionCustomer && !subscriptionCustomer.deleted && subscriptionCustomer.email) {
-          const status = subscription.status === 'active' ? 'active' : 'inactive'
-          const plano = status === 'active' ? 'pro' : 'free'
-
-          console.log('Updating subscription for email:', subscriptionCustomer.email, 'new plan:', plano)
-
-          await supabaseClient
-            .from('users')
-            .update({
-              plano,
-              subscription_status: status,
-              subscription_end_date: new Date(subscription.current_period_end * 1000).toISOString()
-            })
-            .eq('email', subscriptionCustomer.email)
+        } catch (error) {
+          logStep('Error processing subscription update', { error: error.message })
         }
         break
 
       case 'customer.subscription.deleted':
         const deletedSubscription = event.data.object
-        console.log('Subscription deleted:', deletedSubscription.id)
+        logStep('Processing subscription deletion', { 
+          subscriptionId: deletedSubscription.id,
+          customerId: deletedSubscription.customer 
+        })
         
-        const deletedCustomer = await stripe.customers.retrieve(deletedSubscription.customer as string)
-        
-        if (deletedCustomer && !deletedCustomer.deleted && deletedCustomer.email) {
-          console.log('Canceling subscription for email:', deletedCustomer.email)
-          
-          await supabaseClient
+        try {
+          const { data: updateResult, error: updateError } = await supabaseClient
             .from('users')
             .update({
               plano: 'free',
               subscription_status: 'canceled',
-              subscription_id: null
+              subscription_id: null,
+              subscription_end_date: null
             })
-            .eq('email', deletedCustomer.email)
+            .eq('stripe_customer_id', deletedSubscription.customer)
+            .select()
+
+          if (updateError) {
+            logStep('Error canceling subscription', { error: updateError })
+          } else {
+            logStep('Successfully canceled subscription', { result: updateResult })
+          }
+        } catch (error) {
+          logStep('Error processing subscription deletion', { error: error.message })
         }
         break
 
       case 'payment_intent.succeeded':
         const paymentIntent = event.data.object
-        console.log('Payment succeeded:', paymentIntent.id)
+        logStep('Processing payment success', { 
+          paymentIntentId: paymentIntent.id,
+          customerId: paymentIntent.customer,
+          amount: paymentIntent.amount
+        })
         
-        const paymentCustomer = await stripe.customers.retrieve(paymentIntent.customer as string)
-        
-        if (paymentCustomer && !paymentCustomer.deleted && paymentCustomer.email) {
-          const { data: userData } = await supabaseClient
-            .from('users')
-            .select('id')
-            .eq('email', paymentCustomer.email)
-            .single()
+        if (paymentIntent.customer) {
+          try {
+            const customer = await stripe.customers.retrieve(paymentIntent.customer as string)
+            if (customer && !customer.deleted && customer.email) {
+              const { data: userData } = await supabaseClient
+                .from('users')
+                .select('id')
+                .eq('email', customer.email)
+                .single()
 
-          if (userData) {
-            await supabaseClient
-              .from('payment_history')
-              .insert({
-                user_id: userData.id,
-                stripe_payment_intent_id: paymentIntent.id,
-                amount: paymentIntent.amount / 100,
-                currency: paymentIntent.currency.toUpperCase(),
-                status: 'paid',
-                payment_method: paymentIntent.payment_method_types?.[0] || 'card'
-              })
+              if (userData) {
+                await supabaseClient
+                  .from('payment_history')
+                  .insert({
+                    user_id: userData.id,
+                    stripe_payment_intent_id: paymentIntent.id,
+                    amount: paymentIntent.amount / 100,
+                    currency: paymentIntent.currency.toUpperCase(),
+                    status: 'paid',
+                    payment_method: paymentIntent.payment_method_types?.[0] || 'card'
+                  })
+                logStep('Payment history recorded', { userId: userData.id })
+              }
+            }
+          } catch (error) {
+            logStep('Error recording payment history', { error: error.message })
           }
         }
         break
 
       default:
-        console.log('Unhandled event type:', event.type)
+        logStep('Unhandled event type', { type: event.type })
     }
 
     return new Response(JSON.stringify({ received: true }), {
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200
     })
   } catch (error) {
-    console.error('Error processing webhook:', error)
-    return new Response(`Webhook Error: ${error.message}`, { status: 500 })
+    logStep('Error processing webhook', { error: error.message })
+    return new Response(`Webhook Error: ${error.message}`, { 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 500 
+    })
   }
 })

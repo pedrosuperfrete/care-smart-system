@@ -44,17 +44,34 @@ export function usePlanos() {
 
   const createCheckoutSession = useMutation({
     mutationFn: async (priceId: string) => {
+      console.log('Creating checkout session for price:', priceId);
+      
       const { data, error } = await supabase.functions.invoke('create-checkout-session', {
         body: { priceId }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating checkout session:', error);
+        throw error;
+      }
+      
+      console.log('Checkout session created:', data);
       return data;
     },
     onSuccess: (data) => {
+      console.log('Redirecting to:', data.url);
+      // Abrir em nova aba
       window.open(data.url, '_blank');
+      
+      // Invalidar queries para forçar atualização
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['plano-info'] });
+        queryClient.invalidateQueries({ queryKey: ['subscription-status'] });
+        queryClient.invalidateQueries({ queryKey: ['contador-pacientes'] });
+      }, 2000);
     },
     onError: (error: any) => {
+      console.error('Checkout error:', error);
       toast.error('Erro ao criar sessão de pagamento: ' + error.message);
     },
   });
@@ -74,17 +91,25 @@ export function usePlanos() {
     },
   });
 
+  const refreshPlanStatus = () => {
+    queryClient.invalidateQueries({ queryKey: ['plano-info'] });
+    queryClient.invalidateQueries({ queryKey: ['subscription-status'] });
+    queryClient.invalidateQueries({ queryKey: ['contador-pacientes'] });
+    queryClient.invalidateQueries({ queryKey: ['plano-atual'] });
+  };
+
   return {
     planoInfo,
     paymentHistory,
     createCheckoutSession,
     createCustomerPortal,
+    refreshPlanStatus,
     isLoading: !planoInfo,
   };
 }
 
 export function useLimitePacientes() {
-  const { user, userProfile } = useAuth();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const { data: contadorPacientes, refetch: refetchContador } = useQuery({
@@ -119,23 +144,26 @@ export function useLimitePacientes() {
 
       const { data, error } = await supabase
         .from('users')
-        .select('plano')
+        .select('plano, subscription_status')
         .eq('id', user.id)
         .single();
 
       if (error) throw error;
-      return data?.plano || 'free';
+      
+      // Considerar ativo apenas se plano for 'pro' E status for 'active'
+      return (data?.plano === 'pro' && data?.subscription_status === 'active') ? 'pro' : 'free';
     },
     enabled: !!user,
+    refetchInterval: 5000, // Refetch a cada 5 segundos
   });
 
-  // Função para atualizar o cache após mudanças de plano
   const refreshPlanStatus = () => {
     refetchPlano();
     refetchContador();
     queryClient.invalidateQueries({ queryKey: ['plano-info'] });
     queryClient.invalidateQueries({ queryKey: ['plano-atual'] });
     queryClient.invalidateQueries({ queryKey: ['contador-pacientes'] });
+    queryClient.invalidateQueries({ queryKey: ['subscription-status'] });
   };
 
   const limitePacientes = planoAtual === 'free' ? 2 : Infinity;

@@ -1,3 +1,4 @@
+
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -11,7 +12,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { AppSidebar } from "./AppSidebar"
-import { LimiteAlert } from './LimiteAlert';
+import { SubscriptionBanner } from './SubscriptionBanner';
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -34,7 +35,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </Breadcrumb>
             </header>
             <main className="flex-1 p-4">
-              <LimiteAlert />
+              <SubscriptionBanner />
               {children}
             </main>
           </div>
