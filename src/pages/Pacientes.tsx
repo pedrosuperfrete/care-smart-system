@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { PacienteForm } from '@/components/forms/PacienteForm';
+import { PacienteFormWithLimit } from '@/components/forms/PacienteFormWithLimit';
 import { PacienteDetalhes } from '@/components/PacienteDetalhes';
 import { AgendamentoForm } from '@/components/forms/AgendamentoForm';
 import { usePacientes, usePacientesStats } from '@/hooks/usePacientes';
@@ -97,7 +96,7 @@ export default function Pacientes() {
                 Cadastre um novo paciente na clínica
               </DialogDescription>
             </DialogHeader>
-            <PacienteForm onSuccess={() => setIsNewPacienteOpen(false)} />
+            <PacienteFormWithLimit onSuccess={() => setIsNewPacienteOpen(false)} />
           </DialogContent>
         </Dialog>
       </div>
@@ -310,7 +309,7 @@ export default function Pacientes() {
             </DialogDescription>
           </DialogHeader>
           {selectedPaciente && (
-            <PacienteForm 
+            <PacienteFormWithLimit 
               paciente={selectedPaciente}
               onSuccess={() => {
                 setIsEditPacienteOpen(false);
