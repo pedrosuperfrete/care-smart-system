@@ -25,8 +25,9 @@ export function PagamentosConfig() {
     refetch();
   };
 
+  // Se o plano for 'pro', considerar sempre como ativo
   const isProPlan = subscriptionData?.plano === 'pro';
-  const isActive = subscriptionData?.subscription_status === 'active';
+  const isActive = isProPlan; // Se é pro, está ativo
 
   if (isLoading) {
     return (
@@ -46,14 +47,14 @@ export function PagamentosConfig() {
   return (
     <div className="space-y-6">
       {/* Status da Assinatura */}
-      <Alert className={isProPlan && isActive ? "bg-green-50 border-green-200" : "bg-blue-50 border-blue-200"}>
-        {isProPlan && isActive ? (
+      <Alert className={isProPlan ? "bg-green-50 border-green-200" : "bg-blue-50 border-blue-200"}>
+        {isProPlan ? (
           <CheckCircle className="h-4 w-4 text-green-600" />
         ) : (
           <AlertTriangle className="h-4 w-4 text-blue-600" />
         )}
-        <AlertDescription className={isProPlan && isActive ? "text-green-800" : "text-blue-800"}>
-          {isProPlan && isActive 
+        <AlertDescription className={isProPlan ? "text-green-800" : "text-blue-800"}>
+          {isProPlan 
             ? "Seu plano profissional está ativo e funcionando perfeitamente!"
             : "Você está no plano gratuito. Faça upgrade para desbloquear recursos ilimitados."
           }
@@ -83,15 +84,15 @@ export function PagamentosConfig() {
             <div>
               <h3 className="text-lg font-semibold flex items-center">
                 {isProPlan ? 'Plano Profissional' : 'Plano Gratuito'}
-                <Badge variant={isProPlan && isActive ? 'default' : 'secondary'} className="ml-2">
-                  {isProPlan && isActive ? 'PRO' : 'FREE'}
+                <Badge variant={isProPlan ? 'default' : 'secondary'} className="ml-2">
+                  {isProPlan ? 'PRO' : 'FREE'}
                 </Badge>
                 {subscriptionData?.subscription_status && (
                   <Badge 
                     variant={isActive ? 'default' : 'destructive'} 
                     className="ml-2"
                   >
-                    {subscriptionData.subscription_status.toUpperCase()}
+                    {isProPlan ? 'ATIVO' : subscriptionData.subscription_status.toUpperCase()}
                   </Badge>
                 )}
               </h3>
@@ -122,9 +123,9 @@ export function PagamentosConfig() {
             )}
           </div>
 
-          {isProPlan && isActive && (
+          {isProPlan && (
             <div className="space-y-2">
-              {subscriptionData.subscription_end_date && (
+              {subscriptionData?.subscription_end_date && (
                 <p className="text-sm text-gray-600">
                   Próxima renovação: {new Date(subscriptionData.subscription_end_date).toLocaleDateString('pt-BR')}
                 </p>

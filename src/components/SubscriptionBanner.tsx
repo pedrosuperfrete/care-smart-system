@@ -9,7 +9,8 @@ export function SubscriptionBanner() {
   const { atingiuLimite, planoAtual, contadorPacientes } = useLimitePacientes();
   const { createCheckoutSession } = usePlanos();
 
-  if (!atingiuLimite || planoAtual !== 'free') {
+  // Só mostra o banner se não for plano PRO e atingiu o limite
+  if (!atingiuLimite || planoAtual === 'pro') {
     return null;
   }
 

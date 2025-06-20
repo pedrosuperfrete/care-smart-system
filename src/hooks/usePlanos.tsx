@@ -150,8 +150,9 @@ export function useLimitePacientes() {
 
       if (error) throw error;
       
-      // Considerar ativo apenas se plano for 'pro' E status for 'active'
-      return (data?.plano === 'pro' && data?.subscription_status === 'active') ? 'pro' : 'free';
+      // Se o plano for 'pro', considerar sempre como ativo
+      // Independente do subscription_status
+      return data?.plano === 'pro' ? 'pro' : 'free';
     },
     enabled: !!user,
     refetchInterval: 5000, // Refetch a cada 5 segundos

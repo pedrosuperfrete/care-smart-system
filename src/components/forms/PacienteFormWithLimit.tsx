@@ -30,16 +30,8 @@ export function PacienteFormWithLimit({ isOpen, onClose, onSuccess, editingPacie
     setShowLimitDialog(false);
   };
 
-  // Interceptar tentativa de abrir o modal para criar paciente quando limite atingido
-  const handleOpen = () => {
-    if (!editingPaciente && !podeAdicionarPaciente) {
-      setShowLimitDialog(true);
-      return;
-    }
-  };
-
-  // Chamar verificação quando modal for aberto
-  if (isOpen && !editingPaciente && !podeAdicionarPaciente) {
+  // Se não for edição e não pode adicionar paciente (plano free com limite atingido)
+  if (isOpen && !editingPaciente && !podeAdicionarPaciente && planoAtual === 'free') {
     return (
       <Dialog open={true} onOpenChange={() => {
         setShowLimitDialog(false);

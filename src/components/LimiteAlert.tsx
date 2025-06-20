@@ -9,7 +9,8 @@ export function LimiteAlert() {
   const { atingiuLimite, planoAtual } = useLimitePacientes();
   const { createCheckoutSession } = usePlanos();
 
-  if (!atingiuLimite || planoAtual !== 'free') {
+  // Só mostra o alerta se for plano free e atingiu o limite
+  if (!atingiuLimite || planoAtual === 'pro') {
     return null;
   }
 
