@@ -462,42 +462,6 @@ export type Database = {
           },
         ]
       }
-      payment_history: {
-        Row: {
-          amount: number | null
-          created_at: string | null
-          currency: string | null
-          id: string
-          payment_method: string | null
-          status: string | null
-          stripe_payment_intent_id: string | null
-          updated_at: string | null
-          user_id: string | null
-        }
-        Insert: {
-          amount?: number | null
-          created_at?: string | null
-          currency?: string | null
-          id?: string
-          payment_method?: string | null
-          status?: string | null
-          stripe_payment_intent_id?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          amount?: number | null
-          created_at?: string | null
-          currency?: string | null
-          id?: string
-          payment_method?: string | null
-          status?: string | null
-          stripe_payment_intent_id?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
       profissionais: {
         Row: {
           assinatura_digital: string | null
@@ -657,12 +621,7 @@ export type Database = {
           criado_em: string
           email: string
           id: string
-          plano: string | null
           senha_hash: string
-          stripe_customer_id: string | null
-          subscription_end_date: string | null
-          subscription_id: string | null
-          subscription_status: string | null
           tipo_usuario: Database["public"]["Enums"]["tipo_usuario"]
         }
         Insert: {
@@ -670,12 +629,7 @@ export type Database = {
           criado_em?: string
           email: string
           id?: string
-          plano?: string | null
           senha_hash: string
-          stripe_customer_id?: string | null
-          subscription_end_date?: string | null
-          subscription_id?: string | null
-          subscription_status?: string | null
           tipo_usuario?: Database["public"]["Enums"]["tipo_usuario"]
         }
         Update: {
@@ -683,12 +637,7 @@ export type Database = {
           criado_em?: string
           email?: string
           id?: string
-          plano?: string | null
           senha_hash?: string
-          stripe_customer_id?: string | null
-          subscription_end_date?: string | null
-          subscription_id?: string | null
-          subscription_status?: string | null
           tipo_usuario?: Database["public"]["Enums"]["tipo_usuario"]
         }
         Relationships: []

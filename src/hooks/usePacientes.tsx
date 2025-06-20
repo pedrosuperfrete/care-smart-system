@@ -1,28 +1,22 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
-import { useLimitePacientes } from './usePlanos';
 
 type Paciente = Tables<'pacientes'>;
 type InsertPaciente = Omit<Paciente, 'id' | 'criado_em' | 'atualizado_em'>;
 type UpdatePaciente = Partial<InsertPaciente>;
 
-export function usePacientes(search?: string) {
+export function usePacientes() {
   return useQuery({
-    queryKey: ['pacientes', search],
+    queryKey: ['pacientes'],
     queryFn: async () => {
-      let query = supabase
+      const { data, error } = await supabase
         .from('pacientes')
         .select('*')
         .eq('ativo', true)
         .order('criado_em', { ascending: false });
-
-      if (search && search.trim()) {
-        query = query.or(`nome.ilike.%${search}%,cpf.ilike.%${search}%,email.ilike.%${search}%`);
-      }
-      
-      const { data, error } = await query;
       
       if (error) throw error;
       return data || [];
@@ -49,15 +43,9 @@ export function usePaciente(id: string) {
 
 export function useCreatePaciente() {
   const queryClient = useQueryClient();
-  const { podeAdicionarPaciente } = useLimitePacientes();
   
   return useMutation({
     mutationFn: async (paciente: InsertPaciente) => {
-      // Verificar limite antes de criar
-      if (!podeAdicionarPaciente) {
-        throw new Error('Limite de pacientes atingido. Faça upgrade do seu plano.');
-      }
-
       const { data, error } = await supabase
         .from('pacientes')
         .insert(paciente)
@@ -69,7 +57,6 @@ export function useCreatePaciente() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pacientes'] });
-      queryClient.invalidateQueries({ queryKey: ['contador-pacientes'] });
       toast.success('Paciente cadastrado com sucesso!');
     },
     onError: (error: any) => {
