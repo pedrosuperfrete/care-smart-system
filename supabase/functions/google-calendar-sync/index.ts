@@ -46,18 +46,25 @@ serve(async (req) => {
     
     let requestBody
     try {
-      const bodyText = await req.text()
-      console.log('Raw body text:', bodyText)
-      
-      if (!bodyText || bodyText.trim() === '') {
-        throw new Error('Request body is empty')
+      // Tentar primeiro como JSON diretamente
+      try {
+        requestBody = await req.json()
+        console.log('Parsed request body (json):', requestBody)
+      } catch (jsonError) {
+        // Se falhar, tentar como texto
+        const bodyText = await req.text()
+        console.log('Raw body text:', bodyText)
+        
+        if (!bodyText || bodyText.trim() === '') {
+          throw new Error('Request body is empty')
+        }
+        
+        requestBody = JSON.parse(bodyText)
+        console.log('Parsed request body (text):', requestBody)
       }
-      
-      requestBody = JSON.parse(bodyText)
-      console.log('Parsed request body:', requestBody)
     } catch (parseError) {
-      console.error('JSON parse error:', parseError)
-      throw new Error(`Invalid JSON body: ${parseError.message}`)
+      console.error('Body parse error:', parseError)
+      throw new Error(`Invalid request body: ${parseError.message}`)
     }
 
     const { action, agendamento, accessToken } = requestBody
