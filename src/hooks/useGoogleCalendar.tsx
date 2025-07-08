@@ -79,9 +79,16 @@ export function useGoogleCalendar() {
       // Obter token de autenticação do Supabase
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.access_token) {
+        console.error('Supabase session not found')
         toast.error('Sessão não encontrada')
         return null
       }
+
+      console.log('Syncing to Google Calendar:', {
+        action: 'sync_to_google',
+        agendamentoId: agendamento.id,
+        hasAccessToken: !!accessToken
+      })
 
       const { data, error } = await supabase.functions.invoke('google-calendar-sync', {
         headers: {
@@ -95,11 +102,20 @@ export function useGoogleCalendar() {
         }
       })
 
-      if (error) throw error
+      if (error) {
+        console.error('Supabase function error:', error)
+        throw error
+      }
 
-      if (data.success) {
+      console.log('Google Calendar sync response:', data)
+
+      if (data?.success) {
         toast.success('Evento sincronizado com Google Calendar!')
         return data.googleEventId
+      } else {
+        console.error('Sync failed:', data)
+        toast.error('Falha na sincronização com Google Calendar')
+        return null
       }
     } catch (error) {
       console.error('Error syncing to Google:', error)
