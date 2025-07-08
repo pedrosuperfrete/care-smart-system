@@ -706,6 +706,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      debug_auth_status: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          current_user_id: string
+          is_admin_result: boolean
+          is_recepcionista_result: boolean
+          profissional_id_result: string
+          user_exists: boolean
+          user_tipo: string
+        }[]
+      }
       get_current_profissional_id: {
         Args: Record<PropertyKey, never>
         Returns: string
