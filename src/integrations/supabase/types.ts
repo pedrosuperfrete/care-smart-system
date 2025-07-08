@@ -22,6 +22,7 @@ export type Database = {
           data_fim: string
           data_inicio: string
           desmarcada: boolean
+          google_event_id: string | null
           id: string
           observacoes: string | null
           paciente_id: string
@@ -38,6 +39,7 @@ export type Database = {
           data_fim: string
           data_inicio: string
           desmarcada?: boolean
+          google_event_id?: string | null
           id?: string
           observacoes?: string | null
           paciente_id: string
@@ -54,6 +56,7 @@ export type Database = {
           data_fim?: string
           data_inicio?: string
           desmarcada?: boolean
+          google_event_id?: string | null
           id?: string
           observacoes?: string | null
           paciente_id?: string

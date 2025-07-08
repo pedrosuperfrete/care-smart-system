@@ -15,6 +15,9 @@ import { toast } from 'sonner';
 import { VisaoSemanal } from '@/components/agenda/VisaoSemanal';
 import { VisaoMensal } from '@/components/agenda/VisaoMensal';
 import { EditarAgendamentoDialog } from '@/components/agenda/EditarAgendamentoDialog';
+import { GoogleCalendarCard } from '@/components/agenda/GoogleCalendarCard';
+import { useGoogleCalendar } from '@/hooks/useGoogleCalendar';
+import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 
 type Agendamento = Tables<'agendamentos'>;
@@ -27,6 +30,7 @@ export default function Agenda() {
   const confirmarAgendamento = useConfirmarAgendamento();
   const desmarcarAgendamento = useDesmarcarAgendamento();
   const { profissional: currentProfissional, isAdmin } = useAuth();
+  const { syncToGoogle, isConnected } = useGoogleCalendar();
 
   const [viewMode, setViewMode] = useState<'dia' | 'semana' | 'mes'>('dia');
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -49,7 +53,7 @@ export default function Agenda() {
         return;
       }
 
-      await createAgendamento.mutateAsync({
+      const agendamentoData = {
         paciente_id: newConsulta.paciente_id,
         profissional_id: newConsulta.profissional_id,
         data_inicio: newConsulta.data_inicio,
@@ -57,11 +61,25 @@ export default function Agenda() {
         tipo_servico: newConsulta.tipo_servico,
         valor: newConsulta.valor ? parseFloat(newConsulta.valor) : null,
         observacoes: newConsulta.observacoes || null,
-        status: 'pendente',
+        status: 'pendente' as const,
         confirmado_pelo_paciente: false,
         pagamento_id: null,
         desmarcada: false,
-      });
+      };
+
+      const novoAgendamento = await createAgendamento.mutateAsync(agendamentoData);
+
+      // Sincronizar com Google Calendar se conectado
+      if (isConnected && novoAgendamento) {
+        const googleEventId = await syncToGoogle(novoAgendamento);
+        if (googleEventId) {
+          // Atualizar o agendamento com o ID do Google Event
+          await supabase
+            .from('agendamentos')
+            .update({ google_event_id: googleEventId })
+            .eq('id', novoAgendamento.id);
+        }
+      }
 
       setIsNewConsultaOpen(false);
       setNewConsulta({
@@ -335,6 +353,9 @@ export default function Agenda() {
           </Dialog>
         </div>
       </div>
+
+      {/* Google Calendar Card */}
+      <GoogleCalendarCard />
 
       {/* Navegação de Data */}
       <Card>

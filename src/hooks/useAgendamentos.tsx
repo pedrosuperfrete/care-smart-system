@@ -4,7 +4,9 @@ import { Tables } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 
 type Agendamento = Tables<'agendamentos'>;
-type InsertAgendamento = Omit<Agendamento, 'id' | 'criado_em' | 'atualizado_em'>;
+type InsertAgendamento = Omit<Agendamento, 'id' | 'criado_em' | 'atualizado_em' | 'google_event_id'> & {
+  google_event_id?: string | null;
+};
 type UpdateAgendamento = Partial<InsertAgendamento>;
 
 export function useAgendamentos() {
@@ -74,7 +76,7 @@ export function useCreateAgendamento() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (agendamento: InsertAgendamento) => {
+    mutationFn: async (agendamento: InsertAgendamento & { syncToGoogle?: boolean }) => {
       // Verificar conflito de horário
       const { data: conflito, error: conflitoError } = await supabase
         .from('agendamentos')
