@@ -87,7 +87,8 @@ export function useGoogleCalendar() {
       console.log('Syncing to Google Calendar:', {
         action: 'sync_to_google',
         agendamentoId: agendamento.id,
-        hasAccessToken: !!accessToken
+        hasAccessToken: !!accessToken,
+        hasGoogleEventId: !!agendamento.google_event_id
       })
 
       const requestBody = {
@@ -96,7 +97,10 @@ export function useGoogleCalendar() {
         accessToken
       }
 
-      console.log('Sending request to Google Calendar sync:', requestBody)
+      console.log('Sending request to Google Calendar sync:', {
+        ...requestBody,
+        accessToken: accessToken ? '***HIDDEN***' : null
+      })
 
       const { data, error } = await supabase.functions.invoke('google-calendar-sync', {
         headers: {
@@ -173,15 +177,27 @@ export function useGoogleCalendar() {
         return
       }
 
+      console.log('Importing from Google Calendar:', {
+        action: 'sync_from_google',
+        hasAccessToken: !!accessToken
+      })
+
+      const requestBody = {
+        action: 'sync_from_google',
+        accessToken
+      }
+
+      console.log('Sending import request:', {
+        ...requestBody,
+        accessToken: accessToken ? '***HIDDEN***' : null
+      })
+
       const { data, error } = await supabase.functions.invoke('google-calendar-sync', {
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json'
         },
-        body: {
-          action: 'sync_from_google',
-          accessToken
-        }
+        body: requestBody
       })
 
       if (error) throw error
