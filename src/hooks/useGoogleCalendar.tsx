@@ -90,16 +90,20 @@ export function useGoogleCalendar() {
         hasAccessToken: !!accessToken
       })
 
+      const requestBody = {
+        action: 'sync_to_google',
+        agendamento,
+        accessToken
+      }
+
+      console.log('Sending request to Google Calendar sync:', requestBody)
+
       const { data, error } = await supabase.functions.invoke('google-calendar-sync', {
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json'
         },
-        body: {
-          action: 'sync_to_google',
-          agendamento,
-          accessToken
-        }
+        body: requestBody
       })
 
       if (error) {

@@ -40,8 +40,25 @@ serve(async (req) => {
 
     console.log('User authenticated:', user.id)
 
-    const requestBody = await req.json()
-    console.log('Request body:', requestBody)
+    // Verificar se há conteúdo no body
+    const contentType = req.headers.get('content-type')
+    console.log('Content-Type:', contentType)
+    
+    let requestBody
+    try {
+      const bodyText = await req.text()
+      console.log('Raw body text:', bodyText)
+      
+      if (!bodyText || bodyText.trim() === '') {
+        throw new Error('Request body is empty')
+      }
+      
+      requestBody = JSON.parse(bodyText)
+      console.log('Parsed request body:', requestBody)
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError)
+      throw new Error(`Invalid JSON body: ${parseError.message}`)
+    }
 
     const { action, agendamento, accessToken } = requestBody
 
