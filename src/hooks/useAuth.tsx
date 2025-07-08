@@ -53,8 +53,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .from('profissionais')
             .select('*')
             .eq('user_id', userId)
-            .single();
+            .maybeSingle();
+          
           setProfissional(prof);
+          
+          // Se não encontrou profissional, pode estar sendo criado pelo trigger
+          if (!prof) {
+            console.log('Profissional não encontrado, tentando novamente em breve...');
+            setTimeout(() => fetchUserProfile(userId), 1000);
+          }
         }
       }
     } catch (error) {
@@ -119,29 +126,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (profileError) {
         console.error('Erro ao criar perfil:', profileError);
+        return { error: 'Erro ao criar perfil do usuário' };
       }
 
-      // Se for profissional, criar registro inicial
-      if (tipoUsuario === 'profissional') {
-        const { data: clinica } = await supabase
-          .from('clinicas')
-          .select('id')
-          .limit(1)
-          .single();
-
-        if (clinica) {
-          await supabase
-            .from('profissionais')
-            .insert({
-              user_id: data.user.id,
-              clinica_id: clinica.id,
-              nome: '',
-              especialidade: '',
-              crm_cro: '',
-              onboarding_completo: false
-            });
-        }
-      }
+      // Aguardar um momento para o trigger processar
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
 
     return {};
