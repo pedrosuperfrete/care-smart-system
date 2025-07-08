@@ -76,7 +76,18 @@ export function useGoogleCalendar() {
     }
 
     try {
+      // Obter token de autenticação do Supabase
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) {
+        toast.error('Sessão não encontrada')
+        return null
+      }
+
       const { data, error } = await supabase.functions.invoke('google-calendar-sync', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        },
         body: {
           action: 'sync_to_google',
           agendamento,
@@ -105,7 +116,18 @@ export function useGoogleCalendar() {
 
     setIsLoading(true)
     try {
+      // Obter token de autenticação do Supabase
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) {
+        toast.error('Sessão não encontrada')
+        return
+      }
+
       const { data, error } = await supabase.functions.invoke('google-calendar-sync', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        },
         body: {
           action: 'sync_from_google',
           accessToken
@@ -129,7 +151,18 @@ export function useGoogleCalendar() {
     if (!accessToken || !googleEventId) return
 
     try {
+      // Obter token de autenticação do Supabase
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) {
+        toast.error('Sessão não encontrada')
+        return
+      }
+
       const { data, error } = await supabase.functions.invoke('google-calendar-sync', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        },
         body: {
           action: 'delete_from_google',
           agendamento: { google_event_id: googleEventId },

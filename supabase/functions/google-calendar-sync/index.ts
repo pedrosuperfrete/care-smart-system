@@ -34,7 +34,7 @@ serve(async (req) => {
 
     switch (action) {
       case 'sync_to_google':
-        return await syncToGoogle(agendamento, accessToken)
+        return await syncToGoogle(agendamento, accessToken, supabaseClient)
       case 'sync_from_google':
         return await syncFromGoogle(user.id, accessToken, supabaseClient)
       case 'delete_from_google':
@@ -55,17 +55,17 @@ serve(async (req) => {
   }
 })
 
-async function syncToGoogle(agendamento: any, accessToken: string) {
+async function syncToGoogle(agendamento: any, accessToken: string, supabaseClient: any) {
   const calendarId = 'primary'
   
-  // Buscar dados do paciente e profissional
-  const { data: paciente } = await supabase
+  // Buscar dados do paciente e profissional usando o cliente configurado
+  const { data: paciente } = await supabaseClient
     .from('pacientes')
     .select('nome, email')
     .eq('id', agendamento.paciente_id)
     .single()
 
-  const { data: profissional } = await supabase
+  const { data: profissional } = await supabaseClient
     .from('profissionais')
     .select('nome')
     .eq('id', agendamento.profissional_id)
