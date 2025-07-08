@@ -47,24 +47,33 @@ export function usePacientesLimit() {
     queryFn: async () => {
       if (!user) return { count: 0, limit: 0, isAtLimit: false };
 
-      const { count, error } = await supabase
-        .from('pacientes')
-        .select('*', { count: 'exact', head: true })
-        .eq('ativo', true);
+      try {
+        const { count, error } = await supabase
+          .from('pacientes')
+          .select('*', { count: 'exact', head: true })
+          .eq('ativo', true);
 
-      if (error) throw error;
+        if (error) {
+          console.error('Erro ao contar pacientes:', error);
+          // Em caso de erro de RLS, assumir 0 pacientes
+          return { count: 0, limit: 2, isAtLimit: false, isPro: false };
+        }
 
-      const isPro = planData?.plano === 'pro';
-      const limit = isPro ? Infinity : 2;
-      const pacientesCount = count || 0;
-      const isAtLimit = !isPro && pacientesCount >= limit;
+        const isPro = planData?.plano === 'pro';
+        const limit = isPro ? Infinity : 2;
+        const pacientesCount = count || 0;
+        const isAtLimit = !isPro && pacientesCount >= limit;
 
-      return {
-        count: pacientesCount,
-        limit: isPro ? 'Ilimitado' : limit,
-        isAtLimit,
-        isPro
-      };
+        return {
+          count: pacientesCount,
+          limit: isPro ? 'Ilimitado' : limit,
+          isAtLimit,
+          isPro
+        };
+      } catch (error) {
+        console.error('Erro geral ao verificar limite de pacientes:', error);
+        return { count: 0, limit: 2, isAtLimit: false, isPro: false };
+      }
     },
     enabled: !!user && !!planData,
   });

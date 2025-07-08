@@ -718,6 +718,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      user_has_complete_profile: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
     }
     Enums: {
       forma_pagamento: "pix" | "cartao" | "dinheiro" | "link"
