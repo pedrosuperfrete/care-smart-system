@@ -204,6 +204,14 @@ export function useGoogleCalendar() {
 
       if (data.success) {
         toast.success(`${data.syncedCount} eventos importados do Google Calendar!`)
+        
+        // Invalidar queries para mostrar os novos agendamentos
+        const queryClient = (await import('@tanstack/react-query')).useQueryClient()
+        if (queryClient) {
+          queryClient.invalidateQueries({ queryKey: ['agendamentos'] })
+          queryClient.invalidateQueries({ queryKey: ['agendamentos-hoje'] })
+          queryClient.invalidateQueries({ queryKey: ['proximos-agendamentos'] })
+        }
       }
     } catch (error) {
       console.error('Error syncing from Google:', error)

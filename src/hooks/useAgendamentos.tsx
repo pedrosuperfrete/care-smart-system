@@ -183,6 +183,16 @@ export function useDesmarcarAgendamento() {
   
   return useMutation({
     mutationFn: async (id: string) => {
+      // Primeiro buscar o agendamento para obter google_event_id
+      const { data: agendamento, error: fetchError } = await supabase
+        .from('agendamentos')
+        .select('google_event_id')
+        .eq('id', id)
+        .single();
+      
+      if (fetchError) throw fetchError;
+      
+      // Atualizar para desmarcado
       const { data, error } = await supabase
         .from('agendamentos')
         .update({ desmarcada: true })
@@ -195,7 +205,9 @@ export function useDesmarcarAgendamento() {
         .single();
       
       if (error) throw error;
-      return data;
+      
+      // Retornar dados incluindo google_event_id para sincronização
+      return { ...data, google_event_id: agendamento.google_event_id };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agendamentos'] });
