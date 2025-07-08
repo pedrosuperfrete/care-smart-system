@@ -119,7 +119,37 @@ export function useGoogleCalendar() {
       }
     } catch (error) {
       console.error('Error syncing to Google:', error)
-      toast.error('Erro ao sincronizar com Google Calendar')
+      
+      // Se for um erro da edge function, tentar extrair a mensagem específica
+      if (error instanceof Error && error.message.includes('Edge Function returned a non-2xx status code')) {
+        // Tentar fazer uma nova chamada para pegar o erro detalhado
+        try {
+          const { data: { session } } = await supabase.auth.getSession()
+          const response = await fetch(`https://zxgkspeehamsrfhynbzr.supabase.co/functions/v1/google-calendar-sync`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${session?.access_token}`,
+              'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp4Z2tzcGVlaGFtc3JmaHluYnpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAxMjI5MTIsImV4cCI6MjA2NTY5ODkxMn0.4be3mie_aWh91sHAxLQz4WW1Xl00F3egMOY1BxrFg9c',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              action: 'sync_to_google',
+              agendamento,
+              accessToken
+            })
+          })
+          
+          const errorData = await response.json()
+          console.error('Detailed error from edge function:', errorData)
+          toast.error(`Erro detalhado: ${errorData.error || 'Erro desconhecido'}`)
+        } catch (fetchError) {
+          console.error('Failed to get detailed error:', fetchError)
+          toast.error('Erro ao sincronizar com Google Calendar')
+        }
+      } else {
+        toast.error('Erro ao sincronizar com Google Calendar')
+      }
+      
       return null
     }
   }

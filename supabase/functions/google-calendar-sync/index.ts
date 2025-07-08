@@ -7,6 +7,12 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  console.log('Google Calendar Sync function called:', {
+    method: req.method,
+    url: req.url,
+    headers: Object.fromEntries(req.headers.entries())
+  })
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -20,6 +26,7 @@ serve(async (req) => {
 
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
+      console.error('Missing authorization header')
       throw new Error('No authorization header')
     }
 
@@ -27,26 +34,49 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token)
     
     if (authError || !user) {
-      throw new Error('Unauthorized')
+      console.error('Authentication failed:', authError)
+      throw new Error(`Unauthorized: ${authError?.message || 'Invalid user'}`)
     }
 
-    const { action, agendamento, accessToken } = await req.json()
+    console.log('User authenticated:', user.id)
+
+    const requestBody = await req.json()
+    console.log('Request body:', requestBody)
+
+    const { action, agendamento, accessToken } = requestBody
+
+    if (!action) {
+      throw new Error('Missing action parameter')
+    }
+
+    if (!accessToken) {
+      throw new Error('Missing Google access token')
+    }
 
     switch (action) {
       case 'sync_to_google':
+        if (!agendamento) {
+          throw new Error('Missing agendamento data')
+        }
         return await syncToGoogle(agendamento, accessToken, supabaseClient)
       case 'sync_from_google':
         return await syncFromGoogle(user.id, accessToken, supabaseClient)
       case 'delete_from_google':
         return await deleteFromGoogle(agendamento.google_event_id, accessToken)
       default:
-        throw new Error('Invalid action')
+        throw new Error(`Invalid action: ${action}`)
     }
 
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Edge function error:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: errorMessage,
+        timestamp: new Date().toISOString(),
+        success: false
+      }),
       { 
         status: 400, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
