@@ -162,6 +162,11 @@ async function syncToGoogle(agendamento: any, accessToken: string, supabaseClien
 
   const googleEvent = await response.json()
   
+  console.log('Google Calendar sync successful:', {
+    googleEventId: googleEvent.id,
+    htmlLink: googleEvent.htmlLink
+  })
+  
   return new Response(
     JSON.stringify({ 
       success: true, 
@@ -169,6 +174,7 @@ async function syncToGoogle(agendamento: any, accessToken: string, supabaseClien
       htmlLink: googleEvent.htmlLink 
     }),
     { 
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
     }
   )
@@ -241,6 +247,7 @@ async function syncFromGoogle(userId: string, accessToken: string, supabaseClien
       events: syncedEvents 
     }),
     { 
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
     }
   )
@@ -250,7 +257,10 @@ async function deleteFromGoogle(googleEventId: string, accessToken: string) {
   if (!googleEventId) {
     return new Response(
       JSON.stringify({ success: true, message: 'No Google event to delete' }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
     )
   }
 
@@ -271,6 +281,9 @@ async function deleteFromGoogle(googleEventId: string, accessToken: string) {
 
   return new Response(
     JSON.stringify({ success: true }),
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    { 
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    }
   )
 }
