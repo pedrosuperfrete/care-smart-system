@@ -30,7 +30,7 @@ export default function Agenda() {
   const confirmarAgendamento = useConfirmarAgendamento();
   const desmarcarAgendamento = useDesmarcarAgendamento();
   const { profissional: currentProfissional, isAdmin } = useAuth();
-  const { syncToGoogle, isConnected } = useGoogleCalendar();
+  const { syncToGoogle, isConnected, deleteFromGoogle } = useGoogleCalendar();
 
   const [viewMode, setViewMode] = useState<'dia' | 'semana' | 'mes'>('dia');
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -101,7 +101,12 @@ export default function Agenda() {
   };
 
   const handleDesmarcar = async (id: string) => {
-    await desmarcarAgendamento.mutateAsync(id);
+    const agendamento = await desmarcarAgendamento.mutateAsync(id);
+    
+    // Sincronizar cancelamento com Google Calendar se conectado e evento existir
+    if (isConnected && agendamento?.google_event_id) {
+      await deleteFromGoogle(agendamento.google_event_id);
+    }
   };
 
   const handleEditarAgendamento = (agendamento: Agendamento) => {

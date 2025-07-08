@@ -177,7 +177,9 @@ async function syncToGoogle(agendamento: any, accessToken: string, supabaseClien
 async function syncFromGoogle(userId: string, accessToken: string, supabaseClient: any) {
   const calendarId = 'primary'
   const timeMin = new Date().toISOString()
-  const timeMax = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 dias
+  const timeMax = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString() // 60 dias
+
+  console.log('Fetching Google Calendar events:', { timeMin, timeMax })
 
   const response = await fetch(
     `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime`,
@@ -189,20 +191,38 @@ async function syncFromGoogle(userId: string, accessToken: string, supabaseClien
   )
 
   if (!response.ok) {
-    throw new Error('Failed to fetch Google Calendar events')
+    const errorText = await response.text()
+    console.error('Google Calendar API error:', errorText)
+    throw new Error(`Failed to fetch Google Calendar events: ${errorText}`)
   }
 
   const { items: events } = await response.json()
+  console.log(`Found ${events?.length || 0} events from Google Calendar`)
 
   // Filtrar apenas eventos criados pela nossa aplicação ou que tenham palavras-chave
   const medicalEvents = events.filter((event: any) => 
     event.summary?.toLowerCase().includes('consulta') ||
     event.summary?.toLowerCase().includes('retorno') ||
     event.summary?.toLowerCase().includes('exame') ||
+    event.summary?.toLowerCase().includes('atendimento') ||
     event.description?.toLowerCase().includes('consulta')
   )
 
+  console.log(`Filtered to ${medicalEvents.length} medical/relevant events`)
+
   const syncedEvents = []
+  const pacienteExternoId = '00000000-0000-0000-0000-000000000001' // ID do paciente especial
+
+  // Buscar profissional do usuário logado
+  const { data: profissional } = await supabaseClient
+    .from('profissionais')
+    .select('id')
+    .eq('user_id', userId)
+    .single()
+
+  if (!profissional) {
+    throw new Error('Profissional não encontrado para o usuário')
+  }
 
   for (const event of medicalEvents) {
     // Verificar se já existe no banco
@@ -213,32 +233,68 @@ async function syncFromGoogle(userId: string, accessToken: string, supabaseClien
       .single()
 
     if (!existing && event.start?.dateTime && event.end?.dateTime) {
-      // Criar novo agendamento baseado no evento do Google
-      const { data: profissional } = await supabaseClient
-        .from('profissionais')
-        .select('id')
-        .eq('user_id', userId)
-        .single()
-
-      if (profissional) {
-        syncedEvents.push({
-          profissional_id: profissional.id,
-          data_inicio: event.start.dateTime,
-          data_fim: event.end.dateTime,
-          tipo_servico: 'Consulta importada',
-          observacoes: `Importado do Google Calendar: ${event.summary}`,
-          google_event_id: event.id,
-          status: 'pendente'
-        })
+      // Tentar identificar paciente pelo email do participante
+      let pacienteId = pacienteExternoId // padrão
+      
+      if (event.attendees && event.attendees.length > 0) {
+        for (const attendee of event.attendees) {
+          if (attendee.email) {
+            const { data: paciente } = await supabaseClient
+              .from('pacientes')
+              .select('id')
+              .eq('email', attendee.email.toLowerCase())
+              .single()
+            
+            if (paciente) {
+              pacienteId = paciente.id
+              console.log(`Found matching patient for ${attendee.email}`)
+              break
+            }
+          }
+        }
       }
+
+      // Criar novo agendamento baseado no evento do Google
+      const novoAgendamento = {
+        profissional_id: profissional.id,
+        paciente_id: pacienteId,
+        data_inicio: event.start.dateTime,
+        data_fim: event.end.dateTime,
+        tipo_servico: pacienteId === pacienteExternoId ? 'Evento Externo' : 'Consulta Importada',
+        observacoes: `Importado do Google Calendar: ${event.summary || 'Sem título'}${event.description ? '\n' + event.description : ''}`,
+        google_event_id: event.id,
+        status: 'pendente'
+      }
+      
+      syncedEvents.push(novoAgendamento)
     }
+  }
+
+  // Inserir os eventos novos no banco
+  let insertedCount = 0
+  if (syncedEvents.length > 0) {
+    console.log(`Inserting ${syncedEvents.length} new appointments from Google Calendar`)
+    
+    const { data: inserted, error } = await supabaseClient
+      .from('agendamentos')
+      .insert(syncedEvents)
+      .select('id')
+
+    if (error) {
+      console.error('Error inserting imported appointments:', error)
+      throw new Error(`Failed to insert imported events: ${error.message}`)
+    }
+
+    insertedCount = inserted?.length || 0
+    console.log(`Successfully inserted ${insertedCount} appointments`)
   }
 
   return new Response(
     JSON.stringify({ 
       success: true, 
-      syncedCount: syncedEvents.length,
-      events: syncedEvents 
+      syncedCount: insertedCount,
+      totalEventsFound: events?.length || 0,
+      filteredEvents: medicalEvents.length
     }),
     { 
       status: 200,
