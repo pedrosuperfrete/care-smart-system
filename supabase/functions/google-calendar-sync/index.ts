@@ -46,25 +46,12 @@ serve(async (req) => {
     
     let requestBody
     try {
-      // Tentar primeiro como JSON diretamente
-      try {
-        requestBody = await req.json()
-        console.log('Parsed request body (json):', requestBody)
-      } catch (jsonError) {
-        // Se falhar, tentar como texto
-        const bodyText = await req.text()
-        console.log('Raw body text:', bodyText)
-        
-        if (!bodyText || bodyText.trim() === '') {
-          throw new Error('Request body is empty')
-        }
-        
-        requestBody = JSON.parse(bodyText)
-        console.log('Parsed request body (text):', requestBody)
-      }
+      // Usar apenas req.json() pois o supabase.functions.invoke já envia como JSON
+      requestBody = await req.json()
+      console.log('Parsed request body:', requestBody)
     } catch (parseError) {
-      console.error('Body parse error:', parseError)
-      throw new Error(`Invalid request body: ${parseError.message}`)
+      console.error('JSON parse error:', parseError)
+      throw new Error(`Invalid JSON body: ${parseError.message}`)
     }
 
     const { action, agendamento, accessToken } = requestBody
