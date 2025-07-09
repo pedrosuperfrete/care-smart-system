@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
+import { enviarWebhookAgendamento } from '@/lib/webhook';
 
 type Agendamento = Tables<'agendamentos'>;
 type InsertAgendamento = Omit<Agendamento, 'id' | 'criado_em' | 'atualizado_em' | 'google_event_id'> & {
@@ -17,7 +18,7 @@ export function useAgendamentos() {
         .from('agendamentos')
         .select(`
           *,
-          pacientes(id, nome, telefone, email),
+          pacientes(id, nome, telefone, email, cpf),
           profissionais(id, nome, especialidade)
         `)
         .order('data_inicio', { ascending: true });
@@ -37,7 +38,7 @@ export function useAgendamentosHoje() {
         .from('agendamentos')
         .select(`
           *,
-          pacientes(id, nome, telefone, email),
+          pacientes(id, nome, telefone, email, cpf),
           profissionais(id, nome, especialidade)
         `)
         .gte('data_inicio', `${hoje}T00:00:00`)
@@ -59,7 +60,7 @@ export function useProximosAgendamentos(limit = 5) {
         .from('agendamentos')
         .select(`
           *,
-          pacientes(id, nome, telefone, email),
+          pacientes(id, nome, telefone, email, cpf),
           profissionais(id, nome, especialidade)
         `)
         .gte('data_inicio', agora)
@@ -96,7 +97,7 @@ export function useCreateAgendamento() {
         .insert(agendamento)
         .select(`
           *,
-          pacientes(id, nome, telefone, email),
+          pacientes(id, nome, telefone, email, cpf),
           profissionais(id, nome, especialidade)
         `)
         .single();
@@ -104,11 +105,14 @@ export function useCreateAgendamento() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['agendamentos'] });
       queryClient.invalidateQueries({ queryKey: ['agendamentos-hoje'] });
       queryClient.invalidateQueries({ queryKey: ['proximos-agendamentos'] });
       toast.success('Agendamento criado com sucesso!');
+      
+      // Enviar webhook automaticamente
+      enviarWebhookAgendamento('criar', data);
     },
     onError: (error: any) => {
       toast.error('Erro ao criar agendamento: ' + error.message);
@@ -127,7 +131,7 @@ export function useUpdateAgendamento() {
         .eq('id', id)
         .select(`
           *,
-          pacientes(id, nome, telefone, email),
+          pacientes(id, nome, telefone, email, cpf),
           profissionais(id, nome, especialidade)
         `)
         .single();
@@ -135,11 +139,14 @@ export function useUpdateAgendamento() {
       if (error) throw error;
       return updated;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['agendamentos'] });
       queryClient.invalidateQueries({ queryKey: ['agendamentos-hoje'] });
       queryClient.invalidateQueries({ queryKey: ['proximos-agendamentos'] });
       toast.success('Agendamento atualizado com sucesso!');
+      
+      // Enviar webhook automaticamente
+      enviarWebhookAgendamento('atualizar', data);
     },
     onError: (error: any) => {
       toast.error('Erro ao atualizar agendamento: ' + error.message);
@@ -158,7 +165,7 @@ export function useConfirmarAgendamento() {
         .eq('id', id)
         .select(`
           *,
-          pacientes(id, nome, telefone, email),
+          pacientes(id, nome, telefone, email, cpf),
           profissionais(id, nome, especialidade)
         `)
         .single();
@@ -199,7 +206,7 @@ export function useDesmarcarAgendamento() {
         .eq('id', id)
         .select(`
           *,
-          pacientes(id, nome, telefone, email),
+          pacientes(id, nome, telefone, email, cpf),
           profissionais(id, nome, especialidade)
         `)
         .single();
@@ -209,11 +216,14 @@ export function useDesmarcarAgendamento() {
       // Retornar dados incluindo google_event_id para sincronização
       return { ...data, google_event_id: agendamento.google_event_id };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['agendamentos'] });
       queryClient.invalidateQueries({ queryKey: ['agendamentos-hoje'] });
       queryClient.invalidateQueries({ queryKey: ['proximos-agendamentos'] });
       toast.success('Agendamento desmarcado com sucesso!');
+      
+      // Enviar webhook automaticamente para cancelamento
+      enviarWebhookAgendamento('cancelar', data);
     },
     onError: (error: any) => {
       toast.error('Erro ao desmarcar agendamento: ' + error.message);
