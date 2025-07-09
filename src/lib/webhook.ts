@@ -28,6 +28,13 @@ export async function enviarWebhookAgendamento(
       }
     };
 
+    // Log detalhado para debug
+    console.log('Enviando webhook:', {
+      url: 'https://n8n-n8n-start.sclvbq.easypanel.host/webhook/sync-agendamento',
+      method: 'POST',
+      payload: payload
+    });
+
     // Enviar requisição para o webhook
     const response = await fetch('https://n8n-n8n-start.sclvbq.easypanel.host/webhook/sync-agendamento', {
       method: 'POST',
@@ -37,10 +44,17 @@ export async function enviarWebhookAgendamento(
       body: JSON.stringify(payload)
     });
 
+    console.log('Response status:', response.status);
+    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
     if (!response.ok) {
-      throw new Error(`Webhook falhou: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('Webhook error response:', errorText);
+      throw new Error(`Webhook falhou: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
+    const responseData = await response.text();
+    console.log('Webhook response:', responseData);
     console.log(`Webhook enviado com sucesso para ${acao} agendamento:`, agendamento.id);
   } catch (error) {
     console.error('Erro ao enviar webhook:', error);
