@@ -254,6 +254,7 @@ export type Database = {
         Row: {
           campos_json: Json | null
           clinica_id: string | null
+          conteudo: string | null
           criado_em: string
           especialidade: string | null
           id: string
@@ -262,6 +263,7 @@ export type Database = {
         Insert: {
           campos_json?: Json | null
           clinica_id?: string | null
+          conteudo?: string | null
           criado_em?: string
           especialidade?: string | null
           id?: string
@@ -270,6 +272,7 @@ export type Database = {
         Update: {
           campos_json?: Json | null
           clinica_id?: string | null
+          conteudo?: string | null
           criado_em?: string
           especialidade?: string | null
           id?: string

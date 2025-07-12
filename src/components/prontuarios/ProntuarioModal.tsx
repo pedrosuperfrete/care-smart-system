@@ -9,74 +9,30 @@ import { useCreateProntuario, useModelosProntuarios } from '@/hooks/useProntuari
 import { usePacientes } from '@/hooks/usePacientes';
 import { useAgendamentos } from '@/hooks/useAgendamentos';
 import { useAuth } from '@/hooks/useAuth';
+import { Edit, Trash2 } from 'lucide-react';
+import { TemplateModal } from './TemplateModal';
+import { useDeleteTemplate } from '@/hooks/useProntuarios';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface ProntuarioModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const TEMPLATES = {
-  soap: {
-    nome: 'SOAP',
-    conteudo: `**SUBJETIVO**
-Queixa principal:
-História da doença atual:
-Antecedentes pessoais:
-Antecedentes familiares:
-
-**OBJETIVO**
-Exame físico:
-Sinais vitais:
-Exames complementares:
-
-**AVALIAÇÃO**
-Hipótese diagnóstica:
-Diagnóstico diferencial:
-
-**PLANO**
-Tratamento:
-Prescrições:
-Orientações:
-Retorno:`
-  },
-  odonto: {
-    nome: 'Odontológico',
-    conteudo: `**ANAMNESE**
-Queixa principal:
-História da doença atual:
-Antecedentes médicos:
-Medicamentos em uso:
-
-**EXAME CLÍNICO**
-Exame extraoral:
-Exame intraoral:
-Periodonto:
-Oclusão:
-
-**DIAGNÓSTICO**
-Diagnóstico clínico:
-
-**PLANO DE TRATAMENTO**
-Procedimentos indicados:
-Orientações de higiene:
-Retorno:`
-  },
-  livre: {
-    nome: 'Livre',
-    conteudo: ''
-  }
-};
-
 export function ProntuarioModal({ isOpen, onClose }: ProntuarioModalProps) {
   const [pacienteSelecionado, setPacienteSelecionado] = useState('');
   const [templateSelecionado, setTemplateSelecionado] = useState('');
   const [conteudo, setConteudo] = useState('');
   const [agendamentoSelecionado, setAgendamentoSelecionado] = useState('');
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<any>(null);
 
   const { user } = useAuth();
   const { data: pacientes = [] } = usePacientes();
   const { data: agendamentos = [] } = useAgendamentos();
+  const { data: templates = [] } = useModelosProntuarios();
   const createProntuario = useCreateProntuario();
+  const deleteTemplate = useDeleteTemplate();
 
   // Filtrar agendamentos realizados do paciente selecionado
   const agendamentosRealizados = agendamentos.filter(
@@ -85,12 +41,28 @@ export function ProntuarioModal({ isOpen, onClose }: ProntuarioModalProps) {
       ag.status === 'realizado'
   );
 
-  const handleTemplateChange = (template: string) => {
-    setTemplateSelecionado(template);
-    if (template && TEMPLATES[template as keyof typeof TEMPLATES]) {
-      setConteudo(TEMPLATES[template as keyof typeof TEMPLATES].conteudo);
+  const handleTemplateChange = (templateId: string) => {
+    setTemplateSelecionado(templateId);
+    if (templateId) {
+      const selectedTemplate = templates.find(t => t.id === templateId);
+      if (selectedTemplate) {
+        setConteudo(selectedTemplate.conteudo || '');
+      }
     } else {
       setConteudo('');
+    }
+  };
+
+  const handleEditTemplate = (template: any) => {
+    setEditingTemplate(template);
+    setShowTemplateModal(true);
+  };
+
+  const handleDeleteTemplate = async (templateId: string) => {
+    try {
+      await deleteTemplate.mutateAsync(templateId);
+    } catch (error) {
+      console.error('Erro ao excluir template:', error);
     }
   };
 
@@ -158,15 +130,76 @@ export function ProntuarioModal({ isOpen, onClose }: ProntuarioModalProps) {
             </div>
             
             <div className="space-y-2">
-              <Label>Template</Label>
+              <Label className="flex items-center justify-between">
+                Template
+                <div className="flex gap-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowTemplateModal(true)}
+                    className="h-6 px-2 text-xs"
+                  >
+                    + Novo
+                  </Button>
+                  {templateSelecionado && (
+                    <>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const template = templates.find(t => t.id === templateSelecionado);
+                          if (template) handleEditTemplate(template);
+                        }}
+                        className="h-6 px-2 text-xs"
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-xs text-destructive"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir Template</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Tem certeza que deseja excluir este template? Esta ação não pode ser desfeita.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteTemplate(templateSelecionado)}
+                              className="bg-destructive text-destructive-foreground"
+                            >
+                              Excluir
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </>
+                  )}
+                </div>
+              </Label>
               <Select value={templateSelecionado} onValueChange={handleTemplateChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o template" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="soap">SOAP</SelectItem>
-                  <SelectItem value="odonto">Odontológico</SelectItem>
-                  <SelectItem value="livre">Livre</SelectItem>
+                  <SelectItem value="">Nenhum template</SelectItem>
+                  {templates.map((template) => (
+                    <SelectItem key={template.id} value={template.id}>
+                      {template.nome} {template.especialidade && `(${template.especialidade})`}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -215,6 +248,15 @@ export function ProntuarioModal({ isOpen, onClose }: ProntuarioModalProps) {
           </div>
         </div>
       </DialogContent>
+      
+      <TemplateModal 
+        isOpen={showTemplateModal} 
+        onClose={() => {
+          setShowTemplateModal(false);
+          setEditingTemplate(null);
+        }}
+        template={editingTemplate}
+      />
     </Dialog>
   );
 }

@@ -122,3 +122,74 @@ export function useModelosProntuarios() {
     },
   });
 }
+
+export function useCreateTemplate() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (template: { nome: string; conteudo: string; especialidade?: string }) => {
+      const { data, error } = await supabase
+        .from('modelos_prontuarios')
+        .insert(template)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['modelos-prontuarios'] });
+      toast.success('Template criado com sucesso!');
+    },
+    onError: (error: any) => {
+      toast.error('Erro ao criar template: ' + error.message);
+    },
+  });
+}
+
+export function useUpdateTemplate() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: { nome?: string; conteudo?: string; especialidade?: string } }) => {
+      const { data: updated, error } = await supabase
+        .from('modelos_prontuarios')
+        .update(data)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return updated;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['modelos-prontuarios'] });
+      toast.success('Template atualizado com sucesso!');
+    },
+    onError: (error: any) => {
+      toast.error('Erro ao atualizar template: ' + error.message);
+    },
+  });
+}
+
+export function useDeleteTemplate() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('modelos_prontuarios')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['modelos-prontuarios'] });
+      toast.success('Template excluído com sucesso!');
+    },
+    onError: (error: any) => {
+      toast.error('Erro ao excluir template: ' + error.message);
+    },
+  });
+}

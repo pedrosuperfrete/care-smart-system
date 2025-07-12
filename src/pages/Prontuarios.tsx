@@ -9,6 +9,7 @@ import { FileText, Plus, Search, Calendar, User, ArrowLeft, ChevronDown, Chevron
 import { useProntuarios, useProntuariosPorPaciente } from '@/hooks/useProntuarios';
 import { usePacientes } from '@/hooks/usePacientes';
 import { ProntuarioModal } from '@/components/prontuarios/ProntuarioModal';
+import { TemplateModal } from '@/components/prontuarios/TemplateModal';
 import { ProntuarioVisualizacao } from '@/components/prontuarios/ProntuarioVisualizacao';
 
 export default function Prontuarios() {
@@ -16,6 +17,7 @@ export default function Prontuarios() {
   const [tipoFilter, setTipoFilter] = useState('todos');
   const [pacienteSelecionado, setPacienteSelecionado] = useState<string | null>(null);
   const [modalAberto, setModalAberto] = useState(false);
+  const [templateModalAberto, setTemplateModalAberto] = useState(false);
 
   const { data: prontuarios = [], isLoading: loadingProntuarios } = useProntuarios();
   const { data: pacientes = [], isLoading: loadingPacientes } = usePacientes();
@@ -81,10 +83,19 @@ export default function Prontuarios() {
           </p>
         </div>
         
-        <Button onClick={() => setModalAberto(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Novo Prontuário
-        </Button>
+        <div className="flex space-x-2">
+          <Button 
+            variant="outline" 
+            onClick={() => setTemplateModalAberto(true)}
+          >
+            <FileText className="mr-2 h-4 w-4" />
+            Criar Template
+          </Button>
+          <Button onClick={() => setModalAberto(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Novo Prontuário
+          </Button>
+        </div>
       </div>
 
       {/* Filtros */}
@@ -194,6 +205,11 @@ export default function Prontuarios() {
       <ProntuarioModal 
         isOpen={modalAberto}
         onClose={() => setModalAberto(false)}
+      />
+      
+      <TemplateModal 
+        isOpen={templateModalAberto}
+        onClose={() => setTemplateModalAberto(false)}
       />
     </div>
   );
