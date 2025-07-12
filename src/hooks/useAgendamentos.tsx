@@ -100,6 +100,19 @@ export function useCreateAgendamento() {
         .single();
       
       if (error) throw error;
+
+      // Criar evento no Google Calendar
+      try {
+        await supabase.functions.invoke('google-calendar', {
+          body: {
+            action: 'create',
+            agendamentoId: data.id,
+          },
+        });
+      } catch (calendarError) {
+        console.warn('Erro ao criar evento no Google Calendar:', calendarError);
+      }
+
       return data;
     },
     onSuccess: () => {
@@ -131,6 +144,19 @@ export function useUpdateAgendamento() {
         .single();
       
       if (error) throw error;
+
+      // Atualizar evento no Google Calendar
+      try {
+        await supabase.functions.invoke('google-calendar', {
+          body: {
+            action: 'update',
+            agendamentoId: id,
+          },
+        });
+      } catch (calendarError) {
+        console.warn('Erro ao atualizar evento no Google Calendar:', calendarError);
+      }
+
       return updated;
     },
     onSuccess: () => {
@@ -193,6 +219,19 @@ export function useDesmarcarAgendamento() {
         .single();
       
       if (error) throw error;
+
+      // Excluir evento do Google Calendar
+      try {
+        await supabase.functions.invoke('google-calendar', {
+          body: {
+            action: 'delete',
+            agendamentoId: id,
+          },
+        });
+      } catch (calendarError) {
+        console.warn('Erro ao excluir evento no Google Calendar:', calendarError);
+      }
+
       return data;
     },
     onSuccess: () => {

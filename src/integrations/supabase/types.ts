@@ -519,6 +519,7 @@ export type Database = {
           crm_cro: string
           especialidade: string
           formas_pagamento: Json | null
+          google_refresh_token: string | null
           horarios_atendimento: Json | null
           id: string
           mini_bio: string | null
@@ -540,6 +541,7 @@ export type Database = {
           crm_cro: string
           especialidade: string
           formas_pagamento?: Json | null
+          google_refresh_token?: string | null
           horarios_atendimento?: Json | null
           id?: string
           mini_bio?: string | null
@@ -561,6 +563,7 @@ export type Database = {
           crm_cro?: string
           especialidade?: string
           formas_pagamento?: Json | null
+          google_refresh_token?: string | null
           horarios_atendimento?: Json | null
           id?: string
           mini_bio?: string | null
