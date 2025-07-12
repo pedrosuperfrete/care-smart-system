@@ -65,6 +65,7 @@ export function AgendamentoForm({ agendamento, pacienteId, onSuccess }: Agendame
       confirmado_pelo_paciente: false,
       pagamento_id: null,
       desmarcada: false,
+      google_event_id: null,
     };
 
     try {

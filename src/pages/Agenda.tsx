@@ -61,6 +61,7 @@ export default function Agenda() {
         confirmado_pelo_paciente: false,
         pagamento_id: null,
         desmarcada: false,
+        google_event_id: null,
       });
 
       setIsNewConsultaOpen(false);
