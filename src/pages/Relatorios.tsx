@@ -4,81 +4,73 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { Calendar, Download, FileText, TrendingUp, Users, DollarSign } from 'lucide-react';
+import { useRelatorios } from '@/hooks/useRelatorios';
+import { useExportarRelatorios } from '@/hooks/useExportarRelatorios';
+import { toast } from '@/hooks/use-toast';
 
 export default function Relatorios() {
   const [periodo, setPeriodo] = useState('mes');
   const [tipoRelatorio, setTipoRelatorio] = useState('consultas');
+  const [periodoPersonalizado, setPeriodoPersonalizado] = useState('ultimo-mes');
 
-  // Mock data para os gráficos
-  const consultasPorDia = [
-    { dia: '01/06', consultas: 8 },
-    { dia: '02/06', consultas: 12 },
-    { dia: '03/06', consultas: 6 },
-    { dia: '04/06', consultas: 15 },
-    { dia: '05/06', consultas: 10 },
-    { dia: '06/06', consultas: 14 },
-    { dia: '07/06', consultas: 9 },
-  ];
+  const { 
+    loading, 
+    error, 
+    estatisticas, 
+    consultasPorDia, 
+    receitaPorMes, 
+    tiposConsulta 
+  } = useRelatorios(periodo);
 
-  const receitaPorMes = [
-    { mes: 'Jan', receita: 15420 },
-    { mes: 'Fev', receita: 18630 },
-    { mes: 'Mar', receita: 22150 },
-    { mes: 'Abr', receita: 19800 },
-    { mes: 'Mai', receita: 24300 },
-    { mes: 'Jun', receita: 21750 },
-  ];
+  const { exportarCSV, exportarPDF } = useExportarRelatorios();
 
-  const tiposConsulta = [
-    { nome: 'Consulta de Rotina', valor: 45, cor: 'hsl(var(--primary))' },
-    { nome: 'Retorno', valor: 30, cor: 'hsl(var(--success))' },
-    { nome: 'Exames', valor: 15, cor: 'hsl(var(--warning))' },
-    { nome: 'Emergência', valor: 10, cor: 'hsl(var(--destructive))' },
-  ];
+  const iconsMap = {
+    FileText,
+    Users,
+    DollarSign,
+    TrendingUp
+  };
 
-  const estatisticas = [
-    {
-      titulo: 'Total de Consultas',
-      valor: '342',
-      mudanca: '+12%',
-      tipo: 'positivo',
-      icon: FileText,
-      descricao: 'Este mês'
-    },
-    {
-      titulo: 'Novos Pacientes',
-      valor: '28',
-      mudanca: '+8%',
-      tipo: 'positivo',
-      icon: Users,
-      descricao: 'Este mês'
-    },
-    {
-      titulo: 'Receita Total',
-      valor: 'R$ 24.300',
-      mudanca: '+15%',
-      tipo: 'positivo',
-      icon: DollarSign,
-      descricao: 'Este mês'
-    },
-    {
-      titulo: 'Taxa de Retorno',
-      valor: '85%',
-      mudanca: '+3%',
-      tipo: 'positivo',
-      icon: TrendingUp,
-      descricao: 'Pacientes que retornaram'
-    }
-  ];
+  const handleExportarCSV = async () => {
+    await exportarCSV({
+      tipo: tipoRelatorio,
+      periodo: periodoPersonalizado
+    });
+  };
+
+  const handleExportarPDF = async () => {
+    await exportarPDF({
+      tipo: tipoRelatorio,
+      periodo: periodoPersonalizado
+    });
+  };
+
+  const handleGerarRelatorio = () => {
+    toast({
+      title: "Relatório gerado",
+      description: `Relatório de ${tipoRelatorio} para ${periodoPersonalizado} foi processado com sucesso!`
+    });
+  };
+
+  if (error) {
+    return (
+      <div className="p-8">
+        <div className="text-center">
+          <p className="text-destructive">Erro ao carregar relatórios: {error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Relatórios</h1>
-          <p className="text-gray-600 mt-1">
+          <p className="text-muted-foreground mt-1">
             Análise de dados e estatísticas da clínica
           </p>
         </div>
@@ -96,12 +88,12 @@ export default function Relatorios() {
             </SelectContent>
           </Select>
           
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleExportarCSV}>
             <Download className="mr-2 h-4 w-4" />
             Exportar CSV
           </Button>
           
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleExportarPDF}>
             <FileText className="mr-2 h-4 w-4" />
             Exportar PDF
           </Button>
@@ -110,27 +102,48 @@ export default function Relatorios() {
 
       {/* Cards de Estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {estatisticas.map((stat, index) => (
-          <Card key={index}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {stat.titulo}
-              </CardTitle>
-              <stat.icon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.valor}</div>
-              <div className="flex items-center space-x-2 mt-1">
-                <Badge variant={stat.tipo === 'positivo' ? 'default' : 'destructive'}>
-                  {stat.mudanca}
-                </Badge>
-                <p className="text-xs text-muted-foreground">
-                  {stat.descricao}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        {loading ? (
+          Array.from({ length: 4 }).map((_, index) => (
+            <Card key={index}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-4" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-16 mb-2" />
+                <div className="flex items-center space-x-2">
+                  <Skeleton className="h-5 w-12" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          estatisticas.map((stat, index) => {
+            const IconComponent = iconsMap[stat.icon as keyof typeof iconsMap];
+            return (
+              <Card key={index}>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    {stat.titulo}
+                  </CardTitle>
+                  {IconComponent && <IconComponent className="h-4 w-4 text-muted-foreground" />}
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stat.valor}</div>
+                  <div className="flex items-center space-x-2 mt-1">
+                    <Badge variant={stat.tipo === 'positivo' ? 'default' : 'destructive'}>
+                      {stat.mudanca}
+                    </Badge>
+                    <p className="text-xs text-muted-foreground">
+                      {stat.descricao}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })
+        )}
       </div>
 
       {/* Gráficos */}
@@ -143,15 +156,21 @@ export default function Relatorios() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={consultasPorDia}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="dia" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="consultas" fill="hsl(var(--primary))" />
-              </BarChart>
-            </ResponsiveContainer>
+            {loading ? (
+              <div className="h-[300px] flex items-center justify-center">
+                <Skeleton className="h-full w-full" />
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={consultasPorDia}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="dia" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="consultas" fill="hsl(var(--primary))" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
 
@@ -163,15 +182,21 @@ export default function Relatorios() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={receitaPorMes}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="mes" />
-                <YAxis />
-                <Tooltip formatter={(value: any) => [`R$ ${value}`, 'Receita']} />
-                <Line type="monotone" dataKey="receita" stroke="hsl(var(--success))" />
-              </LineChart>
-            </ResponsiveContainer>
+            {loading ? (
+              <div className="h-[300px] flex items-center justify-center">
+                <Skeleton className="h-full w-full" />
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={receitaPorMes}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="mes" />
+                  <YAxis />
+                  <Tooltip formatter={(value: any) => [`R$ ${value}`, 'Receita']} />
+                  <Line type="monotone" dataKey="receita" stroke="hsl(var(--success))" />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -185,25 +210,35 @@ export default function Relatorios() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={tiposConsulta}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ nome, percent }) => `${nome} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="hsl(var(--primary))"
-                  dataKey="valor"
-                >
-                  {tiposConsulta.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.cor} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+            {loading ? (
+              <div className="h-[300px] flex items-center justify-center">
+                <Skeleton className="h-full w-full" />
+              </div>
+            ) : tiposConsulta.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={tiposConsulta}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ nome, percent }) => `${nome} ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="hsl(var(--primary))"
+                    dataKey="valor"
+                  >
+                    {tiposConsulta.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.cor} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                <p>Nenhum dado disponível para o período selecionado</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -232,7 +267,7 @@ export default function Relatorios() {
             
             <div className="space-y-2">
               <label className="text-sm font-medium">Período</label>
-              <Select>
+              <Select value={periodoPersonalizado} onValueChange={setPeriodoPersonalizado}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o período" />
                 </SelectTrigger>
@@ -240,12 +275,11 @@ export default function Relatorios() {
                   <SelectItem value="ultima-semana">Última Semana</SelectItem>
                   <SelectItem value="ultimo-mes">Último Mês</SelectItem>
                   <SelectItem value="ultimo-trimestre">Último Trimestre</SelectItem>
-                  <SelectItem value="personalizado">Período Personalizado</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             
-            <Button className="w-full">
+            <Button className="w-full" onClick={handleGerarRelatorio}>
               <FileText className="mr-2 h-4 w-4" />
               Gerar Relatório
             </Button>
