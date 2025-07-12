@@ -49,36 +49,16 @@ export function ProximosAgendamentos({ agendamentos, pacienteNome, pacienteId, o
   return (
     <Card>
       <CardHeader>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <CardTitle className="text-xl font-bold">Próximos Agendamentos</CardTitle>
-            <CardDescription className="text-sm text-gray-500">
-              Consultas agendadas para este paciente
-            </CardDescription>
-          </div>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button className="bg-primary hover:bg-primary/90 w-full sm:w-auto">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Nova Consulta
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>Agendar Nova Consulta</DialogTitle>
-                  <DialogDescription>
-                    Criar um novo agendamento para {pacienteNome}
-                  </DialogDescription>
-                </DialogHeader>
-                <AgendamentoForm 
-                  pacienteId={pacienteId} 
-                  onSuccess={onClose}
-                />
-              </DialogContent>
-            </Dialog>
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <CardTitle className="text-xl font-bold">Próximos Agendamentos</CardTitle>
+              <CardDescription className="text-sm text-gray-500">
+                Consultas agendadas para este paciente
+              </CardDescription>
+            </div>
             {agendamentos.length > itemsPerPage && (
-              <div className="flex items-center justify-center sm:justify-start space-x-2 w-full sm:w-auto">
+              <div className="flex items-center justify-center sm:justify-end space-x-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -101,6 +81,26 @@ export function ProximosAgendamentos({ agendamentos, pacienteNome, pacienteId, o
               </div>
             )}
           </div>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button className="bg-primary hover:bg-primary/90 w-full sm:w-auto">
+                <Plus className="mr-2 h-4 w-4" />
+                Nova Consulta
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Agendar Nova Consulta</DialogTitle>
+                <DialogDescription>
+                  Criar um novo agendamento para {pacienteNome}
+                </DialogDescription>
+              </DialogHeader>
+              <AgendamentoForm 
+                pacienteId={pacienteId} 
+                onSuccess={onClose}
+              />
+            </DialogContent>
+          </Dialog>
         </div>
       </CardHeader>
       <CardContent>

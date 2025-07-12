@@ -106,40 +106,38 @@ export default function Pacientes() {
       <Card>
         <CardContent className="pt-6">
           <div className="flex flex-col space-y-4">
-            <div className="flex space-x-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="Buscar por nome, CPF ou email..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
+            <div className="w-full">
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Buscar por nome, CPF ou email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
               </div>
             </div>
             
             {/* Contadores de Status */}
-            <div className="flex space-x-4">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
               <Button
                 variant={filtroStatus === 'todos' ? 'default' : 'outline'}
                 onClick={() => setFiltroStatus('todos')}
-                className="flex items-center space-x-2"
+                className="flex items-center justify-center space-x-2 w-full sm:w-auto"
               >
                 <span>Todos ({filteredPacientes.length})</span>
               </Button>
               <Button
                 variant={filtroStatus === 'adimplentes' ? 'default' : 'outline'}
                 onClick={() => setFiltroStatus('adimplentes')}
-                className="flex items-center space-x-2"
+                className="flex items-center justify-center space-x-2 w-full sm:w-auto"
               >
                 <span>Adimplentes ({stats?.adimplentes || 0})</span>
               </Button>
               <Button
                 variant={filtroStatus === 'inadimplentes' ? 'default' : 'outline'}
                 onClick={() => setFiltroStatus('inadimplentes')}
-                className="flex items-center space-x-2"
+                className="flex items-center justify-center space-x-2 w-full sm:w-auto"
               >
                 <span>Inadimplentes ({stats?.inadimplentes || 0})</span>
               </Button>
@@ -184,16 +182,16 @@ export default function Pacientes() {
           filteredPacientes.map((paciente) => (
             <Card key={paciente.id} className="hover:shadow-md transition-shadow">
               <CardContent className="pt-6">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-3">
+                <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                  <div className="flex-1 w-full">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-3">
                       <h3 className="text-lg font-semibold">{paciente.nome}</h3>
                       <Badge className={getRiscoColor(paciente.risco)}>
                         Risco {getRiscoText(paciente.risco)}
                       </Badge>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm text-gray-600">
                       <div className="space-y-2">
                         <p><strong>CPF:</strong> {paciente.cpf}</p>
                         {paciente.data_nascimento && (
@@ -235,13 +233,15 @@ export default function Pacientes() {
                     )}
                   </div>
                   
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                  <div className="flex sm:flex-col items-end gap-2 w-full sm:w-auto mt-4 sm:mt-0">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                          <MoreVertical className="h-4 w-4" />
+                          <span className="ml-2 sm:hidden">Ações</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
                       <DropdownMenuItem onClick={() => {
                         setSelectedPaciente(paciente);
                         setIsDetailsOpen(true);
@@ -270,8 +270,9 @@ export default function Pacientes() {
                         <History className="mr-2 h-4 w-4" />
                         Histórico
                       </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </div>
               </CardContent>
             </Card>
