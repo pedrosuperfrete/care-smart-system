@@ -49,17 +49,17 @@ export function ProximosAgendamentos({ agendamentos, pacienteNome, pacienteId, o
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <CardTitle className="text-xl font-bold">Próximos Agendamentos</CardTitle>
             <CardDescription className="text-sm text-gray-500">
               Consultas agendadas para este paciente
             </CardDescription>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
             <Dialog>
               <DialogTrigger asChild>
-                <Button className="bg-primary hover:bg-primary/90">
+                <Button className="bg-primary hover:bg-primary/90 w-full sm:w-auto">
                   <Plus className="mr-2 h-4 w-4" />
                   Nova Consulta
                 </Button>
@@ -78,7 +78,7 @@ export function ProximosAgendamentos({ agendamentos, pacienteNome, pacienteId, o
               </DialogContent>
             </Dialog>
             {agendamentos.length > itemsPerPage && (
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center justify-center sm:justify-start space-x-2 w-full sm:w-auto">
                 <Button
                   variant="outline"
                   size="sm"
@@ -87,7 +87,7 @@ export function ProximosAgendamentos({ agendamentos, pacienteNome, pacienteId, o
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-gray-500 whitespace-nowrap">
                   {currentPage + 1} de {totalPages}
                 </span>
                 <Button

@@ -32,7 +32,7 @@ export function HistoricoAtendimentos({ agendamentos }: HistoricoAtendimentosPro
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <CardTitle className="text-xl">Histórico de Atendimentos</CardTitle>
             <CardDescription>
@@ -40,7 +40,7 @@ export function HistoricoAtendimentos({ agendamentos }: HistoricoAtendimentosPro
             </CardDescription>
           </div>
           {agendamentos.length > itemsPerPage && (
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center justify-center sm:justify-end space-x-2 w-full sm:w-auto">
               <Button
                 variant="outline"
                 size="sm"
@@ -49,7 +49,7 @@ export function HistoricoAtendimentos({ agendamentos }: HistoricoAtendimentosPro
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-gray-500 whitespace-nowrap">
                 {currentPage + 1} de {totalPages}
               </span>
               <Button

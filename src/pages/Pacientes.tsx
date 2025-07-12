@@ -281,7 +281,7 @@ export default function Pacientes() {
 
       {/* Sheet de Detalhes do Paciente */}
       <Sheet open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-        <SheetContent className="w-[400px] sm:w-[900px] overflow-y-auto">
+        <SheetContent className="w-full sm:w-[500px] md:w-[700px] lg:w-[900px] overflow-y-auto">
           <SheetHeader>
             <SheetTitle>Detalhes do Paciente</SheetTitle>
             <SheetDescription>
