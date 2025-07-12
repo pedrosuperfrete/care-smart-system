@@ -13,6 +13,7 @@ import { Edit, Trash2 } from 'lucide-react';
 import { TemplateModal } from './TemplateModal';
 import { useDeleteTemplate } from '@/hooks/useProntuarios';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
 
 interface ProntuarioModalProps {
   isOpen: boolean;
@@ -68,6 +69,7 @@ export function ProntuarioModal({ isOpen, onClose }: ProntuarioModalProps) {
 
   const handleSubmit = async () => {
     if (!pacienteSelecionado || !conteudo.trim()) {
+      toast.error('Por favor, preencha todos os campos obrigatórios (Paciente e Conteúdo)');
       return;
     }
 
