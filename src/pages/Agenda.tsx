@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { VisaoSemanal } from '@/components/agenda/VisaoSemanal';
 import { VisaoMensal } from '@/components/agenda/VisaoMensal';
 import { EditarAgendamentoDialog } from '@/components/agenda/EditarAgendamentoDialog';
+import { GoogleCalendarConnect } from '@/components/agenda/GoogleCalendarConnect';
 import { Tables } from '@/integrations/supabase/types';
 
 type Agendamento = Tables<'agendamentos'>;
@@ -362,6 +363,9 @@ export default function Agenda() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Google Calendar Integration */}
+      <GoogleCalendarConnect />
 
       {/* Conteúdo baseado na visualização */}
       {viewMode === 'dia' && (
