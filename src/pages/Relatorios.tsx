@@ -32,10 +32,10 @@ export default function Relatorios() {
   ];
 
   const tiposConsulta = [
-    { nome: 'Consulta de Rotina', valor: 45, cor: '#8884d8' },
-    { nome: 'Retorno', valor: 30, cor: '#82ca9d' },
-    { nome: 'Exames', valor: 15, cor: '#ffc658' },
-    { nome: 'Emergência', valor: 10, cor: '#ff7c7c' },
+    { nome: 'Consulta de Rotina', valor: 45, cor: 'hsl(var(--primary))' },
+    { nome: 'Retorno', valor: 30, cor: 'hsl(var(--success))' },
+    { nome: 'Exames', valor: 15, cor: 'hsl(var(--warning))' },
+    { nome: 'Emergência', valor: 10, cor: 'hsl(var(--destructive))' },
   ];
 
   const estatisticas = [
@@ -149,7 +149,7 @@ export default function Relatorios() {
                 <XAxis dataKey="dia" />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="consultas" fill="#8884d8" />
+                <Bar dataKey="consultas" fill="hsl(var(--primary))" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -169,7 +169,7 @@ export default function Relatorios() {
                 <XAxis dataKey="mes" />
                 <YAxis />
                 <Tooltip formatter={(value: any) => [`R$ ${value}`, 'Receita']} />
-                <Line type="monotone" dataKey="receita" stroke="#82ca9d" />
+                <Line type="monotone" dataKey="receita" stroke="hsl(var(--success))" />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
@@ -194,7 +194,7 @@ export default function Relatorios() {
                   labelLine={false}
                   label={({ nome, percent }) => `${nome} ${(percent * 100).toFixed(0)}%`}
                   outerRadius={80}
-                  fill="#8884d8"
+                  fill="hsl(var(--primary))"
                   dataKey="valor"
                 >
                   {tiposConsulta.map((entry, index) => (

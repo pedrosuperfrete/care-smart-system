@@ -154,9 +154,9 @@ export default function Agenda() {
   const getStatusColor = (status: string) => {
     const colors = {
       pendente: 'bg-yellow-100 text-yellow-800',
-      confirmado: 'bg-blue-100 text-blue-800',
-      realizado: 'bg-green-100 text-green-800',
-      faltou: 'bg-red-100 text-red-800'
+      confirmado: 'bg-primary/10 text-primary',
+      realizado: 'bg-success/10 text-success',
+      faltou: 'bg-destructive/10 text-destructive'
     };
     return colors[status as keyof typeof colors] || colors.pendente;
   };

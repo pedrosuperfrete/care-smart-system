@@ -40,7 +40,7 @@ export function ProximosAgendamentos({ agendamentos, pacienteNome, pacienteId, o
           <div className="mt-4">
             <Dialog>
               <DialogTrigger asChild>
-                <Button className="bg-blue-600 hover:bg-blue-700">
+                <Button className="bg-primary hover:bg-primary/90">
                   <Plus className="mr-2 h-4 w-4" />
                   Nova Consulta
                 </Button>
@@ -72,7 +72,7 @@ export function ProximosAgendamentos({ agendamentos, pacienteNome, pacienteId, o
               <div key={agendamento.id} className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <Calendar className="h-5 w-5 text-blue-500" />
+                    <Calendar className="h-5 w-5 text-primary" />
                     <div>
                       <div className="font-semibold text-gray-900">
                         {new Date(agendamento.data_inicio).toLocaleString('pt-BR')}

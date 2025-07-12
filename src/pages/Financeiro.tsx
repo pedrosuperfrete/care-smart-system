@@ -162,10 +162,10 @@ export default function Financeiro() {
             <CardTitle className="text-sm font-medium">
               Total Recebido
             </CardTitle>
-            <DollarSign className="h-4 w-4 text-green-600" />
+            <DollarSign className="h-4 w-4 text-success" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold text-success">
               R$ {statsLoading ? '...' : statsData.totalRecebido.toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -179,10 +179,10 @@ export default function Financeiro() {
             <CardTitle className="text-sm font-medium">
               A Receber
             </CardTitle>
-            <Clock className="h-4 w-4 text-yellow-600" />
+            <Clock className="h-4 w-4 text-warning" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">
+            <div className="text-2xl font-bold text-warning">
               R$ {statsLoading ? '...' : statsData.totalPendente.toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -196,10 +196,10 @@ export default function Financeiro() {
             <CardTitle className="text-sm font-medium">
               Em Atraso
             </CardTitle>
-            <XCircle className="h-4 w-4 text-red-600" />
+            <XCircle className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
+            <div className="text-2xl font-bold text-destructive">
               R$ {statsLoading ? '...' : statsData.totalVencido.toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -213,10 +213,10 @@ export default function Financeiro() {
             <CardTitle className="text-sm font-medium">
               Receita Mensal
             </CardTitle>
-            <TrendingUp className="h-4 w-4 text-blue-600" />
+            <TrendingUp className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
+            <div className="text-2xl font-bold text-primary">
               R$ {statsLoading ? '...' : statsData.receitaMensal.toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground">

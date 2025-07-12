@@ -69,13 +69,13 @@ export function VisaoMensal({ agendamentos, mesAno, onDiaClick }: VisaoMensalPro
                 className={`
                   min-h-[60px] border rounded p-1 cursor-pointer transition-colors
                   ${data ? 'hover:bg-gray-50' : 'bg-gray-100'}
-                  ${isHoje ? 'bg-blue-50 border-blue-200' : ''}
+                  ${isHoje ? 'bg-primary/10 border-primary/30' : ''}
                 `}
                 onClick={() => data && onDiaClick(data)}
               >
                 {data && (
                   <>
-                    <div className={`text-sm ${isHoje ? 'font-bold text-blue-600' : ''}`}>
+                    <div className={`text-sm ${isHoje ? 'font-bold text-primary' : ''}`}>
                       {data.getDate()}
                     </div>
                     {agendamentosDia.length > 0 && (
@@ -85,9 +85,9 @@ export function VisaoMensal({ agendamentos, mesAno, onDiaClick }: VisaoMensalPro
                             key={i}
                             className={`w-2 h-2 rounded-full ${
                               ag.desmarcada ? 'bg-gray-300' :
-                              ag.status === 'confirmado' ? 'bg-blue-400' :
-                              ag.status === 'pendente' ? 'bg-yellow-400' :
-                              ag.status === 'realizado' ? 'bg-green-400' : 'bg-red-400'
+                              ag.status === 'confirmado' ? 'bg-primary' :
+                              ag.status === 'pendente' ? 'bg-warning' :
+                              ag.status === 'realizado' ? 'bg-success' : 'bg-destructive'
                             }`}
                           />
                         ))}

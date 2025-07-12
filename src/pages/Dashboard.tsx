@@ -55,7 +55,7 @@ export default function Dashboard() {
       description: 'Agendar nova consulta',
       icon: Plus,
       onClick: () => navigate('/agenda'),
-      color: 'bg-blue-500 hover:bg-blue-600',
+      color: 'bg-primary hover:bg-primary/90',
     },
     {
       title: 'Novo Paciente',
