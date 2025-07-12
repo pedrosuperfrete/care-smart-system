@@ -9,6 +9,7 @@ import { useCreateProntuario, useModelosProntuarios } from '@/hooks/useProntuari
 import { usePacientes } from '@/hooks/usePacientes';
 import { useAgendamentos } from '@/hooks/useAgendamentos';
 import { useAuth } from '@/hooks/useAuth';
+import { useProfissionais } from '@/hooks/useProfissionais';
 import { Edit, Trash2 } from 'lucide-react';
 import { TemplateModal } from './TemplateModal';
 import { useDeleteTemplate } from '@/hooks/useProntuarios';
@@ -32,8 +33,12 @@ export function ProntuarioModal({ isOpen, onClose }: ProntuarioModalProps) {
   const { data: pacientes = [] } = usePacientes();
   const { data: agendamentos = [] } = useAgendamentos();
   const { data: templates = [] } = useModelosProntuarios();
+  const { data: profissionais = [] } = useProfissionais();
   const createProntuario = useCreateProntuario();
   const deleteTemplate = useDeleteTemplate();
+
+  // Buscar o profissional atual
+  const profissionalAtual = profissionais.find(p => p.user_id === user?.id);
 
   // Filtrar agendamentos realizados do paciente selecionado
   const agendamentosRealizados = agendamentos.filter(
@@ -73,10 +78,15 @@ export function ProntuarioModal({ isOpen, onClose }: ProntuarioModalProps) {
       return;
     }
 
+    if (!profissionalAtual) {
+      toast.error('Profissional não encontrado. Verifique seu perfil.');
+      return;
+    }
+
     try {
       await createProntuario.mutateAsync({
         paciente_id: pacienteSelecionado,
-        profissional_id: user?.id || '',
+        profissional_id: profissionalAtual.id,
         conteudo: conteudo.trim(),
         template_id: templateSelecionado || null,
         agendamento_id: agendamentoSelecionado || null,
