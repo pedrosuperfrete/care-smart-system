@@ -95,7 +95,7 @@ export function TemplateModal({ isOpen, onClose, template }: TemplateModalProps)
                   <SelectValue placeholder="Selecione uma especialidade" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Geral</SelectItem>
+                  <SelectItem value="geral">Geral</SelectItem>
                   <SelectItem value="medicina">Medicina</SelectItem>
                   <SelectItem value="odontologia">Odontologia</SelectItem>
                   <SelectItem value="psicologia">Psicologia</SelectItem>

@@ -196,8 +196,7 @@ export function ProntuarioModal({ isOpen, onClose }: ProntuarioModalProps) {
                   <SelectValue placeholder="Selecione o template" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhum template</SelectItem>
-                  {templates.map((template) => (
+                  {templates.filter(template => template.id).map((template) => (
                     <SelectItem key={template.id} value={template.id}>
                       {template.nome} {template.especialidade && `(${template.especialidade})`}
                     </SelectItem>
@@ -215,8 +214,7 @@ export function ProntuarioModal({ isOpen, onClose }: ProntuarioModalProps) {
                   <SelectValue placeholder="Selecione uma consulta (opcional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Não vincular consulta</SelectItem>
-                  {agendamentosRealizados.map((agendamento: any) => (
+                  {agendamentosRealizados.filter(agendamento => agendamento.id).map((agendamento: any) => (
                     <SelectItem key={agendamento.id} value={agendamento.id}>
                       {agendamento.tipo_servico} - {new Date(agendamento.data_inicio).toLocaleDateString('pt-BR')}
                     </SelectItem>
