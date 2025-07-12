@@ -1,4 +1,0 @@
-
-[functions]
-verify_jwt = false
-raw_request = true

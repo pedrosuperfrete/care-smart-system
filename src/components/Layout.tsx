@@ -1,21 +1,14 @@
 
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
-import { ReactNode, useState } from "react";
+import { ReactNode } from "react";
 import { Menu } from "lucide-react";
-import { SubscriptionBanner } from "./SubscriptionBanner";
-import { usePacientesLimit } from "@/hooks/usePlanos";
 
 interface LayoutProps {
   children: ReactNode;
 }
 
 export function Layout({ children }: LayoutProps) {
-  const { data: limitData } = usePacientesLimit();
-  const [bannerDismissed, setBannerDismissed] = useState(false);
-
-  const showBanner = limitData?.isAtLimit && !bannerDismissed;
-
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gray-50">
@@ -35,9 +28,6 @@ export function Layout({ children }: LayoutProps) {
             </div>
           </header>
           <div className="flex-1 p-6 overflow-auto">
-            {showBanner && (
-              <SubscriptionBanner onDismiss={() => setBannerDismissed(true)} />
-            )}
             {children}
           </div>
         </main>

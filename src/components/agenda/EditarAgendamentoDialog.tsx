@@ -8,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tables } from '@/integrations/supabase/types';
 import { useProfissionais } from '@/hooks/useProfissionais';
 import { useUpdateAgendamento } from '@/hooks/useAgendamentos';
-import { useGoogleCalendar } from '@/hooks/useGoogleCalendar';
 import { toast } from 'sonner';
 
 type Agendamento = Tables<'agendamentos'>;
@@ -26,7 +25,6 @@ export function EditarAgendamentoDialog({
 }: EditarAgendamentoDialogProps) {
   const { data: profissionais = [] } = useProfissionais();
   const updateMutation = useUpdateAgendamento();
-  const { syncToGoogle, isConnected } = useGoogleCalendar();
   const [formData, setFormData] = useState({
     data_inicio: '',
     data_fim: '',
@@ -62,26 +60,10 @@ export function EditarAgendamentoDialog({
         observacoes: formData.observacoes || null
       };
       
-      const updatedAgendamento = await updateMutation.mutateAsync({ 
+      await updateMutation.mutateAsync({ 
         id: agendamento.id, 
         data: updateData 
       });
-
-      // Sincronizar com Google Calendar se conectado e houver google_event_id
-      if (isConnected && agendamento.google_event_id) {
-        console.log('Sincronizando agendamento editado com Google Calendar:', {
-          agendamentoId: agendamento.id,
-          googleEventId: agendamento.google_event_id
-        });
-        
-        const agendamentoParaSync = {
-          ...updatedAgendamento,
-          google_event_id: agendamento.google_event_id
-        };
-        
-        await syncToGoogle(agendamentoParaSync);
-      }
-      
       onClose();
     } catch (error) {
       console.error('Erro ao atualizar agendamento:', error);

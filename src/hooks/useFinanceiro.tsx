@@ -17,7 +17,7 @@ export function usePagamentos(startDate?: Date, endDate?: Date) {
       console.log('Buscando pagamentos com user:', user);
       
       if (!user?.id) {
-        console.log('User não disponível ainda para buscar pagamentos');
+        console.error('User não disponível para buscar pagamentos');
         return [];
       }
 
@@ -123,7 +123,7 @@ export function useFinanceiroStats(startDate?: Date, endDate?: Date) {
       console.log('Calculando estatísticas financeiras com user:', user);
       
       if (!user?.id) {
-        console.log('User não disponível ainda para calcular estatísticas');
+        console.error('User não disponível para calcular estatísticas');
         return {
           totalRecebido: 0,
           totalPendente: 0,
