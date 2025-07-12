@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { FileText } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
+import { useNavigate } from 'react-router-dom';
 
 type Prontuario = Tables<'prontuarios'>;
 
@@ -11,6 +12,12 @@ interface ProntuariosListProps {
 }
 
 export function ProntuariosList({ prontuarios }: ProntuariosListProps) {
+  const navigate = useNavigate();
+
+  const handleVerDetalhes = (prontuarioId: string) => {
+    navigate(`/prontuarios?id=${prontuarioId}`);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -39,7 +46,11 @@ export function ProntuariosList({ prontuarios }: ProntuariosListProps) {
                     </div>
                   </div>
                 </div>
-                <Button variant="outline" size="sm">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => handleVerDetalhes(prontuario.id)}
+                >
                   Ver Detalhes
                 </Button>
               </div>

@@ -102,13 +102,13 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="pb-4">
         <CardTitle>{paciente ? 'Editar Paciente' : 'Novo Paciente'}</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="space-y-1">
               <Label htmlFor="nome">Nome *</Label>
               <Input
                 id="nome"
@@ -120,7 +120,7 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
               )}
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1">
               <Label htmlFor="cpf">CPF *</Label>
               <Input
                 id="cpf"
@@ -133,7 +133,7 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
               )}
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1">
               <Label htmlFor="data_nascimento">Data de Nascimento</Label>
               <Input
                 id="data_nascimento"
@@ -142,7 +142,7 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1">
               <Label htmlFor="telefone">Telefone</Label>
               <Input
                 id="telefone"
@@ -151,7 +151,7 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
@@ -164,7 +164,7 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
               )}
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1">
               <Label htmlFor="risco">Nível de Risco</Label>
               <Select value={risco} onValueChange={(value) => setValue('risco', value as any)}>
                 <SelectTrigger>
@@ -179,7 +179,7 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label htmlFor="endereco">Endereço</Label>
             <Input
               id="endereco"
@@ -188,13 +188,13 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label htmlFor="observacoes">Observações</Label>
             <Textarea
               id="observacoes"
               {...register('observacoes')}
               placeholder="Observações adicionais sobre o paciente"
-              rows={3}
+              rows={2}
             />
           </div>
 
