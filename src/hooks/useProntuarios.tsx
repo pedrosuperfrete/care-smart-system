@@ -28,6 +28,30 @@ export function useProntuarios() {
   });
 }
 
+export function useProntuario(prontuarioId: string) {
+  return useQuery({
+    queryKey: ['prontuario', prontuarioId],
+    queryFn: async () => {
+      if (!prontuarioId) return null;
+      
+      const { data, error } = await supabase
+        .from('prontuarios')
+        .select(`
+          *,
+          pacientes(id, nome, email, telefone),
+          profissionais(id, nome, especialidade),
+          agendamentos(id, data_inicio, tipo_servico)
+        `)
+        .eq('id', prontuarioId)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!prontuarioId,
+  });
+}
+
 export function useProntuariosPorPaciente(pacienteId: string) {
   return useQuery({
     queryKey: ['prontuarios', 'paciente', pacienteId],

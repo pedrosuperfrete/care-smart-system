@@ -1,18 +1,22 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { FileText, Plus, Search, Calendar, User, ArrowLeft, ChevronDown, ChevronRight } from 'lucide-react';
-import { useProntuarios, useProntuariosPorPaciente } from '@/hooks/useProntuarios';
+import { useProntuarios, useProntuariosPorPaciente, useProntuario } from '@/hooks/useProntuarios';
 import { usePacientes } from '@/hooks/usePacientes';
 import { ProntuarioModal } from '@/components/prontuarios/ProntuarioModal';
 import { TemplateModal } from '@/components/prontuarios/TemplateModal';
 import { ProntuarioVisualizacao } from '@/components/prontuarios/ProntuarioVisualizacao';
 
 export default function Prontuarios() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const prontuarioId = searchParams.get('id');
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [tipoFilter, setTipoFilter] = useState('todos');
   const [pacienteSelecionado, setPacienteSelecionado] = useState<string | null>(null);
@@ -21,6 +25,14 @@ export default function Prontuarios() {
 
   const { data: prontuarios = [], isLoading: loadingProntuarios } = useProntuarios();
   const { data: pacientes = [], isLoading: loadingPacientes } = usePacientes();
+  const { data: prontuarioEspecifico } = useProntuario(prontuarioId || '');
+
+  // Effect para detectar prontuário específico na URL
+  useEffect(() => {
+    if (prontuarioId && prontuarioEspecifico) {
+      setPacienteSelecionado(prontuarioEspecifico.paciente_id);
+    }
+  }, [prontuarioId, prontuarioEspecifico]);
 
   // Agrupar prontuários por paciente
   const prontuariosPorPaciente = prontuarios.reduce((acc: any, prontuario: any) => {
@@ -68,7 +80,11 @@ export default function Prontuarios() {
     return (
       <ProntuarioVisualizacao 
         pacienteId={pacienteSelecionado}
-        onVoltar={() => setPacienteSelecionado(null)}
+        prontuarioId={prontuarioId}
+        onVoltar={() => {
+          setPacienteSelecionado(null);
+          setSearchParams({});
+        }}
       />
     );
   }

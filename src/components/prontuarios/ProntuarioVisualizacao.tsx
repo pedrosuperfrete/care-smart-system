@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,10 +11,11 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 
 interface ProntuarioVisualizacaoProps {
   pacienteId: string;
+  prontuarioId?: string | null;
   onVoltar: () => void;
 }
 
-export function ProntuarioVisualizacao({ pacienteId, onVoltar }: ProntuarioVisualizacaoProps) {
+export function ProntuarioVisualizacao({ pacienteId, prontuarioId, onVoltar }: ProntuarioVisualizacaoProps) {
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [conteudoEditado, setConteudoEditado] = useState('');
   const [prontuariosAbertos, setProntuariosAbertos] = useState<Record<string, boolean>>({});
@@ -23,6 +24,16 @@ export function ProntuarioVisualizacao({ pacienteId, onVoltar }: ProntuarioVisua
   const { data: paciente } = usePaciente(pacienteId);
   const { data: prontuarios = [], isLoading } = useProntuariosPorPaciente(pacienteId);
   const updateProntuario = useUpdateProntuario();
+
+  // Effect para abrir automaticamente o prontuário específico
+  useEffect(() => {
+    if (prontuarioId && prontuarios.length > 0) {
+      setProntuariosAbertos(prev => ({
+        ...prev,
+        [prontuarioId]: true
+      }));
+    }
+  }, [prontuarioId, prontuarios]);
 
   const handleIniciarEdicao = (prontuario: any) => {
     setEditandoId(prontuario.id);
@@ -138,7 +149,7 @@ export function ProntuarioVisualizacao({ pacienteId, onVoltar }: ProntuarioVisua
           prontuarios.map((prontuario: any, index: number) => (
             <Card key={prontuario.id} className="overflow-hidden">
               <Collapsible 
-                open={prontuariosAbertos[prontuario.id] || index === 0} 
+                open={prontuariosAbertos[prontuario.id] || index === 0 || prontuarioId === prontuario.id} 
                 onOpenChange={() => toggleProntuario(prontuario.id)}
               >
                 <CollapsibleTrigger asChild>
@@ -146,7 +157,7 @@ export function ProntuarioVisualizacao({ pacienteId, onVoltar }: ProntuarioVisua
                     <div className="flex justify-between items-start">
                       <div className="space-y-2">
                         <div className="flex items-center space-x-3">
-                          {prontuariosAbertos[prontuario.id] || index === 0 ? (
+                          {prontuariosAbertos[prontuario.id] || index === 0 || prontuarioId === prontuario.id ? (
                             <ChevronDown className="h-4 w-4" />
                           ) : (
                             <ChevronRight className="h-4 w-4" />
