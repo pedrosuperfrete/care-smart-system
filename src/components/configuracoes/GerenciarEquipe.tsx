@@ -91,6 +91,32 @@ export function GerenciarEquipe() {
     }
 
     try {
+      // Primeiro, verificar se o usuário já existe
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', novoUsuario.email)
+        .maybeSingle();
+
+      if (existingUser) {
+        // Se já existe, apenas associar à clínica
+        await createUsuarioClinica.mutateAsync({
+          usuario_id: existingUser.id,
+          clinica_id: clinicaAtual,
+          tipo_papel: novoUsuario.tipo_papel,
+        });
+
+        setNovoUsuario({ 
+          email: '', 
+          senha: '', 
+          confirmarSenha: '', 
+          tipo_papel: 'recepcionista' 
+        });
+        setDialogAberto(false);
+        toast.success('Usuário adicionado à clínica com sucesso!');
+        return;
+      }
+
       // Criar novo usuário no Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: novoUsuario.email,
@@ -101,8 +127,9 @@ export function GerenciarEquipe() {
       });
 
       if (authError) {
+        console.error('Erro de autenticação:', authError);
         if (authError.message.includes('User already registered')) {
-          toast.error('E-mail já cadastrado no sistema');
+          toast.error('E-mail já cadastrado no sistema. Use uma opção diferente.');
         } else {
           toast.error('Erro ao criar usuário: ' + authError.message);
         }
@@ -121,12 +148,12 @@ export function GerenciarEquipe() {
           id: authData.user.id,
           email: novoUsuario.email,
           tipo_usuario: novoUsuario.tipo_papel === 'admin_clinica' ? 'admin' : novoUsuario.tipo_papel,
-          senha_hash: 'managed_by_auth' // Placeholder, pois o Supabase Auth gerencia as senhas
+          senha_hash: 'managed_by_auth'
         });
 
       if (userError) {
         console.error('Erro ao criar registro do usuário:', userError);
-        toast.error('Erro ao criar registro do usuário');
+        toast.error('Erro ao criar registro do usuário: ' + userError.message);
         return;
       }
 
