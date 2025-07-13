@@ -141,7 +141,7 @@ export function usePacientesStats() {
           nome,
           agendamentos!inner(
             id,
-            pagamentos(status)
+            pagamentos!fk_pagamento_agendamento(status)
           )
         `)
         .in('clinica_id', clinicaIds)

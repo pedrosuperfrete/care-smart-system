@@ -99,7 +99,7 @@ export const useExportarRelatorios = () => {
       .select(`
         *,
         pacientes (nome, cpf, telefone),
-        pagamentos (valor_total, status)
+        pagamentos!fk_pagamento_agendamento (valor_total, status)
       `)
       .eq('profissional_id', profissionalId)
       .gte('data_inicio', dataInicio.toISOString())
