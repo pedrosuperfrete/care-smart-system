@@ -24,6 +24,8 @@ interface ServicoPreco {
 interface OnboardingStep2Props {
   data: {
     nome_clinica: string;
+    cnpj_clinica: string;
+    endereco_clinica: string;
     horarios_atendimento: string;
     servicos_precos: ServicoPreco[];
     formas_pagamento: string[];
@@ -44,6 +46,10 @@ export function OnboardingStep2({ data, onDataChange, onSubmit, onBack, loading 
 
     if (!data.nome_clinica.trim()) {
       newErrors.nome_clinica = 'Nome da clínica é obrigatório';
+    }
+
+    if (!data.cnpj_clinica.trim()) {
+      newErrors.cnpj_clinica = 'CNPJ da clínica é obrigatório';
     }
 
     if (!data.horarios_atendimento.trim()) {
@@ -112,6 +118,31 @@ export function OnboardingStep2({ data, onDataChange, onSubmit, onBack, loading 
             {errors.nome_clinica && (
               <p className="text-sm text-red-600">{errors.nome_clinica}</p>
             )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="cnpj_clinica">CNPJ da Clínica *</Label>
+              <Input
+                id="cnpj_clinica"
+                value={data.cnpj_clinica}
+                onChange={(e) => onDataChange({ ...data, cnpj_clinica: e.target.value })}
+                placeholder="00.000.000/0000-00"
+              />
+              {errors.cnpj_clinica && (
+                <p className="text-sm text-red-600">{errors.cnpj_clinica}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="endereco_clinica">Endereço da Clínica</Label>
+              <Input
+                id="endereco_clinica"
+                value={data.endereco_clinica}
+                onChange={(e) => onDataChange({ ...data, endereco_clinica: e.target.value })}
+                placeholder="Endereço completo (opcional)"
+              />
+            </div>
           </div>
 
           <div className="space-y-2">

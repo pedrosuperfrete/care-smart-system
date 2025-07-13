@@ -16,7 +16,7 @@ interface AuthContextType {
   clinicasUsuario: Array<{ clinica_id: string; tipo_papel: string }>;
   setClinicaAtual: (clinicaId: string) => void;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
-  signUp: (email: string, password: string, tipoUsuario?: 'admin' | 'profissional' | 'recepcionista', novaClinica?: { nome: string; cnpj: string; endereco?: string }) => Promise<{ error?: string }>;
+  signUp: (email: string, password: string, tipoUsuario?: 'admin' | 'profissional' | 'recepcionista') => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
   updateProfissional: (data: Partial<Profissional>) => Promise<void>;
@@ -134,8 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = async (
     email: string, 
     password: string, 
-    tipoUsuario: 'admin' | 'profissional' | 'recepcionista' = 'profissional',
-    novaClinica?: { nome: string; cnpj: string; endereco?: string }
+    tipoUsuario: 'admin' | 'profissional' | 'recepcionista' = 'profissional'
   ) => {
     try {
       setLoading(true);
@@ -154,35 +153,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { error: 'Erro ao criar usuário' };
       }
 
+      // Para novos usuários, associar à primeira clínica disponível temporariamente
+      // A clínica definitiva será criada durante o onboarding para profissionais
+      const { data: clinicas } = await supabase
+        .from('clinicas')
+        .select('id')
+        .limit(1);
+      
       let clinicaId: string | null = null;
-
-      // Agora que o usuário está autenticado, criar clínica se necessário
-      if (novaClinica) {
-        const { data: clinicaData, error: clinicaError } = await supabase
-          .from('clinicas')
-          .insert({
-            nome: novaClinica.nome,
-            cnpj: novaClinica.cnpj,
-            endereco: novaClinica.endereco || null,
-          })
-          .select()
-          .single();
-
-        if (clinicaError) {
-          return { error: 'Erro ao criar clínica: ' + clinicaError.message };
-        }
-
-        clinicaId = clinicaData.id;
-      } else {
-        // Usar primeira clínica existente
-        const { data: clinicas } = await supabase
-          .from('clinicas')
-          .select('id')
-          .limit(1);
-        
-        if (clinicas && clinicas.length > 0) {
-          clinicaId = clinicas[0].id;
-        }
+      if (clinicas && clinicas.length > 0) {
+        clinicaId = clinicas[0].id;
       }
 
       if (!clinicaId) {
@@ -204,9 +184,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { error: 'Erro ao criar perfil do usuário: ' + userError.message };
       }
 
-      // Criar associação usuário-clínica
-      const tipoPapel = novaClinica ? 'admin_clinica' : 
-                        tipoUsuario === 'admin' ? 'admin_clinica' : 
+      // Criar associação usuário-clínica (temporária para profissionais)
+      const tipoPapel = tipoUsuario === 'admin' ? 'admin_clinica' : 
                         tipoUsuario === 'profissional' ? 'profissional' : 'recepcionista';
 
       const { error: associacaoError } = await supabase
