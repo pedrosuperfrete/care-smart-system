@@ -91,7 +91,7 @@ export function GerenciarEquipe() {
     }
 
     try {
-      // Primeiro, verificar se o usuário já existe
+      // Primeiro, verificar se o usuário já existe na nossa tabela
       const { data: existingUser } = await supabase
         .from('users')
         .select('id')
@@ -99,7 +99,20 @@ export function GerenciarEquipe() {
         .maybeSingle();
 
       if (existingUser) {
-        // Se já existe, apenas associar à clínica
+        // Se já existe, verificar se já está associado à clínica
+        const { data: existingAssociation } = await supabase
+          .from('usuarios_clinicas')
+          .select('id')
+          .eq('usuario_id', existingUser.id)
+          .eq('clinica_id', clinicaAtual)
+          .maybeSingle();
+
+        if (existingAssociation) {
+          toast.error('Usuário já está associado a esta clínica');
+          return;
+        }
+
+        // Se não está associado, apenas associar à clínica
         await createUsuarioClinica.mutateAsync({
           usuario_id: existingUser.id,
           clinica_id: clinicaAtual,
