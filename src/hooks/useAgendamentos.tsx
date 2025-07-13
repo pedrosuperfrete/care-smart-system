@@ -106,6 +106,29 @@ export function useCreateAgendamento() {
   
   return useMutation({
     mutationFn: async (agendamento: InsertAgendamento) => {
+      console.log('Dados do agendamento a ser criado:', agendamento);
+      
+      // Validações básicas
+      if (!agendamento.paciente_id || !agendamento.profissional_id || !agendamento.data_inicio) {
+        throw new Error('Dados obrigatórios ausentes: ' + JSON.stringify({
+          paciente_id: !!agendamento.paciente_id,
+          profissional_id: !!agendamento.profissional_id,
+          data_inicio: !!agendamento.data_inicio
+        }));
+      }
+
+      // Verificar se o profissional existe e está ativo
+      const { data: profissionalVerif, error: profError } = await supabase
+        .from('profissionais')
+        .select('id, ativo')
+        .eq('id', agendamento.profissional_id)
+        .eq('ativo', true)
+        .single();
+
+      if (profError || !profissionalVerif) {
+        throw new Error('Profissional não encontrado ou inativo');
+      }
+
       // Verificar conflito de horário
       const { data: conflito, error: conflitoError } = await supabase
         .from('agendamentos')
@@ -153,6 +176,7 @@ export function useCreateAgendamento() {
       toast.success('Agendamento criado com sucesso!');
     },
     onError: (error: any) => {
+      console.error('Erro detalhado ao criar agendamento:', error);
       toast.error('Erro ao criar agendamento: ' + error.message);
     },
   });

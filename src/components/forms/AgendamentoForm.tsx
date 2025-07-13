@@ -44,7 +44,16 @@ export function AgendamentoForm({ agendamento, pacienteId, onSuccess }: Agendame
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('Dados do formulário:', formData);
+    console.log('Profissional disponível:', profissional);
+    console.log('Lista de profissionais:', profissionais);
+    
     if (!formData.paciente_id || !formData.profissional_id || !formData.data_inicio) {
+      console.error('Dados obrigatórios ausentes:', {
+        paciente_id: formData.paciente_id,
+        profissional_id: formData.profissional_id,
+        data_inicio: formData.data_inicio
+      });
       return;
     }
 

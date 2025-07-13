@@ -168,7 +168,7 @@ export function useFinanceiroStats(startDate?: Date, endDate?: Date) {
           data_pagamento, 
           data_vencimento, 
           criado_em,
-          agendamentos!inner(
+          agendamentos!fk_pagamento_agendamento(
             profissionais!inner(clinica_id)
           )
         `)
