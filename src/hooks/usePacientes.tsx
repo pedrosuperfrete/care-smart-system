@@ -111,9 +111,24 @@ export function usePacientesStats() {
   return useQuery({
     queryKey: ['pacientes-stats'],
     queryFn: async () => {
+      // Buscar clínicas do usuário
+      const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
+      
+      if (!clinicasUsuario || clinicasUsuario.length === 0) {
+        return {
+          total: 0,
+          adimplentes: 0,
+          inadimplentes: 0,
+        };
+      }
+
+      // Filtrar pacientes pelas clínicas do usuário
+      const clinicaIds = clinicasUsuario.map(c => c.clinica_id);
+
       const { count: total, error: totalError } = await supabase
         .from('pacientes')
         .select('*', { count: 'exact', head: true })
+        .in('clinica_id', clinicaIds)
         .eq('ativo', true);
 
       if (totalError) throw totalError;
@@ -129,6 +144,7 @@ export function usePacientesStats() {
             pagamentos(status)
           )
         `)
+        .in('clinica_id', clinicaIds)
         .eq('ativo', true);
 
       if (pagamentosError) throw pagamentosError;

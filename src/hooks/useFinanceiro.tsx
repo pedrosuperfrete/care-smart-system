@@ -21,6 +21,16 @@ export function usePagamentos(startDate?: Date, endDate?: Date) {
         return [];
       }
 
+      // Buscar clínicas do usuário
+      const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
+      
+      if (!clinicasUsuario || clinicasUsuario.length === 0) {
+        return [];
+      }
+
+      // Filtrar pagamentos pelos profissionais das clínicas do usuário
+      const clinicaIds = clinicasUsuario.map(c => c.clinica_id);
+
       let query = supabase
         .from('pagamentos')
         .select(`
@@ -45,13 +55,15 @@ export function usePagamentos(startDate?: Date, endDate?: Date) {
               email,
               telefone
             ),
-            profissionais (
+            profissionais!inner (
               id,
               nome,
-              especialidade
+              especialidade,
+              clinica_id
             )
           )
         `)
+        .in('agendamentos.profissionais.clinica_id', clinicaIds)
         .order('criado_em', { ascending: false });
 
       // Filtrar por data se fornecido
@@ -132,9 +144,35 @@ export function useFinanceiroStats(startDate?: Date, endDate?: Date) {
         };
       }
 
+      // Buscar clínicas do usuário
+      const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
+      
+      if (!clinicasUsuario || clinicasUsuario.length === 0) {
+        return {
+          totalRecebido: 0,
+          totalPendente: 0,
+          totalVencido: 0,
+          receitaMensal: 0,
+        };
+      }
+
+      // Filtrar estatísticas pelos profissionais das clínicas do usuário
+      const clinicaIds = clinicasUsuario.map(c => c.clinica_id);
+
       let query = supabase
         .from('pagamentos')
-        .select('valor_total, valor_pago, status, data_pagamento, data_vencimento, criado_em');
+        .select(`
+          valor_total, 
+          valor_pago, 
+          status, 
+          data_pagamento, 
+          data_vencimento, 
+          criado_em,
+          agendamentos!inner(
+            profissionais!inner(clinica_id)
+          )
+        `)
+        .in('agendamentos.profissionais.clinica_id', clinicaIds);
       
       // Filtrar por data se fornecido
       if (startDate) {

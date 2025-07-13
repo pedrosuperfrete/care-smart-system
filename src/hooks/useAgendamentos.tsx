@@ -11,13 +11,24 @@ export function useAgendamentos() {
   return useQuery({
     queryKey: ['agendamentos'],
     queryFn: async () => {
+      // Buscar clínicas do usuário
+      const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
+      
+      if (!clinicasUsuario || clinicasUsuario.length === 0) {
+        return [];
+      }
+
+      // Filtrar agendamentos pelos profissionais das clínicas do usuário
+      const clinicaIds = clinicasUsuario.map(c => c.clinica_id);
+
       const { data, error } = await supabase
         .from('agendamentos')
         .select(`
           *,
           pacientes(id, nome, telefone, email),
-          profissionais(id, nome, especialidade)
+          profissionais!inner(id, nome, especialidade, clinica_id)
         `)
+        .in('profissionais.clinica_id', clinicaIds)
         .order('data_inicio', { ascending: true });
       
       if (error) throw error;
@@ -30,14 +41,24 @@ export function useAgendamentosHoje() {
   return useQuery({
     queryKey: ['agendamentos-hoje'],
     queryFn: async () => {
+      // Buscar clínicas do usuário
+      const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
+      
+      if (!clinicasUsuario || clinicasUsuario.length === 0) {
+        return [];
+      }
+
+      const clinicaIds = clinicasUsuario.map(c => c.clinica_id);
       const hoje = new Date().toISOString().split('T')[0];
+      
       const { data, error } = await supabase
         .from('agendamentos')
         .select(`
           *,
           pacientes(id, nome, telefone, email),
-          profissionais(id, nome, especialidade)
+          profissionais!inner(id, nome, especialidade, clinica_id)
         `)
+        .in('profissionais.clinica_id', clinicaIds)
         .gte('data_inicio', `${hoje}T00:00:00`)
         .lt('data_inicio', `${hoje}T23:59:59`)
         .order('data_inicio', { ascending: true });
@@ -52,14 +73,24 @@ export function useProximosAgendamentos(limit = 5) {
   return useQuery({
     queryKey: ['proximos-agendamentos', limit],
     queryFn: async () => {
+      // Buscar clínicas do usuário
+      const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
+      
+      if (!clinicasUsuario || clinicasUsuario.length === 0) {
+        return [];
+      }
+
+      const clinicaIds = clinicasUsuario.map(c => c.clinica_id);
       const agora = new Date().toISOString();
+      
       const { data, error } = await supabase
         .from('agendamentos')
         .select(`
           *,
           pacientes(id, nome, telefone, email),
-          profissionais(id, nome, especialidade)
+          profissionais!inner(id, nome, especialidade, clinica_id)
         `)
+        .in('profissionais.clinica_id', clinicaIds)
         .gte('data_inicio', agora)
         .order('data_inicio', { ascending: true })
         .limit(limit);
@@ -250,12 +281,29 @@ export function useAgendamentosStats() {
   return useQuery({
     queryKey: ['agendamentos-stats'],
     queryFn: async () => {
+      // Buscar clínicas do usuário
+      const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
+      
+      if (!clinicasUsuario || clinicasUsuario.length === 0) {
+        return {
+          consultasHoje: 0,
+          confirmadasHoje: 0,
+          pendentes: 0,
+        };
+      }
+
+      const clinicaIds = clinicasUsuario.map(c => c.clinica_id);
       const hoje = new Date().toISOString().split('T')[0];
       
       // Consultas hoje
       const { data: consultasHoje, error: hojeError } = await supabase
         .from('agendamentos')
-        .select('status, confirmado_pelo_paciente')
+        .select(`
+          status, 
+          confirmado_pelo_paciente,
+          profissionais!inner(clinica_id)
+        `)
+        .in('profissionais.clinica_id', clinicaIds)
         .gte('data_inicio', `${hoje}T00:00:00`)
         .lt('data_inicio', `${hoje}T23:59:59`);
       
@@ -264,7 +312,11 @@ export function useAgendamentosStats() {
       // Consultas pendentes (geral)
       const { count: pendentes, error: pendentesError } = await supabase
         .from('agendamentos')
-        .select('*', { count: 'exact', head: true })
+        .select(`
+          *,
+          profissionais!inner(clinica_id)
+        `, { count: 'exact', head: true })
+        .in('profissionais.clinica_id', clinicaIds)
         .eq('status', 'pendente');
       
       if (pendentesError) throw pendentesError;

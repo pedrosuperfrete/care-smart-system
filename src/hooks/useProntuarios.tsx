@@ -12,14 +12,25 @@ export function useProntuarios() {
   return useQuery({
     queryKey: ['prontuarios'],
     queryFn: async () => {
+      // Buscar clínicas do usuário
+      const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
+      
+      if (!clinicasUsuario || clinicasUsuario.length === 0) {
+        return [];
+      }
+
+      // Filtrar prontuários pelos profissionais das clínicas do usuário
+      const clinicaIds = clinicasUsuario.map(c => c.clinica_id);
+
       const { data, error } = await supabase
         .from('prontuarios')
         .select(`
           *,
           pacientes(id, nome, email, telefone),
-          profissionais(id, nome, especialidade),
+          profissionais!inner(id, nome, especialidade, clinica_id),
           agendamentos(id, data_inicio, tipo_servico)
         `)
+        .in('profissionais.clinica_id', clinicaIds)
         .order('ultima_edicao', { ascending: false });
       
       if (error) throw error;
@@ -136,9 +147,20 @@ export function useModelosProntuarios() {
   return useQuery({
     queryKey: ['modelos-prontuarios'],
     queryFn: async () => {
+      // Buscar clínicas do usuário
+      const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
+      
+      if (!clinicasUsuario || clinicasUsuario.length === 0) {
+        return [];
+      }
+
+      // Filtrar modelos pelas clínicas do usuário
+      const clinicaIds = clinicasUsuario.map(c => c.clinica_id);
+
       const { data, error } = await supabase
         .from('modelos_prontuarios')
         .select('*')
+        .in('clinica_id', clinicaIds)
         .order('nome', { ascending: true });
       
       if (error) throw error;
@@ -152,9 +174,24 @@ export function useCreateTemplate() {
   
   return useMutation({
     mutationFn: async (template: { nome: string; conteudo: string; especialidade?: string }) => {
+      // Buscar clínica atual do usuário
+      const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
+      
+      if (!clinicasUsuario || clinicasUsuario.length === 0) {
+        throw new Error('Usuário não está associado a nenhuma clínica');
+      }
+
+      // Usar a primeira clínica (ou permitir que o usuário escolha se tiver múltiplas)
+      const clinicaId = clinicasUsuario[0].clinica_id;
+
+      const templateData = {
+        ...template,
+        clinica_id: clinicaId,
+      };
+
       const { data, error } = await supabase
         .from('modelos_prontuarios')
-        .insert(template)
+        .insert(templateData)
         .select()
         .single();
       

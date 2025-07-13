@@ -12,9 +12,20 @@ export function useProfissionais() {
   return useQuery({
     queryKey: ['profissionais'],
     queryFn: async (): Promise<Profissional[]> => {
+      // Buscar clínicas do usuário
+      const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
+      
+      if (!clinicasUsuario || clinicasUsuario.length === 0) {
+        return [];
+      }
+
+      // Filtrar profissionais pelas clínicas do usuário
+      const clinicaIds = clinicasUsuario.map(c => c.clinica_id);
+
       const { data, error } = await supabase
         .from('profissionais')
         .select('*')
+        .in('clinica_id', clinicaIds)
         .eq('ativo', true)
         .order('nome');
 

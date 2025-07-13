@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { UserPlus, UserMinus, Edit } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useUsuariosClinicas, useCreateUsuarioClinica, useRemoveUsuarioClinica } from '@/hooks/useUsuariosClinicas';
+import { useUsuariosClinicas, useCreateUsuarioClinica, useRemoveUsuarioClinica, useUpdateUsuarioClinica } from '@/hooks/useUsuariosClinicas';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -34,6 +34,7 @@ export function GerenciarEquipe() {
   const { data: usuarios = [], isLoading } = useUsuariosClinicas(clinicaAtual || undefined);
   const createUsuarioClinica = useCreateUsuarioClinica();
   const removeUsuarioClinica = useRemoveUsuarioClinica();
+  const updateUsuarioClinica = useUpdateUsuarioClinica();
 
   // Buscar detalhes dos usuários
   useEffect(() => {
@@ -364,7 +365,13 @@ export function GerenciarEquipe() {
                 <div className="flex items-center space-x-2">
                   <Switch 
                     checked={usuarioClinica.ativo} 
-                    disabled={true}
+                    onCheckedChange={(checked) => {
+                      updateUsuarioClinica.mutate({
+                        id: usuarioClinica.id,
+                        ativo: checked
+                      });
+                    }}
+                    disabled={updateUsuarioClinica.isPending}
                   />
                   <Button 
                     variant="outline" 

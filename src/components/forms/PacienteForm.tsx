@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCreatePaciente, useUpdatePaciente } from '@/hooks/usePacientes';
-import { useClinica } from '@/hooks/useClinica';
+import { useAuth } from '@/hooks/useAuth';
 import { Tables } from '@/integrations/supabase/types';
 
 type Paciente = Tables<'pacientes'>;
@@ -34,7 +34,7 @@ interface PacienteFormProps {
 }
 
 export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
-  const { data: clinica } = useClinica();
+  const { clinicaAtual } = useAuth();
   const createPaciente = useCreatePaciente();
   const updatePaciente = useUpdatePaciente();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -64,7 +64,7 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
   const risco = watch('risco');
 
   const onSubmit = async (data: PacienteFormData) => {
-    if (!clinica) {
+    if (!clinicaAtual) {
       return;
     }
 
@@ -73,7 +73,7 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
       const pacienteData = {
         nome: data.nome,
         cpf: data.cpf,
-        clinica_id: clinica.id,
+        clinica_id: clinicaAtual,
         email: data.email || null,
         data_nascimento: data.data_nascimento || null,
         telefone: data.telefone || null,
