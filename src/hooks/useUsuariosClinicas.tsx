@@ -13,11 +13,7 @@ export function useUsuariosClinicas(clinicaId?: string) {
     queryFn: async (): Promise<UsuarioClinica[]> => {
       let query = supabase
         .from('usuarios_clinicas')
-        .select(`
-          *,
-          clinicas(id, nome),
-          users(id, email)
-        `);
+        .select('*');
 
       if (clinicaId) {
         query = query.eq('clinica_id', clinicaId);

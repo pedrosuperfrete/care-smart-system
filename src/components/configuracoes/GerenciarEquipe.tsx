@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,10 +22,44 @@ export function GerenciarEquipe() {
   const { isAdminClinica, clinicaAtual } = useAuth();
   const [novoUsuario, setNovoUsuario] = useState<NovoUsuarioForm>({ email: '', tipo_papel: 'recepcionista' });
   const [dialogAberto, setDialogAberto] = useState(false);
+  const [usuariosDetalhes, setUsuariosDetalhes] = useState<any[]>([]);
 
   const { data: usuarios = [], isLoading } = useUsuariosClinicas(clinicaAtual || undefined);
   const createUsuarioClinica = useCreateUsuarioClinica();
   const removeUsuarioClinica = useRemoveUsuarioClinica();
+
+  // Buscar detalhes dos usuários
+  useEffect(() => {
+    const fetchUsuariosDetalhes = async () => {
+      if (usuarios.length === 0) return;
+
+      const detalhes = await Promise.all(
+        usuarios.map(async (usuarioClinica) => {
+          try {
+            const { data: userData } = await supabase
+              .from('users')
+              .select('email')
+              .eq('id', usuarioClinica.usuario_id)
+              .single();
+
+            return {
+              ...usuarioClinica,
+              email: userData?.email || 'Email não encontrado'
+            };
+          } catch (error) {
+            return {
+              ...usuarioClinica,
+              email: 'Erro ao carregar email'
+            };
+          }
+        })
+      );
+
+      setUsuariosDetalhes(detalhes);
+    };
+
+    fetchUsuariosDetalhes();
+  }, [usuarios]);
 
   const handleAdicionarUsuario = async () => {
     if (!clinicaAtual) {
@@ -163,12 +197,12 @@ export function GerenciarEquipe() {
       
       <CardContent>
         <div className="space-y-4">
-          {usuarios.map((usuarioClinica) => (
+          {usuariosDetalhes.map((usuarioClinica) => (
             <div key={usuarioClinica.id} className="flex items-center justify-between p-4 border rounded-lg bg-card">
               <div className="flex-1">
                 <div className="flex items-center space-x-3">
                   <div>
-                    <h4 className="font-medium">{(usuarioClinica as any).users?.email || 'E-mail não disponível'}</h4>
+                    <h4 className="font-medium">{usuarioClinica.email}</h4>
                     <div className="flex items-center space-x-2 mt-1">
                       <Badge variant={getTipoPapelVariant(usuarioClinica.tipo_papel)}>
                         {getTipoPapelDisplay(usuarioClinica.tipo_papel)}
@@ -202,7 +236,7 @@ export function GerenciarEquipe() {
             </div>
           ))}
           
-          {usuarios.length === 0 && (
+          {usuariosDetalhes.length === 0 && !isLoading && (
             <div className="text-center py-8 text-muted-foreground">
               Nenhum usuário encontrado nesta clínica.
             </div>
