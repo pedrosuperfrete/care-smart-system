@@ -12,17 +12,26 @@ export function usePacientes() {
   return useQuery({
     queryKey: ['pacientes'],
     queryFn: async () => {
-      // Debug: verificar clínicas do usuário
+      // Buscar clínicas do usuário
       const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
       console.log('Clínicas do usuário na query de pacientes:', clinicasUsuario);
+      
+      if (!clinicasUsuario || clinicasUsuario.length === 0) {
+        console.log('Usuário não tem clínicas associadas');
+        return [];
+      }
+
+      // Filtrar pacientes pelas clínicas do usuário
+      const clinicaIds = clinicasUsuario.map(c => c.clinica_id);
       
       const { data, error } = await supabase
         .from('pacientes')
         .select('*')
+        .in('clinica_id', clinicaIds)
         .eq('ativo', true)
         .order('criado_em', { ascending: false });
       
-      console.log('Pacientes retornados:', data);
+      console.log('Pacientes filtrados por clínica:', data);
       if (error) {
         console.error('Erro ao buscar pacientes:', error);
         throw error;
