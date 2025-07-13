@@ -21,10 +21,23 @@ export function useCreatePagamento() {
     mutationFn: async (data: CreatePagamentoData) => {
       console.log('Criando pagamento manual:', data);
       
+      // Buscar o profissional atual primeiro
+      const { data: currentUser } = await supabase.auth.getUser();
+      if (!currentUser.user) throw new Error('Usuário não autenticado');
+
+      const { data: profissional } = await supabase
+        .from('profissionais')
+        .select('id')
+        .eq('user_id', currentUser.user.id)
+        .eq('ativo', true)
+        .single();
+
+      if (!profissional) throw new Error('Profissional não encontrado');
+      
       // Primeiro, vamos criar um agendamento
       const agendamentoData = {
         paciente_id: data.paciente_id,
-        profissional_id: '00000000-0000-0000-0000-000000000000', // UUID temporário para pagamentos manuais
+        profissional_id: profissional.id,
         tipo_servico: data.servico_prestado,
         data_inicio: data.data_vencimento ? data.data_vencimento.toISOString() : new Date().toISOString(),
         data_fim: data.data_vencimento ? new Date(data.data_vencimento.getTime() + 60 * 60 * 1000).toISOString() : new Date(Date.now() + 60 * 60 * 1000).toISOString(),

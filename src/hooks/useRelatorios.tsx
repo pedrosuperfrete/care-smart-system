@@ -83,39 +83,59 @@ export const useRelatorios = (periodo: string = 'mes') => {
       // Buscar profissional atual
       const { data: profissional } = await supabase
         .from('profissionais')
-        .select('id')
+        .select('id, clinica_id')
         .eq('user_id', user.id)
+        .eq('ativo', true)
         .single();
 
       if (!profissional) return;
 
-      // 1. Total de consultas do período atual
+      // 1. Total de consultas do período atual - da mesma clínica
       const { data: consultasAtual } = await supabase
         .from('agendamentos')
-        .select('id, status')
-        .eq('profissional_id', profissional.id)
+        .select(`
+          id, 
+          status,
+          profissionais!inner (
+            id,
+            clinica_id
+          )
+        `)
+        .eq('profissionais.clinica_id', profissional.clinica_id)
         .gte('data_inicio', inicio.toISOString())
         .lte('data_inicio', fim.toISOString());
 
-      // 2. Total de consultas do período anterior
+      // 2. Total de consultas do período anterior - da mesma clínica
       const { data: consultasAnterior } = await supabase
         .from('agendamentos')
-        .select('id')
-        .eq('profissional_id', profissional.id)
+        .select(`
+          id,
+          profissionais!inner (
+            id,
+            clinica_id
+          )
+        `)
+        .eq('profissionais.clinica_id', profissional.clinica_id)
         .gte('data_inicio', periodoAnterior.inicio.toISOString())
         .lte('data_inicio', periodoAnterior.fim.toISOString());
 
-      // 3. Novos pacientes (primeira consulta no período)
+      // 3. Novos pacientes (primeira consulta no período) - da mesma clínica
       const { data: pacientesNovos } = await supabase
         .from('agendamentos')
-        .select('paciente_id')
-        .eq('profissional_id', profissional.id)
+        .select(`
+          paciente_id,
+          profissionais!inner (
+            id,
+            clinica_id
+          )
+        `)
+        .eq('profissionais.clinica_id', profissional.clinica_id)
         .gte('data_inicio', inicio.toISOString())
         .lte('data_inicio', fim.toISOString());
 
       const pacientesUnicos = new Set(pacientesNovos?.map(p => p.paciente_id) || []);
 
-      // 4. Receita total do período
+      // 4. Receita total do período - apenas da mesma clínica
       const { data: pagamentos } = await supabase
         .from('pagamentos')
         .select(`
@@ -123,21 +143,29 @@ export const useRelatorios = (periodo: string = 'mes') => {
           status,
           agendamentos!inner (
             profissional_id,
-            data_inicio
+            data_inicio,
+            profissionais!inner (
+              clinica_id
+            )
           )
         `)
-        .eq('agendamentos.profissional_id', profissional.id)
+        .eq('agendamentos.profissionais.clinica_id', profissional.clinica_id)
         .gte('agendamentos.data_inicio', inicio.toISOString())
         .lte('agendamentos.data_inicio', fim.toISOString())
         .eq('status', 'pago');
 
       const receitaTotal = pagamentos?.reduce((acc, p) => acc + Number(p.valor_pago), 0) || 0;
 
-      // 5. Taxa de retorno (pacientes que tiveram mais de uma consulta)
+      // 5. Taxa de retorno (pacientes que tiveram mais de uma consulta) - apenas da mesma clínica
       const { data: todasConsultas } = await supabase
         .from('agendamentos')
-        .select('paciente_id')
-        .eq('profissional_id', profissional.id)
+        .select(`
+          paciente_id,
+          profissionais!inner (
+            clinica_id
+          )
+        `)
+        .eq('profissionais.clinica_id', profissional.clinica_id)
         .eq('status', 'realizado');
 
       const consultasPorPaciente = todasConsultas?.reduce((acc: any, consulta) => {
@@ -203,8 +231,9 @@ export const useRelatorios = (periodo: string = 'mes') => {
     try {
       const { data: profissional } = await supabase
         .from('profissionais')
-        .select('id')
+        .select('id, clinica_id')
         .eq('user_id', user.id)
+        .eq('ativo', true)
         .single();
 
       if (!profissional) return;
@@ -219,8 +248,13 @@ export const useRelatorios = (periodo: string = 'mes') => {
         ultimosDias.map(async (dia) => {
           const { data: consultas } = await supabase
             .from('agendamentos')
-            .select('id')
-            .eq('profissional_id', profissional.id)
+            .select(`
+              id,
+              profissionais!inner (
+                clinica_id
+              )
+            `)
+            .eq('profissionais.clinica_id', profissional.clinica_id)
             .gte('data_inicio', `${dia}T00:00:00`)
             .lt('data_inicio', `${dia}T23:59:59`);
 
@@ -243,8 +277,9 @@ export const useRelatorios = (periodo: string = 'mes') => {
     try {
       const { data: profissional } = await supabase
         .from('profissionais')
-        .select('id')
+        .select('id, clinica_id')
         .eq('user_id', user.id)
+        .eq('ativo', true)
         .single();
 
       if (!profissional) return;
@@ -267,10 +302,13 @@ export const useRelatorios = (periodo: string = 'mes') => {
               valor_pago,
               agendamentos!inner (
                 profissional_id,
-                data_inicio
+                data_inicio,
+                profissionais!inner (
+                  clinica_id
+                )
               )
             `)
-            .eq('agendamentos.profissional_id', profissional.id)
+            .eq('agendamentos.profissionais.clinica_id', profissional.clinica_id)
             .gte('agendamentos.data_inicio', inicio.toISOString())
             .lte('agendamentos.data_inicio', fim.toISOString())
             .eq('status', 'pago');
@@ -296,8 +334,9 @@ export const useRelatorios = (periodo: string = 'mes') => {
     try {
       const { data: profissional } = await supabase
         .from('profissionais')
-        .select('id')
+        .select('id, clinica_id')
         .eq('user_id', user.id)
+        .eq('ativo', true)
         .single();
 
       if (!profissional) return;
@@ -306,8 +345,13 @@ export const useRelatorios = (periodo: string = 'mes') => {
 
       const { data: agendamentos } = await supabase
         .from('agendamentos')
-        .select('tipo_servico')
-        .eq('profissional_id', profissional.id)
+        .select(`
+          tipo_servico,
+          profissionais!inner (
+            clinica_id
+          )
+        `)
+        .eq('profissionais.clinica_id', profissional.clinica_id)
         .gte('data_inicio', inicio.toISOString())
         .lte('data_inicio', fim.toISOString());
 

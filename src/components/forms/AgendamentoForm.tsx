@@ -19,15 +19,18 @@ interface AgendamentoFormProps {
 }
 
 export function AgendamentoForm({ agendamento, pacienteId, onSuccess }: AgendamentoFormProps) {
-  const { profissional } = useAuth();
+  const { profissional, user } = useAuth();
   const createMutation = useCreateAgendamento();
   const updateMutation = useUpdateAgendamento();
   const { data: pacientes = [] } = usePacientes();
   const { data: profissionais = [] } = useProfissionais();
 
+  // Se o usuário é profissional, usar automaticamente seu ID. Se é recepcionista, mostrar lista
+  const isProfissional = profissional && user;
+  
   const [formData, setFormData] = useState({
     paciente_id: agendamento?.paciente_id || pacienteId || '',
-    profissional_id: agendamento?.profissional_id || profissional?.id || '',
+    profissional_id: agendamento?.profissional_id || (isProfissional ? profissional?.id || '' : ''),
     data_inicio: agendamento?.data_inicio ? 
       new Date(agendamento.data_inicio).toISOString().slice(0, 16) : '',
     data_fim: agendamento?.data_fim ? 
@@ -112,21 +115,29 @@ export function AgendamentoForm({ agendamento, pacienteId, onSuccess }: Agendame
 
         <div className="space-y-2">
           <Label htmlFor="profissional">Profissional *</Label>
-          <Select 
-            value={formData.profissional_id} 
-            onValueChange={(value) => handleChange('profissional_id', value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione o profissional" />
-            </SelectTrigger>
-            <SelectContent>
-              {profissionais.map((prof) => (
-                <SelectItem key={prof.id} value={prof.id}>
-                  {prof.nome} - {prof.especialidade}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {isProfissional ? (
+            <Input
+              value={profissional?.nome || 'Profissional não encontrado'}
+              disabled
+              className="bg-muted"
+            />
+          ) : (
+            <Select 
+              value={formData.profissional_id} 
+              onValueChange={(value) => handleChange('profissional_id', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o profissional" />
+              </SelectTrigger>
+              <SelectContent>
+                {profissionais.map((prof) => (
+                  <SelectItem key={prof.id} value={prof.id}>
+                    {prof.nome} - {prof.especialidade}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
         <div className="space-y-2">
