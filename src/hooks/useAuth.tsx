@@ -71,9 +71,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .select('*')
           .eq('user_id', userId)
           .eq('ativo', true)
-          .single();
+          .maybeSingle();
 
         if (!profError && profissionalData) {
+          console.log('Profissional carregado:', profissionalData);
           setProfissional(profissionalData);
         }
       }

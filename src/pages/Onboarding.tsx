@@ -8,7 +8,7 @@ import { OnboardingStep2 } from '@/components/onboarding/OnboardingStep2';
 import { supabase } from '@/integrations/supabase/client';
 
 export default function Onboarding() {
-  const { profissional, updateProfissional } = useAuth();
+  const { user, profissional, updateProfissional } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -68,7 +68,7 @@ export default function Onboarding() {
           clinica_id: clinicaData.id,
           tipo_papel: 'admin_clinica' // Profissional que cria clínica vira admin
         })
-        .eq('usuario_id', profissional?.user_id);
+        .eq('usuario_id', user?.id); // Usar user.id ao invés de profissional.user_id
 
       if (associacaoError) {
         console.error('Erro ao atualizar associação:', associacaoError);
