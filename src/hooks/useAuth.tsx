@@ -1,8 +1,8 @@
-
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
 import { Tables } from '@/integrations/supabase/types';
+import { toast } from 'sonner';
 
 type UserProfile = Tables<'users'>;
 type Profissional = Tables<'profissionais'>;
@@ -12,14 +12,18 @@ interface AuthContextType {
   userProfile: UserProfile | null;
   profissional: Profissional | null;
   loading: boolean;
+  clinicaAtual: string | null;
+  clinicasUsuario: Array<{ clinica_id: string; tipo_papel: string }>;
+  setClinicaAtual: (clinicaId: string) => void;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
-  signUp: (email: string, password: string, tipoUsuario?: 'admin' | 'profissional' | 'recepcionista') => Promise<{ error?: string }>;
+  signUp: (email: string, password: string, tipoUsuario?: 'admin' | 'profissional' | 'recepcionista', novaClinica?: { nome: string; cnpj: string; endereco?: string }) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
   updateProfissional: (data: Partial<Profissional>) => Promise<void>;
   isAdmin: boolean;
   isProfissional: boolean;
   isRecepcionista: boolean;
+  isAdminClinica: boolean;
   needsOnboarding: boolean;
 }
 
@@ -30,47 +34,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [profissional, setProfissional] = useState<Profissional | null>(null);
   const [loading, setLoading] = useState(true);
-
-  const isAdmin = userProfile?.tipo_usuario === 'admin';
-  const isProfissional = userProfile?.tipo_usuario === 'profissional';
-  const isRecepcionista = userProfile?.tipo_usuario === 'recepcionista';
-
-  const needsOnboarding = isProfissional && (!profissional || !profissional.onboarding_completo);
+  const [clinicaAtual, setClinicaAtual] = useState<string | null>(null);
+  const [clinicasUsuario, setClinicasUsuario] = useState<Array<{ clinica_id: string; tipo_papel: string }>>([]);
 
   const fetchUserProfile = async (userId: string) => {
     try {
-      const { data: profile } = await supabase
+      // Buscar perfil do usuário
+      const { data: userProfileData, error: userError } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
         .single();
 
-      if (profile) {
-        setUserProfile(profile);
+      if (userError) {
+        console.error('Erro ao buscar perfil do usuário:', userError);
+        return;
+      }
+
+      setUserProfile(userProfileData);
+
+      // Buscar clínicas do usuário
+      const { data: clinicasData, error: clinicasError } = await supabase.rpc('get_user_clinicas');
+      if (!clinicasError && clinicasData) {
+        setClinicasUsuario(clinicasData);
         
-        if (profile.tipo_usuario === 'profissional') {
-          const { data: prof } = await supabase
-            .from('profissionais')
-            .select('*')
-            .eq('user_id', userId)
-            .single();
-          setProfissional(prof);
+        // Definir clínica atual se não estiver definida
+        if (clinicasData.length > 0 && !clinicaAtual) {
+          setClinicaAtual(clinicasData[0].clinica_id);
+        }
+      }
+
+      // Se for profissional, buscar dados adicionais
+      if (userProfileData?.tipo_usuario === 'profissional') {
+        const { data: profissionalData, error: profError } = await supabase
+          .from('profissionais')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('ativo', true)
+          .single();
+
+        if (!profError && profissionalData) {
+          setProfissional(profissionalData);
         }
       }
     } catch (error) {
-      console.error('Erro ao buscar perfil:', error);
+      console.error('Erro ao buscar dados do usuário:', error);
     }
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchUserProfile(session.user.id);
-      }
-      setLoading(false);
-    });
-
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -80,6 +92,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setUserProfile(null);
         setProfissional(null);
+        setClinicasUsuario([]);
+        setClinicaAtual(null);
+      }
+      setLoading(false);
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchUserProfile(session.user.id);
       }
       setLoading(false);
     });
@@ -88,63 +110,139 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error: error?.message };
+    try {
+      setLoading(true);
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        return { error: error.message };
+      }
+
+      toast.success('Login realizado com sucesso!');
+      return {};
+    } catch (error: any) {
+      console.error('Erro no login:', error);
+      return { error: error.message };
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const signUp = async (email: string, password: string, tipoUsuario = 'profissional' as const) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: undefined // Remove a necessidade de confirmação por email
-      }
-    });
+  const signUp = async (
+    email: string, 
+    password: string, 
+    tipoUsuario: 'admin' | 'profissional' | 'recepcionista' = 'profissional',
+    novaClinica?: { nome: string; cnpj: string; endereco?: string }
+  ) => {
+    try {
+      setLoading(true);
+      
+      let clinicaId: string | null = null;
 
-    if (error) return { error: error.message };
-
-    if (data.user) {
-      // Criar perfil do usuário
-      const { error: profileError } = await supabase
-        .from('users')
-        .insert({
-          id: data.user.id,
-          email,
-          senha_hash: '', // Será preenchido pelo trigger
-          tipo_usuario: tipoUsuario
-        });
-
-      if (profileError) {
-        console.error('Erro ao criar perfil:', profileError);
-      }
-
-      // Se for profissional, criar registro inicial
-      if (tipoUsuario === 'profissional') {
-        const { data: clinica } = await supabase
+      // Se deve criar nova clínica, criar primeiro
+      if (novaClinica) {
+        const { data: clinicaData, error: clinicaError } = await supabase
           .from('clinicas')
-          .select('id')
-          .limit(1)
+          .insert({
+            nome: novaClinica.nome,
+            cnpj: novaClinica.cnpj,
+            endereco: novaClinica.endereco || null,
+          })
+          .select()
           .single();
 
-        if (clinica) {
-          await supabase
+        if (clinicaError) {
+          return { error: 'Erro ao criar clínica: ' + clinicaError.message };
+        }
+
+        clinicaId = clinicaData.id;
+      } else {
+        // Usar primeira clínica existente
+        const { data: clinicas } = await supabase
+          .from('clinicas')
+          .select('id')
+          .limit(1);
+        
+        if (clinicas && clinicas.length > 0) {
+          clinicaId = clinicas[0].id;
+        }
+      }
+
+      // Registrar usuário no Supabase Auth
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (error) {
+        return { error: error.message };
+      }
+
+      if (data.user && clinicaId) {
+        // Criar perfil na tabela users
+        const { error: userError } = await supabase
+          .from('users')
+          .insert({
+            id: data.user.id,
+            email: data.user.email!,
+            senha_hash: '',  // Será gerenciado pelo Supabase Auth
+            tipo_usuario: tipoUsuario,
+          });
+
+        if (userError) {
+          console.error('Erro ao criar perfil do usuário:', userError);
+          return { error: 'Erro ao criar perfil do usuário' };
+        }
+
+        // Criar associação usuário-clínica
+        const tipoPapel = novaClinica ? 'admin_clinica' : 
+                          tipoUsuario === 'admin' ? 'admin_clinica' : 
+                          tipoUsuario === 'profissional' ? 'profissional' : 'recepcionista';
+
+        const { error: associacaoError } = await supabase
+          .from('usuarios_clinicas')
+          .insert({
+            usuario_id: data.user.id,
+            clinica_id: clinicaId,
+            tipo_papel: tipoPapel,
+          });
+
+        if (associacaoError) {
+          console.error('Erro ao associar usuário à clínica:', associacaoError);
+        }
+
+        // Se for profissional, criar registro na tabela profissionais
+        if (tipoUsuario === 'profissional') {
+          const { error: profError } = await supabase
             .from('profissionais')
             .insert({
               user_id: data.user.id,
-              clinica_id: clinica.id,
+              clinica_id: clinicaId,
               nome: '',
               especialidade: '',
               crm_cro: '',
-              onboarding_completo: false
+              onboarding_completo: false,
             });
-        }
-      }
-    }
 
-    return {};
+          if (profError) {
+            console.error('Erro ao criar perfil profissional:', profError);
+          }
+        }
+        
+        toast.success('Conta criada com sucesso!');
+        return {};
+      }
+
+      return { error: 'Erro desconhecido' };
+    } catch (error: any) {
+      console.error('Erro no cadastro:', error);
+      return { error: error.message };
+    } finally {
+      setLoading(false);
+    }
   };
 
   const signOut = async () => {
@@ -176,12 +274,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await fetchUserProfile(user.id);
   };
 
+  const isAdmin = userProfile?.tipo_usuario === 'admin';
+  const isProfissional = userProfile?.tipo_usuario === 'profissional';
+  const isRecepcionista = userProfile?.tipo_usuario === 'recepcionista';
+  const isAdminClinica = clinicasUsuario.some(c => c.tipo_papel === 'admin_clinica');
+  const needsOnboarding = isProfissional && !profissional?.onboarding_completo;
+
   return (
     <AuthContext.Provider value={{
       user,
       userProfile,
       profissional,
       loading,
+      clinicaAtual,
+      clinicasUsuario,
+      setClinicaAtual,
       signIn,
       signUp,
       signOut,
@@ -190,7 +297,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAdmin,
       isProfissional,
       isRecepcionista,
-      needsOnboarding
+      isAdminClinica,
+      needsOnboarding,
     }}>
       {children}
     </AuthContext.Provider>

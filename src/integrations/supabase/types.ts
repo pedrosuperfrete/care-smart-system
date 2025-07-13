@@ -757,6 +757,41 @@ export type Database = {
         }
         Relationships: []
       }
+      usuarios_clinicas: {
+        Row: {
+          ativo: boolean
+          clinica_id: string
+          criado_em: string
+          id: string
+          tipo_papel: string
+          usuario_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          clinica_id: string
+          criado_em?: string
+          id?: string
+          tipo_papel: string
+          usuario_id: string
+        }
+        Update: {
+          ativo?: boolean
+          clinica_id?: string
+          criado_em?: string
+          id?: string
+          tipo_papel?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usuarios_clinicas_clinica_id_fkey"
+            columns: ["clinica_id"]
+            isOneToOne: false
+            referencedRelation: "clinicas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -777,8 +812,23 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_current_user_clinica: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_user_clinicas: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          clinica_id: string
+          tipo_papel: string
+        }[]
+      }
       is_admin: {
         Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_admin_clinica: {
+        Args: { clinica_uuid?: string }
         Returns: boolean
       }
       is_recepcionista: {

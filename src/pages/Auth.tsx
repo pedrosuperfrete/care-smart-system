@@ -15,6 +15,8 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [tipoUsuario, setTipoUsuario] = useState<'admin' | 'profissional' | 'recepcionista'>('profissional');
   const [loading, setLoading] = useState(false);
+  const [criarNovaClinica, setCriarNovaClinica] = useState(false);
+  const [dadosClinica, setDadosClinica] = useState({ nome: '', cnpj: '', endereco: '' });
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
 
@@ -24,7 +26,8 @@ export default function Auth() {
 
     try {
       if (isSignUp) {
-        const { error } = await signUp(email, password, tipoUsuario);
+        const novaClinica = criarNovaClinica && dadosClinica.nome && dadosClinica.cnpj ? dadosClinica : undefined;
+        const { error } = await signUp(email, password, tipoUsuario, novaClinica);
         if (error) {
           toast.error(error);
         } else {
@@ -91,19 +94,76 @@ export default function Auth() {
             </div>
 
             {isSignUp && (
-              <div className="space-y-2">
-                <Label htmlFor="tipo">Tipo de Usuário</Label>
-                <Select value={tipoUsuario} onValueChange={(value) => setTipoUsuario(value as any)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="profissional">Profissional</SelectItem>
-                    <SelectItem value="recepcionista">Recepcionista</SelectItem>
-                    <SelectItem value="admin">Administrador</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="tipo">Tipo de Usuário</Label>
+                  <Select value={tipoUsuario} onValueChange={(value) => setTipoUsuario(value as any)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="profissional">Profissional</SelectItem>
+                      <SelectItem value="recepcionista">Recepcionista</SelectItem>
+                      <SelectItem value="admin">Administrador</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {tipoUsuario === 'profissional' && (
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="criarNovaClinica"
+                        checked={criarNovaClinica}
+                        onChange={(e) => setCriarNovaClinica(e.target.checked)}
+                      />
+                      <Label htmlFor="criarNovaClinica" className="text-sm">
+                        Criar nova clínica (você será o administrador)
+                      </Label>
+                    </div>
+                  </div>
+                )}
+
+                {criarNovaClinica && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="nomeClinica">Nome da Clínica</Label>
+                      <Input
+                        id="nomeClinica"
+                        type="text"
+                        placeholder="Nome da sua clínica"
+                        value={dadosClinica.nome}
+                        onChange={(e) => setDadosClinica({ ...dadosClinica, nome: e.target.value })}
+                        required={criarNovaClinica}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="cnpjClinica">CNPJ da Clínica</Label>
+                      <Input
+                        id="cnpjClinica"
+                        type="text"
+                        placeholder="00.000.000/0000-00"
+                        value={dadosClinica.cnpj}
+                        onChange={(e) => setDadosClinica({ ...dadosClinica, cnpj: e.target.value })}
+                        required={criarNovaClinica}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="enderecoClinica">Endereço (Opcional)</Label>
+                      <Input
+                        id="enderecoClinica"
+                        type="text"
+                        placeholder="Endereço da clínica"
+                        value={dadosClinica.endereco}
+                        onChange={(e) => setDadosClinica({ ...dadosClinica, endereco: e.target.value })}
+                      />
+                    </div>
+                  </>
+                )}
+              </>
             )}
 
             <Button type="submit" className="w-full" disabled={loading}>

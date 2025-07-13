@@ -164,7 +164,7 @@ export default function Configuracoes() {
 
         {/* Aba Equipe */}
         <TabsContent value="equipe">
-          <GerenciarEquipe isAdmin={isAdmin} />
+          <GerenciarEquipe />
         </TabsContent>
 
         {/* Aba Sistema */}
