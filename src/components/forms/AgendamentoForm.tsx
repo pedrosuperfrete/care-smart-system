@@ -139,11 +139,15 @@ export function AgendamentoForm({ agendamento, pacienteId, onSuccess }: Agendame
                 <SelectValue placeholder="Selecione o profissional" />
               </SelectTrigger>
               <SelectContent>
-                {profissionais.map((prof) => (
-                  <SelectItem key={prof.id} value={prof.id}>
-                    {prof.nome} - {prof.especialidade}
-                  </SelectItem>
-                ))}
+                {profissionais.length === 0 ? (
+                  <SelectItem value="" disabled>Nenhum profissional encontrado</SelectItem>
+                ) : (
+                  profissionais.map((prof) => (
+                    <SelectItem key={prof.id} value={prof.id}>
+                      {prof.nome} - {prof.especialidade}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
           )}
