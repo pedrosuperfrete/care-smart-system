@@ -14,6 +14,36 @@ const googleClientSecret = Deno.env.get('GOOGLE_CLIENT_SECRET')!;
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// Helper function to log errors to database
+async function logError(
+  agendamentoId: string,
+  userId: string | null,
+  profissionalId: string | null,
+  errorMessage: string,
+  action: string
+) {
+  try {
+    console.log(`[ERROR LOG] ${action} - Agendamento ${agendamentoId}: ${errorMessage}`);
+    
+    const { error } = await supabase
+      .from('erros_sistema')
+      .insert({
+        user_id: userId,
+        profissional_id: profissionalId,
+        tipo: 'calendar_sync',
+        entidade_id: agendamentoId,
+        mensagem_erro: `${action}: ${errorMessage}`,
+        data_ocorrencia: new Date().toISOString()
+      });
+
+    if (error) {
+      console.error('Erro ao salvar log no banco:', error);
+    }
+  } catch (err) {
+    console.error('Erro crítico ao salvar log:', err);
+  }
+}
+
 interface GoogleCalendarEvent {
   summary: string;
   description?: string;
@@ -84,8 +114,15 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  let agendamentoId: string | null = null;
+  let userId: string | null = null;
+  let profissionalId: string | null = null;
+  let action: string = '';
+
   try {
-    const { action, agendamentoId, agendamentoData } = await req.json();
+    const requestData = await req.json();
+    action = requestData.action;
+    agendamentoId = requestData.agendamentoId;
 
     // Buscar dados do agendamento e profissional
     const { data: agendamento, error: agendamentoError } = await supabase
@@ -93,7 +130,7 @@ serve(async (req) => {
       .select(`
         *,
         pacientes:paciente_id (nome, email),
-        profissionais:profissional_id (nome, google_refresh_token)
+        profissionais:profissional_id (nome, google_refresh_token, user_id)
       `)
       .eq('id', agendamentoId)
       .single();
@@ -104,12 +141,19 @@ serve(async (req) => {
 
     const profissional = agendamento.profissionais;
     const paciente = agendamento.pacientes;
+    userId = profissional.user_id;
+    profissionalId = agendamento.profissional_id;
 
     if (!profissional.google_refresh_token) {
       throw new Error('Profissional não tem token do Google configurado');
     }
 
-    const accessToken = await getAccessToken(profissional.google_refresh_token);
+    let accessToken: string;
+    try {
+      accessToken = await getAccessToken(profissional.google_refresh_token);
+    } catch (tokenError) {
+      throw new Error(`Erro ao obter token do Google: ${tokenError.message}`);
+    }
 
     const calendarEvent: GoogleCalendarEvent = {
       summary: `${agendamento.tipo_servico} - ${paciente.nome}`,
@@ -128,15 +172,19 @@ serve(async (req) => {
 
     switch (action) {
       case 'create':
-        const eventId = await createCalendarEvent(accessToken, calendarEvent);
-        
-        // Atualizar agendamento com o ID do evento do Google
-        await supabase
-          .from('agendamentos')
-          .update({ google_event_id: eventId })
-          .eq('id', agendamentoId);
-        
-        result = { eventId };
+        try {
+          const eventId = await createCalendarEvent(accessToken, calendarEvent);
+          
+          // Atualizar agendamento com o ID do evento do Google
+          await supabase
+            .from('agendamentos')
+            .update({ google_event_id: eventId })
+            .eq('id', agendamentoId);
+          
+          result = { eventId };
+        } catch (createError) {
+          throw new Error(`Erro ao criar evento no Google Calendar: ${createError.message}`);
+        }
         break;
 
       case 'update':
@@ -144,19 +192,27 @@ serve(async (req) => {
           throw new Error('Agendamento não tem evento do Google associado');
         }
         
-        await updateCalendarEvent(accessToken, agendamento.google_event_id, calendarEvent);
-        result = { success: true };
+        try {
+          await updateCalendarEvent(accessToken, agendamento.google_event_id, calendarEvent);
+          result = { success: true };
+        } catch (updateError) {
+          throw new Error(`Erro ao atualizar evento no Google Calendar: ${updateError.message}`);
+        }
         break;
 
       case 'delete':
         if (agendamento.google_event_id) {
-          await deleteCalendarEvent(accessToken, agendamento.google_event_id);
-          
-          // Remover o ID do evento do Google do agendamento
-          await supabase
-            .from('agendamentos')
-            .update({ google_event_id: null })
-            .eq('id', agendamentoId);
+          try {
+            await deleteCalendarEvent(accessToken, agendamento.google_event_id);
+            
+            // Remover o ID do evento do Google do agendamento
+            await supabase
+              .from('agendamentos')
+              .update({ google_event_id: null })
+              .eq('id', agendamentoId);
+          } catch (deleteError) {
+            throw new Error(`Erro ao deletar evento no Google Calendar: ${deleteError.message}`);
+          }
         }
         result = { success: true };
         break;
@@ -171,6 +227,12 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Erro na função Google Calendar:', error);
+    
+    // Log error to database if we have the necessary info
+    if (agendamentoId && action) {
+      await logError(agendamentoId, userId, profissionalId, error.message, action);
+    }
+    
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

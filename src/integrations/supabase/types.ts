@@ -174,6 +174,56 @@ export type Database = {
           },
         ]
       }
+      erros_sistema: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          data_ocorrencia: string
+          entidade_id: string | null
+          id: string
+          mensagem_erro: string
+          profissional_id: string | null
+          resolvido: boolean
+          tentativas_retry: number | null
+          tipo: string
+          user_id: string | null
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          data_ocorrencia?: string
+          entidade_id?: string | null
+          id?: string
+          mensagem_erro: string
+          profissional_id?: string | null
+          resolvido?: boolean
+          tentativas_retry?: number | null
+          tipo: string
+          user_id?: string | null
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          data_ocorrencia?: string
+          entidade_id?: string | null
+          id?: string
+          mensagem_erro?: string
+          profissional_id?: string | null
+          resolvido?: boolean
+          tentativas_retry?: number | null
+          tipo?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "erros_sistema_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profissionais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       logs_acesso: {
         Row: {
           acao: string

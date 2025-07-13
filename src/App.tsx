@@ -16,6 +16,7 @@ import Prontuarios from "./pages/Prontuarios";
 import Financeiro from "./pages/Financeiro";
 import Relatorios from "./pages/Relatorios";
 import Configuracoes from "./pages/Configuracoes";
+import ErrosSistema from "./pages/ErrosSistema";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -95,6 +96,14 @@ function AppRoutes() {
         needsOnboarding ? <Navigate to="/onboarding" replace /> :
         <ProtectedRoute>
           <Layout><Configuracoes /></Layout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/erros-sistema" element={
+        !user ? <Navigate to="/auth" replace /> :
+        needsOnboarding ? <Navigate to="/onboarding" replace /> :
+        <ProtectedRoute allowedRoles={['admin', 'profissional']}>
+          <Layout><ErrosSistema /></Layout>
         </ProtectedRoute>
       } />
       
