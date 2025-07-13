@@ -12,13 +12,21 @@ export function usePacientes() {
   return useQuery({
     queryKey: ['pacientes'],
     queryFn: async () => {
+      // Debug: verificar clínicas do usuário
+      const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
+      console.log('Clínicas do usuário na query de pacientes:', clinicasUsuario);
+      
       const { data, error } = await supabase
         .from('pacientes')
         .select('*')
         .eq('ativo', true)
         .order('criado_em', { ascending: false });
       
-      if (error) throw error;
+      console.log('Pacientes retornados:', data);
+      if (error) {
+        console.error('Erro ao buscar pacientes:', error);
+        throw error;
+      }
       return data || [];
     },
   });

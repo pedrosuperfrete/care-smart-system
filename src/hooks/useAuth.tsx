@@ -56,10 +56,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Buscar clínicas do usuário
       const { data: clinicasData, error: clinicasError } = await supabase.rpc('get_user_clinicas');
       if (!clinicasError && clinicasData) {
+        console.log('Clínicas do usuário:', clinicasData);
         setClinicasUsuario(clinicasData);
         
         // Definir clínica atual se não estiver definida
         if (clinicasData.length > 0 && !clinicaAtual) {
+          console.log('Definindo clínica atual:', clinicasData[0].clinica_id);
           setClinicaAtual(clinicasData[0].clinica_id);
         }
       }
