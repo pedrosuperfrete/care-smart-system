@@ -15,12 +15,19 @@ import { toast } from 'sonner';
 
 interface NovoUsuarioForm {
   email: string;
+  senha: string;
+  confirmarSenha: string;
   tipo_papel: 'admin_clinica' | 'profissional' | 'recepcionista';
 }
 
 export function GerenciarEquipe() {
   const { isAdminClinica, clinicaAtual } = useAuth();
-  const [novoUsuario, setNovoUsuario] = useState<NovoUsuarioForm>({ email: '', tipo_papel: 'recepcionista' });
+  const [novoUsuario, setNovoUsuario] = useState<NovoUsuarioForm>({ 
+    email: '', 
+    senha: '', 
+    confirmarSenha: '', 
+    tipo_papel: 'recepcionista' 
+  });
   const [dialogAberto, setDialogAberto] = useState(false);
   const [usuariosDetalhes, setUsuariosDetalhes] = useState<any[]>([]);
 
@@ -67,29 +74,98 @@ export function GerenciarEquipe() {
       return;
     }
 
-    try {
-      // Primeiro, tentar encontrar o usuário pelo email
-      const { data: usersList, error: searchError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('email', novoUsuario.email)
-        .single();
+    // Validações
+    if (!novoUsuario.email || !novoUsuario.senha || !novoUsuario.confirmarSenha) {
+      toast.error('Todos os campos são obrigatórios');
+      return;
+    }
 
-      if (searchError || !usersList) {
-        toast.error('Usuário não encontrado. O usuário deve estar cadastrado no sistema.');
+    if (novoUsuario.senha !== novoUsuario.confirmarSenha) {
+      toast.error('As senhas não conferem');
+      return;
+    }
+
+    if (novoUsuario.senha.length < 6) {
+      toast.error('A senha deve ter pelo menos 6 caracteres');
+      return;
+    }
+
+    try {
+      // Criar novo usuário no Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: novoUsuario.email,
+        password: novoUsuario.senha,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (authError) {
+        if (authError.message.includes('User already registered')) {
+          toast.error('E-mail já cadastrado no sistema');
+        } else {
+          toast.error('Erro ao criar usuário: ' + authError.message);
+        }
         return;
       }
 
+      if (!authData.user) {
+        toast.error('Erro ao criar usuário');
+        return;
+      }
+
+      // Criar registro na tabela users
+      const { error: userError } = await supabase
+        .from('users')
+        .insert({
+          id: authData.user.id,
+          email: novoUsuario.email,
+          tipo_usuario: novoUsuario.tipo_papel === 'admin_clinica' ? 'admin' : novoUsuario.tipo_papel,
+          senha_hash: 'managed_by_auth' // Placeholder, pois o Supabase Auth gerencia as senhas
+        });
+
+      if (userError) {
+        console.error('Erro ao criar registro do usuário:', userError);
+        toast.error('Erro ao criar registro do usuário');
+        return;
+      }
+
+      // Associar usuário à clínica
       await createUsuarioClinica.mutateAsync({
-        usuario_id: usersList.id,
+        usuario_id: authData.user.id,
         clinica_id: clinicaAtual,
         tipo_papel: novoUsuario.tipo_papel,
       });
 
-      setNovoUsuario({ email: '', tipo_papel: 'recepcionista' });
+      // Se for profissional, criar registro na tabela profissionais
+      if (novoUsuario.tipo_papel === 'profissional') {
+        const { error: profError } = await supabase
+          .from('profissionais')
+          .insert({
+            user_id: authData.user.id,
+            clinica_id: clinicaAtual,
+            nome: '', // Será preenchido no onboarding
+            especialidade: '',
+            crm_cro: '',
+            onboarding_completo: false
+          });
+
+        if (profError) {
+          console.error('Erro ao criar registro do profissional:', profError);
+        }
+      }
+
+      setNovoUsuario({ 
+        email: '', 
+        senha: '', 
+        confirmarSenha: '', 
+        tipo_papel: 'recepcionista' 
+      });
       setDialogAberto(false);
+      toast.success('Usuário criado e adicionado à clínica com sucesso!');
     } catch (error) {
       console.error('Erro ao adicionar usuário:', error);
+      toast.error('Erro inesperado ao criar usuário');
     }
   };
 
@@ -146,9 +222,9 @@ export function GerenciarEquipe() {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Adicionar Usuário à Clínica</DialogTitle>
+                <DialogTitle>Criar Novo Usuário</DialogTitle>
                 <DialogDescription>
-                  Adicione um usuário existente à clínica. O usuário deve estar previamente cadastrado no sistema.
+                  Crie um novo usuário e adicione-o à clínica. Defina a senha inicial que será usada para o primeiro acesso.
                 </DialogDescription>
               </DialogHeader>
               
@@ -161,6 +237,28 @@ export function GerenciarEquipe() {
                     placeholder="usuario@email.com"
                     value={novoUsuario.email}
                     onChange={(e) => setNovoUsuario({ ...novoUsuario, email: e.target.value })}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="senha">Senha Inicial</Label>
+                  <Input
+                    id="senha"
+                    type="password"
+                    placeholder="Mínimo 6 caracteres"
+                    value={novoUsuario.senha}
+                    onChange={(e) => setNovoUsuario({ ...novoUsuario, senha: e.target.value })}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="confirmarSenha">Confirmar Senha</Label>
+                  <Input
+                    id="confirmarSenha"
+                    type="password"
+                    placeholder="Digite a senha novamente"
+                    value={novoUsuario.confirmarSenha}
+                    onChange={(e) => setNovoUsuario({ ...novoUsuario, confirmarSenha: e.target.value })}
                   />
                 </div>
                 
@@ -185,9 +283,14 @@ export function GerenciarEquipe() {
               <DialogFooter>
                 <Button 
                   onClick={handleAdicionarUsuario}
-                  disabled={createUsuarioClinica.isPending || !novoUsuario.email}
+                  disabled={
+                    createUsuarioClinica.isPending || 
+                    !novoUsuario.email || 
+                    !novoUsuario.senha || 
+                    !novoUsuario.confirmarSenha
+                  }
                 >
-                  {createUsuarioClinica.isPending ? 'Adicionando...' : 'Adicionar'}
+                  {createUsuarioClinica.isPending ? 'Criando...' : 'Criar Usuário'}
                 </Button>
               </DialogFooter>
             </DialogContent>
