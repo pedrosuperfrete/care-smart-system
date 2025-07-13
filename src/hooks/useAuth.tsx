@@ -185,62 +185,64 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      if (clinicaId) {
-        // Criar perfil na tabela users
-        const { error: userError } = await supabase
-          .from('users')
-          .insert({
-            id: data.user.id,
-            email: data.user.email!,
-            senha_hash: '',  // Será gerenciado pelo Supabase Auth
-            tipo_usuario: tipoUsuario,
-          });
-
-        if (userError) {
-          console.error('Erro ao criar perfil do usuário:', userError);
-          return { error: 'Erro ao criar perfil do usuário' };
-        }
-
-        // Criar associação usuário-clínica
-        const tipoPapel = novaClinica ? 'admin_clinica' : 
-                          tipoUsuario === 'admin' ? 'admin_clinica' : 
-                          tipoUsuario === 'profissional' ? 'profissional' : 'recepcionista';
-
-        const { error: associacaoError } = await supabase
-          .from('usuarios_clinicas')
-          .insert({
-            usuario_id: data.user.id,
-            clinica_id: clinicaId,
-            tipo_papel: tipoPapel,
-          });
-
-        if (associacaoError) {
-          console.error('Erro ao associar usuário à clínica:', associacaoError);
-        }
-
-        // Se for profissional, criar registro na tabela profissionais
-        if (tipoUsuario === 'profissional') {
-          const { error: profError } = await supabase
-            .from('profissionais')
-            .insert({
-              user_id: data.user.id,
-              clinica_id: clinicaId,
-              nome: '',
-              especialidade: '',
-              crm_cro: '',
-              onboarding_completo: false,
-            });
-
-          if (profError) {
-            console.error('Erro ao criar perfil profissional:', profError);
-          }
-        }
-        
-        toast.success('Conta criada com sucesso!');
-        return {};
+      if (!clinicaId) {
+        return { error: 'Erro: nenhuma clínica disponível' };
       }
 
-      return { error: 'Erro desconhecido' };
+      // Criar perfil na tabela users
+      const { error: userError } = await supabase
+        .from('users')
+        .insert({
+          id: data.user.id,
+          email: data.user.email!,
+          senha_hash: '',  // Será gerenciado pelo Supabase Auth
+          tipo_usuario: tipoUsuario,
+        });
+
+      if (userError) {
+        console.error('Erro ao criar perfil do usuário:', userError);
+        return { error: 'Erro ao criar perfil do usuário: ' + userError.message };
+      }
+
+      // Criar associação usuário-clínica
+      const tipoPapel = novaClinica ? 'admin_clinica' : 
+                        tipoUsuario === 'admin' ? 'admin_clinica' : 
+                        tipoUsuario === 'profissional' ? 'profissional' : 'recepcionista';
+
+      const { error: associacaoError } = await supabase
+        .from('usuarios_clinicas')
+        .insert({
+          usuario_id: data.user.id,
+          clinica_id: clinicaId,
+          tipo_papel: tipoPapel,
+        });
+
+      if (associacaoError) {
+        console.error('Erro ao associar usuário à clínica:', associacaoError);
+        return { error: 'Erro ao associar usuário à clínica: ' + associacaoError.message };
+      }
+
+      // Se for profissional, criar registro na tabela profissionais
+      if (tipoUsuario === 'profissional') {
+        const { error: profError } = await supabase
+          .from('profissionais')
+          .insert({
+            user_id: data.user.id,
+            clinica_id: clinicaId,
+            nome: '',
+            especialidade: '',
+            crm_cro: '',
+            onboarding_completo: false,
+          });
+
+        if (profError) {
+          console.error('Erro ao criar perfil profissional:', profError);
+          return { error: 'Erro ao criar perfil profissional: ' + profError.message };
+        }
+      }
+      
+      toast.success('Conta criada com sucesso!');
+      return {};
     } catch (error: any) {
       console.error('Erro no cadastro:', error);
       return { error: error.message };
