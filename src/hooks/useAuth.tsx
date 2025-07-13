@@ -140,9 +140,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setLoading(true);
       
+      // Registrar usuário no Supabase Auth primeiro
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (error) {
+        return { error: error.message };
+      }
+
+      if (!data.user) {
+        return { error: 'Erro ao criar usuário' };
+      }
+
       let clinicaId: string | null = null;
 
-      // Se deve criar nova clínica, criar primeiro
+      // Agora que o usuário está autenticado, criar clínica se necessário
       if (novaClinica) {
         const { data: clinicaData, error: clinicaError } = await supabase
           .from('clinicas')
@@ -171,17 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      // Registrar usuário no Supabase Auth
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-
-      if (error) {
-        return { error: error.message };
-      }
-
-      if (data.user && clinicaId) {
+      if (clinicaId) {
         // Criar perfil na tabela users
         const { error: userError } = await supabase
           .from('users')
