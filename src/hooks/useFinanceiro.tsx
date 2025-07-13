@@ -21,15 +21,17 @@ export function usePagamentos(startDate?: Date, endDate?: Date) {
         return [];
       }
 
-      // Buscar clínicas do usuário
-      const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
-      
-      if (!clinicasUsuario || clinicasUsuario.length === 0) {
+      // Buscar o profissional atual
+      const { data: profissionalAtual, error: profError } = await supabase
+        .from('profissionais')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profError || !profissionalAtual) {
+        console.log('Profissional não encontrado para o usuário:', user.id);
         return [];
       }
-
-      // Filtrar pagamentos pelos profissionais das clínicas do usuário
-      const clinicaIds = clinicasUsuario.map(c => c.clinica_id);
 
       let query = supabase
         .from('pagamentos')
@@ -55,7 +57,7 @@ export function usePagamentos(startDate?: Date, endDate?: Date) {
               email,
               telefone
             ),
-            profissionais!inner (
+            profissionais (
               id,
               nome,
               especialidade,
@@ -63,7 +65,7 @@ export function usePagamentos(startDate?: Date, endDate?: Date) {
             )
           )
         `)
-        .in('agendamentos.profissionais.clinica_id', clinicaIds)
+        .eq('agendamentos.profissional_id', profissionalAtual.id)
         .order('criado_em', { ascending: false });
 
       // Filtrar por data se fornecido
@@ -144,10 +146,15 @@ export function useFinanceiroStats(startDate?: Date, endDate?: Date) {
         };
       }
 
-      // Buscar clínicas do usuário
-      const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
-      
-      if (!clinicasUsuario || clinicasUsuario.length === 0) {
+      // Buscar o profissional atual
+      const { data: profissionalAtual, error: profError } = await supabase
+        .from('profissionais')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profError || !profissionalAtual) {
+        console.log('Profissional não encontrado para o usuário:', user.id);
         return {
           totalRecebido: 0,
           totalPendente: 0,
@@ -155,9 +162,6 @@ export function useFinanceiroStats(startDate?: Date, endDate?: Date) {
           receitaMensal: 0,
         };
       }
-
-      // Filtrar estatísticas pelos profissionais das clínicas do usuário
-      const clinicaIds = clinicasUsuario.map(c => c.clinica_id);
 
       let query = supabase
         .from('pagamentos')
@@ -169,10 +173,10 @@ export function useFinanceiroStats(startDate?: Date, endDate?: Date) {
           data_vencimento, 
           criado_em,
           agendamentos!fk_pagamento_agendamento(
-            profissionais!inner(clinica_id)
+            profissional_id
           )
         `)
-        .in('agendamentos.profissionais.clinica_id', clinicaIds);
+        .eq('agendamentos.profissional_id', profissionalAtual.id);
       
       // Filtrar por data se fornecido
       if (startDate) {
