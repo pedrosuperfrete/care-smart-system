@@ -135,7 +135,7 @@ export const useRelatorios = (periodo: string = 'mes') => {
 
       const pacientesUnicos = new Set(pacientesNovos?.map(p => p.paciente_id) || []);
 
-      // 4. Receita total do período - apenas da mesma clínica
+      // 4. Receita total do período - apenas do profissional logado
       const { data: pagamentos } = await supabase
         .from('pagamentos')
         .select(`
@@ -143,29 +143,23 @@ export const useRelatorios = (periodo: string = 'mes') => {
           status,
           agendamentos!inner (
             profissional_id,
-            data_inicio,
-            profissionais!inner (
-              clinica_id
-            )
+            data_inicio
           )
         `)
-        .eq('agendamentos.profissionais.clinica_id', profissional.clinica_id)
+        .eq('agendamentos.profissional_id', profissional.id)
         .gte('agendamentos.data_inicio', inicio.toISOString())
         .lte('agendamentos.data_inicio', fim.toISOString())
         .eq('status', 'pago');
 
       const receitaTotal = pagamentos?.reduce((acc, p) => acc + Number(p.valor_pago), 0) || 0;
 
-      // 5. Taxa de retorno (pacientes que tiveram mais de uma consulta) - apenas da mesma clínica
+      // 5. Taxa de retorno (pacientes que tiveram mais de uma consulta) - apenas do profissional logado
       const { data: todasConsultas } = await supabase
         .from('agendamentos')
         .select(`
-          paciente_id,
-          profissionais!inner (
-            clinica_id
-          )
+          paciente_id
         `)
-        .eq('profissionais.clinica_id', profissional.clinica_id)
+        .eq('profissional_id', profissional.id)
         .eq('status', 'realizado');
 
       const consultasPorPaciente = todasConsultas?.reduce((acc: any, consulta) => {
@@ -302,13 +296,10 @@ export const useRelatorios = (periodo: string = 'mes') => {
               valor_pago,
               agendamentos!inner (
                 profissional_id,
-                data_inicio,
-                profissionais!inner (
-                  clinica_id
-                )
+                data_inicio
               )
             `)
-            .eq('agendamentos.profissionais.clinica_id', profissional.clinica_id)
+            .eq('agendamentos.profissional_id', profissional.id)
             .gte('agendamentos.data_inicio', inicio.toISOString())
             .lte('agendamentos.data_inicio', fim.toISOString())
             .eq('status', 'pago');
