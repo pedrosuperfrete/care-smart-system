@@ -23,6 +23,56 @@ const logEvent = (step: string, details?: any) => {
   console.log(`[STRIPE-WEBHOOK] ${step}${detailsStr}`);
 };
 
+// Função para verificar assinatura Stripe de forma assíncrona (compatível com Deno)
+async function verifyStripeSignature(body: string, signature: string, secret: string) {
+  const elements = signature.split(",");
+  let timestamp = 0;
+  let v1 = "";
+
+  for (const element of elements) {
+    const [key, value] = element.split("=");
+    if (key === "t") {
+      timestamp = parseInt(value, 10);
+    } else if (key === "v1") {
+      v1 = value;
+    }
+  }
+
+  if (!timestamp || !v1) {
+    throw new Error("Invalid signature format");
+  }
+
+  const payload = `${timestamp}.${body}`;
+  const encoder = new TextEncoder();
+  const keyData = encoder.encode(secret);
+  const payloadData = encoder.encode(payload);
+
+  const cryptoKey = await crypto.subtle.importKey(
+    "raw",
+    keyData,
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+
+  const signature_bytes = await crypto.subtle.sign("HMAC", cryptoKey, payloadData);
+  const signature_hex = Array.from(new Uint8Array(signature_bytes))
+    .map(b => b.toString(16).padStart(2, "0"))
+    .join("");
+
+  if (signature_hex !== v1) {
+    throw new Error("Invalid signature");
+  }
+
+  // Verificar timestamp (não mais que 5 minutos de diferença)
+  const now = Math.floor(Date.now() / 1000);
+  if (Math.abs(now - timestamp) > 300) {
+    throw new Error("Timestamp too old");
+  }
+
+  return JSON.parse(body);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -46,7 +96,10 @@ serve(async (req) => {
     }
 
     logEvent("Validando evento Stripe");
-    const event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    
+    // Verificação manual da assinatura para compatibilidade com Deno
+    const event = await verifyStripeSignature(body, signature, webhookSecret);
+    
     logEvent("Evento validado", { type: event.type, id: event.id });
 
     switch (event.type) {
