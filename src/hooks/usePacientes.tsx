@@ -62,10 +62,50 @@ export function useCreatePaciente() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (paciente: InsertPaciente) => {
+    mutationFn: async (paciente: InsertPaciente & { verificarLimite?: boolean }) => {
+      // Verificar limite se solicitado
+      if (paciente.verificarLimite) {
+        // Buscar dados do profissional
+        const { data: user } = await supabase.auth.getUser();
+        if (!user.user) throw new Error("Usuário não autenticado");
+
+        const { data: profissional, error: profError } = await supabase
+          .from('profissionais')
+          .select('assinatura_ativa')
+          .eq('user_id', user.user.id)
+          .single();
+
+        if (profError) throw profError;
+
+        // Contar pacientes atuais
+        const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
+        
+        if (clinicasUsuario && clinicasUsuario.length > 0) {
+          const clinicaIds = clinicasUsuario.map(c => c.clinica_id);
+          
+          const { count: totalPacientes, error: countError } = await supabase
+            .from('pacientes')
+            .select('*', { count: 'exact', head: true })
+            .in('clinica_id', clinicaIds)
+            .eq('ativo', true);
+
+          if (countError) throw countError;
+
+          const assinaturaAtiva = profissional?.assinatura_ativa || false;
+          
+          // Se não tem assinatura ativa e já tem 2 ou mais pacientes, bloquear
+          if (!assinaturaAtiva && (totalPacientes || 0) >= 2) {
+            throw new Error("LIMITE_ATINGIDO");
+          }
+        }
+      }
+
+      // Remover campo de verificação antes de inserir
+      const { verificarLimite, ...pacienteData } = paciente;
+      
       const { data, error } = await supabase
         .from('pacientes')
-        .insert(paciente)
+        .insert(pacienteData)
         .select()
         .single();
       
@@ -74,9 +114,14 @@ export function useCreatePaciente() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pacientes'] });
+      queryClient.invalidateQueries({ queryKey: ['limite-pacientes'] });
       toast.success('Paciente cadastrado com sucesso!');
     },
     onError: (error: any) => {
+      if (error.message === "LIMITE_ATINGIDO") {
+        // Não mostrar toast aqui, será tratado no componente
+        throw error;
+      }
       toast.error('Erro ao cadastrar paciente: ' + error.message);
     },
   });

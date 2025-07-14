@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
-import { User, Building, Users, Save } from 'lucide-react';
+import { User, Building, Users, Save, Crown } from 'lucide-react';
 import { toast } from 'sonner';
 import { PerfilBasico } from '@/components/configuracoes/PerfilBasico';
 import { InformacoesProfissionais } from '@/components/configuracoes/InformacoesProfissionais';
@@ -11,10 +11,15 @@ import { ServicosPrecos } from '@/components/configuracoes/ServicosPrecos';
 import { GerenciarEquipe } from '@/components/configuracoes/GerenciarEquipe';
 import { ConfiguracoesSistema } from '@/components/configuracoes/ConfiguracoesSistema';
 import { ConfiguracaoClinica } from '@/components/configuracoes/ConfiguracaoClinica';
+import { AssinaturaStatus } from '@/components/configuracoes/AssinaturaStatus';
 
 export default function Configuracoes() {
   const { userProfile, profissional, isAdmin, updateProfissional } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('tab') || 'perfil';
+  });
 
   // Estado para dados do perfil profissional
   const [profileData, setProfileData] = useState({
@@ -96,8 +101,8 @@ export default function Configuracoes() {
         </p>
       </div>
 
-      <Tabs defaultValue="perfil" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="perfil">
             <User className="mr-2 h-4 w-4" />
             Perfil
@@ -114,6 +119,10 @@ export default function Configuracoes() {
           </TabsTrigger>
           <TabsTrigger value="sistema">
             Sistema
+          </TabsTrigger>
+          <TabsTrigger value="assinatura">
+            <Crown className="mr-2 h-4 w-4" />
+            Assinatura
           </TabsTrigger>
         </TabsList>
 
@@ -170,6 +179,11 @@ export default function Configuracoes() {
         {/* Aba Sistema */}
         <TabsContent value="sistema">
           <ConfiguracoesSistema />
+        </TabsContent>
+
+        {/* Aba Assinatura */}
+        <TabsContent value="assinatura">
+          <AssinaturaStatus />
         </TabsContent>
       </Tabs>
     </div>

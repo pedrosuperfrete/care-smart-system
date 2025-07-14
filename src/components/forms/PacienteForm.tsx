@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCreatePaciente, useUpdatePaciente } from '@/hooks/usePacientes';
+import { LimiteAssinaturaModal } from '@/components/modals/LimiteAssinaturaModal';
 import { useAuth } from '@/hooks/useAuth';
 import { Tables } from '@/integrations/supabase/types';
 
@@ -38,6 +39,7 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
   const createPaciente = useCreatePaciente();
   const updatePaciente = useUpdatePaciente();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showLimiteModal, setShowLimiteModal] = useState(false);
 
   const {
     register,
@@ -89,12 +91,15 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
           data: pacienteData 
         });
       } else {
-        await createPaciente.mutateAsync(pacienteData);
+        await createPaciente.mutateAsync({ ...pacienteData, verificarLimite: true });
       }
       
       onSuccess?.();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao salvar paciente:', error);
+      if (error.message === "LIMITE_ATINGIDO") {
+        setShowLimiteModal(true);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -209,6 +214,11 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
           </div>
         </form>
       </CardContent>
+
+      <LimiteAssinaturaModal 
+        open={showLimiteModal}
+        onOpenChange={setShowLimiteModal}
+      />
     </Card>
   );
 }
