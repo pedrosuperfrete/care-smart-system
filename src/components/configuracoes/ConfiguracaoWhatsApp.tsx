@@ -242,15 +242,6 @@ export function ConfiguracaoWhatsApp() {
           </div>
         )}
 
-        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <h4 className="font-medium text-blue-900 mb-2">Sobre a Integração</h4>
-          <div className="text-sm text-blue-700 space-y-1">
-            <p>• Os pacientes podem enviar mensagens em linguagem natural</p>
-            <p>• A IA interpreta automaticamente a intenção (agendar, remarcar, cancelar)</p>
-            <p>• Funciona através do N8N com Evolution API</p>
-            <p>• Confirmações são enviadas automaticamente via WhatsApp</p>
-          </div>
-        </div>
       </CardContent>
     </Card>
   );
