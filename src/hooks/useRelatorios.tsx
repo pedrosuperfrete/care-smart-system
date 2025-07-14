@@ -290,40 +290,49 @@ export const useRelatorios = (periodo: string = 'mes') => {
         };
       });
 
+      console.log('Buscando receita mensal para profissional:', profissional.id);
+
       const dadosPorMes = await Promise.all(
         ultimosMeses.map(async ({ mes, inicio, fim }) => {
-          console.log('Buscando receita mensal para:', mes, profissional.id);
+          console.log(`Buscando receita para ${mes}: ${inicio.toISOString()} - ${fim.toISOString()}`);
           
+          // Primeiro buscar agendamentos do profissional no período
+          const { data: agendamentos } = await supabase
+            .from('agendamentos')
+            .select('id')
+            .eq('profissional_id', profissional.id)
+            .gte('data_inicio', inicio.toISOString())
+            .lte('data_inicio', fim.toISOString());
+
+          if (!agendamentos || agendamentos.length === 0) {
+            console.log(`Nenhum agendamento para ${mes}`);
+            return { mes, receita: 0 };
+          }
+
+          const agendamentoIds = agendamentos.map(a => a.id);
+          console.log(`Agendamentos de ${mes}:`, agendamentoIds);
+
+          // Agora buscar pagamentos desses agendamentos
           const { data: pagamentos, error } = await supabase
             .from('pagamentos')
-            .select(`
-              valor_pago,
-              valor_total,
-              agendamentos!fk_pagamento_agendamento (
-                profissional_id,
-                data_inicio
-              )
-            `)
-            .eq('agendamentos.profissional_id', profissional.id)
-            .gte('agendamentos.data_inicio', inicio.toISOString())
-            .lte('agendamentos.data_inicio', fim.toISOString())
+            .select('valor_pago, valor_total, status')
+            .in('agendamento_id', agendamentoIds)
             .eq('status', 'pago');
 
           if (error) {
-            console.error('Erro buscar receita mensal:', error);
+            console.error(`Erro buscar receita mensal para ${mes}:`, error);
+            return { mes, receita: 0 };
           }
           
-          console.log(`Pagamentos ${mes}:`, pagamentos);
+          console.log(`Pagamentos pagos de ${mes}:`, pagamentos);
           const receita = pagamentos?.reduce((acc, p) => acc + (Number(p.valor_pago) > 0 ? Number(p.valor_pago) : Number(p.valor_total)), 0) || 0;
           console.log(`Receita ${mes}:`, receita);
 
-          return {
-            mes,
-            receita
-          };
+          return { mes, receita };
         })
       );
 
+      console.log('Dados finais por mês:', dadosPorMes);
       setReceitaPorMes(dadosPorMes);
     } catch (err) {
       console.error('Erro ao buscar receita por mês:', err);
