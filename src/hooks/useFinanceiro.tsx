@@ -33,6 +33,27 @@ export function usePagamentos(startDate?: Date, endDate?: Date) {
         return [];
       }
 
+      console.log('Buscando pagamentos para profissional:', profissionalAtual.id);
+
+      // Primeiro buscar os agendamentos do profissional
+      const { data: agendamentos, error: agendamentosError } = await supabase
+        .from('agendamentos')
+        .select('id')
+        .eq('profissional_id', profissionalAtual.id);
+
+      if (agendamentosError) {
+        console.error('Erro ao buscar agendamentos:', agendamentosError);
+        throw agendamentosError;
+      }
+
+      if (!agendamentos || agendamentos.length === 0) {
+        console.log('Nenhum agendamento encontrado para o profissional');
+        return [];
+      }
+
+      const agendamentoIds = agendamentos.map(a => a.id);
+      console.log('IDs dos agendamentos encontrados:', agendamentoIds);
+
       let query = supabase
         .from('pagamentos')
         .select(`
@@ -65,7 +86,7 @@ export function usePagamentos(startDate?: Date, endDate?: Date) {
             )
           )
         `)
-        .eq('agendamentos.profissional_id', profissionalAtual.id)
+        .in('agendamento_id', agendamentoIds)
         .order('criado_em', { ascending: false });
 
       // Filtrar por data se fornecido
@@ -163,6 +184,28 @@ export function useFinanceiroStats(startDate?: Date, endDate?: Date) {
         };
       }
 
+      // Primeiro buscar os agendamentos do profissional
+      const { data: agendamentos, error: agendamentosError } = await supabase
+        .from('agendamentos')
+        .select('id')
+        .eq('profissional_id', profissionalAtual.id);
+
+      if (agendamentosError) {
+        console.error('Erro ao buscar agendamentos para stats:', agendamentosError);
+        throw agendamentosError;
+      }
+
+      if (!agendamentos || agendamentos.length === 0) {
+        return {
+          totalRecebido: 0,
+          totalPendente: 0,
+          totalVencido: 0,
+          receitaMensal: 0,
+        };
+      }
+
+      const agendamentoIds = agendamentos.map(a => a.id);
+
       let query = supabase
         .from('pagamentos')
         .select(`
@@ -171,12 +214,9 @@ export function useFinanceiroStats(startDate?: Date, endDate?: Date) {
           status, 
           data_pagamento, 
           data_vencimento, 
-          criado_em,
-          agendamentos!fk_pagamento_agendamento(
-            profissional_id
-          )
+          criado_em
         `)
-        .eq('agendamentos.profissional_id', profissionalAtual.id);
+        .in('agendamento_id', agendamentoIds);
       
       // Filtrar por data se fornecido
       if (startDate) {
