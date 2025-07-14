@@ -1,6 +1,7 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { NotificacaoErros } from "./layout/NotificacaoErros";
+import { AlertaAssinatura } from "./layout/AlertaAssinatura";
 import { SeletorClinica } from "./configuracoes/SeletorClinica";
 import { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
@@ -46,6 +47,7 @@ export function Layout({ children }: LayoutProps) {
             </div>
           </header>
           <div className="flex-1 p-6 overflow-auto bg-background">
+            <AlertaAssinatura />
             {children}
           </div>
         </main>
