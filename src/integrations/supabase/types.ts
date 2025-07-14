@@ -561,12 +561,14 @@ export type Database = {
       }
       profissionais: {
         Row: {
+          assinatura_ativa: boolean | null
           assinatura_digital: string | null
           ativo: boolean
           atualizado_em: string
           clinica_id: string | null
           criado_em: string
           crm_cro: string
+          data_vencimento_assinatura: string | null
           especialidade: string
           formas_pagamento: Json | null
           google_refresh_token: string | null
@@ -579,16 +581,20 @@ export type Database = {
           planos_saude: Json | null
           servicos_oferecidos: Json | null
           servicos_precos: Json | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
           telefone: string | null
           user_id: string | null
         }
         Insert: {
+          assinatura_ativa?: boolean | null
           assinatura_digital?: string | null
           ativo?: boolean
           atualizado_em?: string
           clinica_id?: string | null
           criado_em?: string
           crm_cro: string
+          data_vencimento_assinatura?: string | null
           especialidade: string
           formas_pagamento?: Json | null
           google_refresh_token?: string | null
@@ -601,16 +607,20 @@ export type Database = {
           planos_saude?: Json | null
           servicos_oferecidos?: Json | null
           servicos_precos?: Json | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           telefone?: string | null
           user_id?: string | null
         }
         Update: {
+          assinatura_ativa?: boolean | null
           assinatura_digital?: string | null
           ativo?: boolean
           atualizado_em?: string
           clinica_id?: string | null
           criado_em?: string
           crm_cro?: string
+          data_vencimento_assinatura?: string | null
           especialidade?: string
           formas_pagamento?: Json | null
           google_refresh_token?: string | null
@@ -623,6 +633,8 @@ export type Database = {
           planos_saude?: Json | null
           servicos_oferecidos?: Json | null
           servicos_precos?: Json | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           telefone?: string | null
           user_id?: string | null
         }
