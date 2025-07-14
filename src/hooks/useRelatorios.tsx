@@ -119,45 +119,42 @@ export const useRelatorios = (periodo: string = 'mes') => {
       // 4. Receita total do período - apenas do profissional logado
       console.log('Buscando receita para profissional:', profissional.id, 'período:', inicio, 'até', fim);
       
-      // Primeiro vamos buscar todos os pagamentos do profissional para debug
-      const { data: todosPagamentos } = await supabase
-        .from('pagamentos')
-        .select(`
-          valor_pago,
-          valor_total,
-          status,
-          agendamentos!fk_pagamento_agendamento (
-            profissional_id,
-            data_inicio
-          )
-        `)
-        .eq('agendamentos.profissional_id', profissional.id)
-        .eq('status', 'pago');
+      // Buscar agendamentos do profissional no período primeiro
+      const { data: agendamentosPeriodo } = await supabase
+        .from('agendamentos')
+        .select('id')
+        .eq('profissional_id', profissional.id)
+        .gte('data_inicio', inicio.toISOString())
+        .lte('data_inicio', fim.toISOString());
 
-      console.log('Todos os pagamentos do profissional:', todosPagamentos);
+      if (!agendamentosPeriodo || agendamentosPeriodo.length === 0) {
+        console.log('Nenhum agendamento encontrado no período');
+        const receitaTotal = 0;
+        console.log('Receita total calculada:', receitaTotal);
+        // Não retornar aqui, continuar com receita = 0
+      }
+
+      let receitaTotal = 0;
       
-      const { data: pagamentos, error: receitaError } = await supabase
-        .from('pagamentos')
-        .select(`
-          valor_pago,
-          valor_total,
-          status,
-          agendamentos!fk_pagamento_agendamento (
-            profissional_id,
-            data_inicio
-          )
-        `)
-        .eq('agendamentos.profissional_id', profissional.id)
-        .gte('agendamentos.data_inicio', inicio.toISOString())
-        .lte('agendamentos.data_inicio', fim.toISOString())
-        .eq('status', 'pago');
+      if (agendamentosPeriodo && agendamentosPeriodo.length > 0) {
+        const agendamentoIds = agendamentosPeriodo.map(a => a.id);
+        console.log('Agendamentos do período:', agendamentoIds);
+        
+        // Buscar pagamentos desses agendamentos específicos
+        const { data: pagamentos, error: receitaError } = await supabase
+          .from('pagamentos')
+          .select('valor_pago, valor_total, status')
+          .in('agendamento_id', agendamentoIds)
+          .eq('status', 'pago');
 
-      if (receitaError) {
-        console.error('Erro ao buscar receita:', receitaError);
+        if (receitaError) {
+          console.error('Erro ao buscar receita:', receitaError);
+        }
+        
+        console.log('Pagamentos encontrados para receita no período:', pagamentos);
+        receitaTotal = pagamentos?.reduce((acc, p) => acc + (Number(p.valor_pago) > 0 ? Number(p.valor_pago) : Number(p.valor_total)), 0) || 0;
       }
       
-      console.log('Pagamentos encontrados para receita no período:', pagamentos);
-      const receitaTotal = pagamentos?.reduce((acc, p) => acc + (Number(p.valor_pago) > 0 ? Number(p.valor_pago) : Number(p.valor_total)), 0) || 0;
       console.log('Receita total calculada:', receitaTotal);
 
       // 5. Taxa de retorno (pacientes que tiveram mais de uma consulta) - apenas do profissional logado
