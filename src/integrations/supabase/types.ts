@@ -809,6 +809,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_create_patient: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       debug_auth_status: {
         Args: Record<PropertyKey, never>
         Returns: {
