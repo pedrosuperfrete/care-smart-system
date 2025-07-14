@@ -4,7 +4,9 @@ import { Tables } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 
 type Agendamento = Tables<'agendamentos'>;
-type InsertAgendamento = Omit<Agendamento, 'id' | 'criado_em' | 'atualizado_em'>;
+type InsertAgendamento = Omit<Agendamento, 'id' | 'criado_em' | 'atualizado_em'> & {
+  origem?: string;
+};
 type UpdateAgendamento = Partial<InsertAgendamento>;
 
 export function useAgendamentos() {

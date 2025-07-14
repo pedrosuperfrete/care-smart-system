@@ -25,6 +25,7 @@ export type Database = {
           google_event_id: string | null
           id: string
           observacoes: string | null
+          origem: string | null
           paciente_id: string
           pagamento_id: string | null
           profissional_id: string
@@ -42,6 +43,7 @@ export type Database = {
           google_event_id?: string | null
           id?: string
           observacoes?: string | null
+          origem?: string | null
           paciente_id: string
           pagamento_id?: string | null
           profissional_id: string
@@ -59,6 +61,7 @@ export type Database = {
           google_event_id?: string | null
           id?: string
           observacoes?: string | null
+          origem?: string | null
           paciente_id?: string
           pagamento_id?: string | null
           profissional_id?: string
@@ -803,6 +806,44 @@ export type Database = {
             columns: ["clinica_id"]
             isOneToOne: false
             referencedRelation: "clinicas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_profissionais: {
+        Row: {
+          api_key_n8n: string | null
+          ativo: boolean
+          atualizado_em: string
+          criado_em: string
+          id: string
+          numero_telefone: string
+          profissional_id: string
+        }
+        Insert: {
+          api_key_n8n?: string | null
+          ativo?: boolean
+          atualizado_em?: string
+          criado_em?: string
+          id?: string
+          numero_telefone: string
+          profissional_id: string
+        }
+        Update: {
+          api_key_n8n?: string | null
+          ativo?: boolean
+          atualizado_em?: string
+          criado_em?: string
+          id?: string
+          numero_telefone?: string
+          profissional_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_profissionais_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: true
+            referencedRelation: "profissionais"
             referencedColumns: ["id"]
           },
         ]

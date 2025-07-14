@@ -12,6 +12,7 @@ import { GerenciarEquipe } from '@/components/configuracoes/GerenciarEquipe';
 import { ConfiguracoesSistema } from '@/components/configuracoes/ConfiguracoesSistema';
 import { ConfiguracaoClinica } from '@/components/configuracoes/ConfiguracaoClinica';
 import { AssinaturaStatus } from '@/components/configuracoes/AssinaturaStatus';
+import { ConfiguracaoWhatsApp } from '@/components/configuracoes/ConfiguracaoWhatsApp';
 
 export default function Configuracoes() {
   const { userProfile, profissional, isAdmin, updateProfissional } = useAuth();
@@ -102,7 +103,7 @@ export default function Configuracoes() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="perfil">
             <User className="mr-2 h-4 w-4" />
             Perfil
@@ -116,6 +117,9 @@ export default function Configuracoes() {
           <TabsTrigger value="equipe">
             <Users className="mr-2 h-4 w-4" />
             Equipe
+          </TabsTrigger>
+          <TabsTrigger value="whatsapp">
+            WhatsApp
           </TabsTrigger>
           <TabsTrigger value="sistema">
             Sistema
@@ -174,6 +178,11 @@ export default function Configuracoes() {
         {/* Aba Equipe */}
         <TabsContent value="equipe">
           <GerenciarEquipe />
+        </TabsContent>
+
+        {/* Aba WhatsApp */}
+        <TabsContent value="whatsapp">
+          <ConfiguracaoWhatsApp />
         </TabsContent>
 
         {/* Aba Sistema */}

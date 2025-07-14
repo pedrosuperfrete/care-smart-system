@@ -63,6 +63,7 @@ export default function Agenda() {
         pagamento_id: null,
         desmarcada: false,
         google_event_id: null,
+        origem: 'web',
       });
 
       setIsNewConsultaOpen(false);

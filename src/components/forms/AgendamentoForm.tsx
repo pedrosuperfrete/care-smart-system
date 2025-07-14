@@ -78,6 +78,7 @@ export function AgendamentoForm({ agendamento, pacienteId, onSuccess }: Agendame
       pagamento_id: null,
       desmarcada: false,
       google_event_id: null,
+      origem: 'web',
     };
 
     try {
