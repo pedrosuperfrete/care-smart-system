@@ -23,7 +23,7 @@ const Login = () => {
     e.preventDefault();
     // Simular login/cadastro
     console.log("Form submitted:", formData);
-    navigate("/app");
+    navigate("/app/dashboard");
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

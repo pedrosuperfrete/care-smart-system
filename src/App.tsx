@@ -36,19 +36,19 @@ function AppRoutes() {
   return (
     <Routes>
       {/* Landing Page - Home pública */}
-      <Route path="/" element={<LandingPage />} />
+      <Route path="/app" element={<LandingPage />} />
       
       {/* Rotas da Plataforma - /app/* */}
       <Route path="/app/auth" element={
-        user ? <Navigate to="/app" replace /> : <Auth />
+        user ? <Navigate to="/app/dashboard" replace /> : <Auth />
       } />
       
       <Route path="/app/onboarding" element={
         !user ? <Navigate to="/app/auth" replace /> : 
-        needsOnboarding ? <Onboarding /> : <Navigate to="/app" replace />
+        needsOnboarding ? <Onboarding /> : <Navigate to="/app/dashboard" replace />
       } />
       
-      <Route path="/app" element={
+      <Route path="/app/dashboard" element={
         !user ? <Navigate to="/app/auth" replace /> :
         needsOnboarding ? <Navigate to="/app/onboarding" replace /> :
         <ProtectedRoute>
@@ -111,6 +111,9 @@ function AppRoutes() {
           <Layout><ErrosSistema /></Layout>
         </ProtectedRoute>
       } />
+      
+      {/* Redirect root to /app */}
+      <Route path="/" element={<Navigate to="/app" replace />} />
       
       <Route path="*" element={<NotFound />} />
     </Routes>
