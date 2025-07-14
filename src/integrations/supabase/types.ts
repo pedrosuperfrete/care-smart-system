@@ -582,6 +582,7 @@ export type Database = {
           servicos_oferecidos: Json | null
           servicos_precos: Json | null
           stripe_customer_id: string | null
+          stripe_status: string | null
           stripe_subscription_id: string | null
           telefone: string | null
           user_id: string | null
@@ -608,6 +609,7 @@ export type Database = {
           servicos_oferecidos?: Json | null
           servicos_precos?: Json | null
           stripe_customer_id?: string | null
+          stripe_status?: string | null
           stripe_subscription_id?: string | null
           telefone?: string | null
           user_id?: string | null
@@ -634,6 +636,7 @@ export type Database = {
           servicos_oferecidos?: Json | null
           servicos_precos?: Json | null
           stripe_customer_id?: string | null
+          stripe_status?: string | null
           stripe_subscription_id?: string | null
           telefone?: string | null
           user_id?: string | null
