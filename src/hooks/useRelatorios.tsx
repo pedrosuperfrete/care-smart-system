@@ -126,7 +126,7 @@ export const useRelatorios = (periodo: string = 'mes') => {
           valor_pago,
           valor_total,
           status,
-          agendamentos!inner (
+          agendamentos!fk_pagamento_agendamento (
             profissional_id,
             data_inicio
           )
@@ -142,7 +142,7 @@ export const useRelatorios = (periodo: string = 'mes') => {
           valor_pago,
           valor_total,
           status,
-          agendamentos!inner (
+          agendamentos!fk_pagamento_agendamento (
             profissional_id,
             data_inicio
           )
@@ -299,7 +299,7 @@ export const useRelatorios = (periodo: string = 'mes') => {
             .select(`
               valor_pago,
               valor_total,
-              agendamentos!inner (
+              agendamentos!fk_pagamento_agendamento (
                 profissional_id,
                 data_inicio
               )
