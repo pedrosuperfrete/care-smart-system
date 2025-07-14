@@ -1,6 +1,6 @@
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Crown } from "lucide-react";
+import { Info, Crown } from "lucide-react";
 import { useVerificarLimitePacientes, useCreateCheckout } from "@/hooks/useAssinatura";
 
 export function AlertaAssinatura() {
@@ -17,23 +17,37 @@ export function AlertaAssinatura() {
   };
 
   return (
-    <Alert className="bg-destructive/15 border-destructive/30 text-destructive-foreground mb-4">
-      <AlertTriangle className="h-4 w-4" />
-      <AlertDescription className="flex items-center justify-between w-full">
-        <div className="flex items-center gap-2">
-          <span className="font-medium">
-            Você possui {limitePacientes.totalPacientes} pacientes e precisa de uma assinatura ativa para continuar usando todas as funcionalidades.
-          </span>
+    <Card 
+      className="mb-6 p-4 border-0 shadow-sm animate-fade-in" 
+      style={{ backgroundColor: '#FFF8E1' }}
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex-shrink-0">
+            <Info className="h-5 w-5 text-amber-600" />
+          </div>
+          <div className="text-sm text-gray-700">
+            <span className="font-medium">
+              Você atingiu o limite gratuito de 3 pacientes.
+            </span>
+            <span className="ml-1">
+              Para continuar utilizando todos os recursos da plataforma, ative sua assinatura.
+            </span>
+          </div>
         </div>
         <Button 
           onClick={handleAssinar}
           disabled={createCheckout.isPending}
-          className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium flex items-center gap-2 ml-4"
+          className="flex-shrink-0 ml-4 font-medium flex items-center gap-2 transition-all duration-200 hover:scale-105"
+          style={{ 
+            backgroundColor: '#264c43',
+            color: 'white'
+          }}
         >
           <Crown className="h-4 w-4" />
-          {createCheckout.isPending ? 'Processando...' : 'Assinar Agora'}
+          {createCheckout.isPending ? 'Processando...' : 'Ativar Assinatura'}
         </Button>
-      </AlertDescription>
-    </Alert>
+      </div>
+    </Card>
   );
 }
