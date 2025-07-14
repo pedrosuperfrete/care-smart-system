@@ -117,7 +117,26 @@ export const useRelatorios = (periodo: string = 'mes') => {
       const pacientesUnicos = new Set(pacientesNovos?.map(p => p.paciente_id) || []);
 
       // 4. Receita total do período - apenas do profissional logado
-      const { data: pagamentos } = await supabase
+      console.log('Buscando receita para profissional:', profissional.id, 'período:', inicio, 'até', fim);
+      
+      // Primeiro vamos buscar todos os pagamentos do profissional para debug
+      const { data: todosPagamentos } = await supabase
+        .from('pagamentos')
+        .select(`
+          valor_pago,
+          valor_total,
+          status,
+          agendamentos!inner (
+            profissional_id,
+            data_inicio
+          )
+        `)
+        .eq('agendamentos.profissional_id', profissional.id)
+        .eq('status', 'pago');
+
+      console.log('Todos os pagamentos do profissional:', todosPagamentos);
+      
+      const { data: pagamentos, error: receitaError } = await supabase
         .from('pagamentos')
         .select(`
           valor_pago,
@@ -133,7 +152,13 @@ export const useRelatorios = (periodo: string = 'mes') => {
         .lte('agendamentos.data_inicio', fim.toISOString())
         .eq('status', 'pago');
 
+      if (receitaError) {
+        console.error('Erro ao buscar receita:', receitaError);
+      }
+      
+      console.log('Pagamentos encontrados para receita no período:', pagamentos);
       const receitaTotal = pagamentos?.reduce((acc, p) => acc + (Number(p.valor_pago) > 0 ? Number(p.valor_pago) : Number(p.valor_total)), 0) || 0;
+      console.log('Receita total calculada:', receitaTotal);
 
       // 5. Taxa de retorno (pacientes que tiveram mais de uma consulta) - apenas do profissional logado
       const { data: todasConsultas } = await supabase
@@ -267,7 +292,9 @@ export const useRelatorios = (periodo: string = 'mes') => {
 
       const dadosPorMes = await Promise.all(
         ultimosMeses.map(async ({ mes, inicio, fim }) => {
-          const { data: pagamentos } = await supabase
+          console.log('Buscando receita mensal para:', mes, profissional.id);
+          
+          const { data: pagamentos, error } = await supabase
             .from('pagamentos')
             .select(`
               valor_pago,
@@ -282,7 +309,13 @@ export const useRelatorios = (periodo: string = 'mes') => {
             .lte('agendamentos.data_inicio', fim.toISOString())
             .eq('status', 'pago');
 
+          if (error) {
+            console.error('Erro buscar receita mensal:', error);
+          }
+          
+          console.log(`Pagamentos ${mes}:`, pagamentos);
           const receita = pagamentos?.reduce((acc, p) => acc + (Number(p.valor_pago) > 0 ? Number(p.valor_pago) : Number(p.valor_total)), 0) || 0;
+          console.log(`Receita ${mes}:`, receita);
 
           return {
             mes,
