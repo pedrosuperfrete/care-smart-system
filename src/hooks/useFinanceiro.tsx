@@ -118,6 +118,19 @@ export function useUpdatePagamento() {
     mutationFn: async ({ id, data }: { id: string; data: UpdatePagamento }) => {
       console.log('Atualizando pagamento:', id, data);
       
+      // Se estiver marcando como pago e não foi especificado valor_pago, usar valor_total
+      if (data.status === 'pago' && !data.valor_pago) {
+        const { data: pagamento } = await supabase
+          .from('pagamentos')
+          .select('valor_total')
+          .eq('id', id)
+          .single();
+        
+        if (pagamento) {
+          data.valor_pago = pagamento.valor_total;
+        }
+      }
+      
       const { data: updated, error } = await supabase
         .from('pagamentos')
         .update(data)
@@ -250,12 +263,12 @@ export function useFinanceiroStats(startDate?: Date, endDate?: Date) {
 
         // Receita mensal (pagamentos recebidos no mês)
         if (dataPagamento && dataPagamento >= inicioMes && dataPagamento <= fimMes) {
-          receitaMensal += valorPago;
+          receitaMensal += valorPago > 0 ? valorPago : valorTotal;
         }
 
         // Status dos pagamentos
         if (pagamento.status === 'pago') {
-          totalRecebido += valorPago;
+          totalRecebido += valorPago > 0 ? valorPago : valorTotal;
         } else if (pagamento.status === 'pendente') {
           if (dataVencimento && dataVencimento < agora) {
             totalVencido += valorTotal - valorPago;

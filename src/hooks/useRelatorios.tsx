@@ -140,6 +140,7 @@ export const useRelatorios = (periodo: string = 'mes') => {
         .from('pagamentos')
         .select(`
           valor_pago,
+          valor_total,
           status,
           agendamentos!inner (
             profissional_id,
@@ -151,7 +152,7 @@ export const useRelatorios = (periodo: string = 'mes') => {
         .lte('agendamentos.data_inicio', fim.toISOString())
         .eq('status', 'pago');
 
-      const receitaTotal = pagamentos?.reduce((acc, p) => acc + Number(p.valor_pago), 0) || 0;
+      const receitaTotal = pagamentos?.reduce((acc, p) => acc + (Number(p.valor_pago) > 0 ? Number(p.valor_pago) : Number(p.valor_total)), 0) || 0;
 
       // 5. Taxa de retorno (pacientes que tiveram mais de uma consulta) - apenas do profissional logado
       const { data: todasConsultas } = await supabase
@@ -294,6 +295,7 @@ export const useRelatorios = (periodo: string = 'mes') => {
             .from('pagamentos')
             .select(`
               valor_pago,
+              valor_total,
               agendamentos!inner (
                 profissional_id,
                 data_inicio
@@ -304,7 +306,7 @@ export const useRelatorios = (periodo: string = 'mes') => {
             .lte('agendamentos.data_inicio', fim.toISOString())
             .eq('status', 'pago');
 
-          const receita = pagamentos?.reduce((acc, p) => acc + Number(p.valor_pago), 0) || 0;
+          const receita = pagamentos?.reduce((acc, p) => acc + (Number(p.valor_pago) > 0 ? Number(p.valor_pago) : Number(p.valor_total)), 0) || 0;
 
           return {
             mes,
