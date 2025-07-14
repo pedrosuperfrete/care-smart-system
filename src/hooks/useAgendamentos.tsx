@@ -73,14 +73,13 @@ export function useProximosAgendamentos(limit = 5) {
   return useQuery({
     queryKey: ['proximos-agendamentos', limit],
     queryFn: async () => {
-      // Buscar clínicas do usuário
-      const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
+      // Buscar profissional atual
+      const { data: profissionalId } = await supabase.rpc('get_current_profissional_id');
       
-      if (!clinicasUsuario || clinicasUsuario.length === 0) {
+      if (!profissionalId) {
         return [];
       }
 
-      const clinicaIds = clinicasUsuario.map(c => c.clinica_id);
       const agora = new Date().toISOString();
       
       const { data, error } = await supabase
@@ -88,9 +87,9 @@ export function useProximosAgendamentos(limit = 5) {
         .select(`
           *,
           pacientes(id, nome, telefone, email),
-          profissionais!inner(id, nome, especialidade, clinica_id)
+          profissionais(id, nome, especialidade)
         `)
-        .in('profissionais.clinica_id', clinicaIds)
+        .eq('profissional_id', profissionalId)
         .gte('data_inicio', agora)
         .order('data_inicio', { ascending: true })
         .limit(limit);
