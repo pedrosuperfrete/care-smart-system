@@ -18,7 +18,7 @@ export function Layout({ children }: LayoutProps) {
   const { data: clinicasData } = useClinica();
 
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/app/auth" replace />;
   }
 
   const clinicaAtualData = Array.isArray(clinicasData) ? 

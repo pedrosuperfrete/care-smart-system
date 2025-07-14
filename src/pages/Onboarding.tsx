@@ -90,7 +90,7 @@ export default function Onboarding() {
 
       await updateProfissional(completeData);
       toast.success('Sua clínica foi criada com sucesso!');
-      navigate('/');
+      navigate('/app');
     } catch (error) {
       toast.error('Erro ao criar clínica. Tente novamente.');
       console.error('Erro no onboarding:', error);

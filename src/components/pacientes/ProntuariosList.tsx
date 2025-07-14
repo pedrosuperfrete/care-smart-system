@@ -15,7 +15,7 @@ export function ProntuariosList({ prontuarios }: ProntuariosListProps) {
   const navigate = useNavigate();
 
   const handleVerDetalhes = (prontuarioId: string) => {
-    navigate(`/prontuarios?id=${prontuarioId}`);
+    navigate(`/app/prontuarios?id=${prontuarioId}`);
   };
 
   return (

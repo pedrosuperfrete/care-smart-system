@@ -20,15 +20,15 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
   }
 
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/app/auth" replace />;
   }
 
   if (needsOnboarding) {
-    return <Navigate to="/onboarding" replace />;
+    return <Navigate to="/app/onboarding" replace />;
   }
 
   if (allowedRoles && userProfile && !allowedRoles.includes(userProfile.tipo_usuario)) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/app" replace />;
   }
 
   return <>{children}</>;

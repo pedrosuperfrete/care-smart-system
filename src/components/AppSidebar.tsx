@@ -27,45 +27,45 @@ export function AppSidebar() {
   const baseMenuItems = [
     {
       title: "Dashboard",
-      url: "/",
+      url: "/app",
       icon: Home,
     },
     {
       title: "Pacientes",
-      url: "/pacientes",
+      url: "/app/pacientes",
       icon: Users,
     },
     {
       title: "Agenda",
-      url: "/agenda",
+      url: "/app/agenda",
       icon: Calendar,
     },
     {
       title: "Prontuários",
-      url: "/prontuarios",
+      url: "/app/prontuarios",
       icon: FileText,
       hideFor: ['recepcionista'],
     },
     {
       title: "Financeiro",
-      url: "/financeiro",
+      url: "/app/financeiro",
       icon: DollarSign,
       hideFor: ['recepcionista'],
     },
     {
       title: "Relatórios",
-      url: "/relatorios",
+      url: "/app/relatorios",
       icon: Clock,
     },
     {
       title: "Erros do Sistema",
-      url: "/erros-sistema",
+      url: "/app/erros-sistema",
       icon: AlertTriangle,
       hideFor: ['recepcionista'],
     },
     {
       title: "Configurações",
-      url: "/configuracoes",
+      url: "/app/configuracoes",
       icon: Settings,
     },
   ];

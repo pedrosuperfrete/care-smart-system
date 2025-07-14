@@ -54,21 +54,21 @@ export default function Dashboard() {
       title: 'Nova Consulta',
       description: 'Agendar nova consulta',
       icon: Plus,
-      onClick: () => navigate('/agenda'),
+      onClick: () => navigate('/app/agenda'),
       color: 'bg-primary hover:bg-primary/90',
     },
     {
       title: 'Novo Paciente',
       description: 'Cadastrar paciente',
       icon: Users,
-      onClick: () => navigate('/pacientes'),
+      onClick: () => navigate('/app/pacientes'),
       color: 'bg-green-500 hover:bg-green-600',
     },
     {
       title: 'Relatórios',
       description: 'Ver relatórios',
       icon: BarChart3,
-      onClick: () => navigate('/relatorios'),
+      onClick: () => navigate('/app/relatorios'),
       color: 'bg-purple-500 hover:bg-purple-600',
     },
   ];
@@ -177,7 +177,7 @@ export default function Dashboard() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => navigate(`/pacientes`)}
+                        onClick={() => navigate(`/app/pacientes`)}
                       >
                         Ver
                       </Button>

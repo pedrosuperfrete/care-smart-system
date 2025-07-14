@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import { Layout } from "./components/Layout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import LandingPage from "./pages/LandingPage";
 import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
@@ -34,74 +35,78 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/auth" element={
-        user ? <Navigate to="/" replace /> : <Auth />
+      {/* Landing Page - Home pública */}
+      <Route path="/" element={<LandingPage />} />
+      
+      {/* Rotas da Plataforma - /app/* */}
+      <Route path="/app/auth" element={
+        user ? <Navigate to="/app" replace /> : <Auth />
       } />
       
-      <Route path="/onboarding" element={
-        !user ? <Navigate to="/auth" replace /> : 
-        needsOnboarding ? <Onboarding /> : <Navigate to="/" replace />
+      <Route path="/app/onboarding" element={
+        !user ? <Navigate to="/app/auth" replace /> : 
+        needsOnboarding ? <Onboarding /> : <Navigate to="/app" replace />
       } />
       
-      <Route path="/" element={
-        !user ? <Navigate to="/auth" replace /> :
-        needsOnboarding ? <Navigate to="/onboarding" replace /> :
+      <Route path="/app" element={
+        !user ? <Navigate to="/app/auth" replace /> :
+        needsOnboarding ? <Navigate to="/app/onboarding" replace /> :
         <ProtectedRoute>
           <Layout><Dashboard /></Layout>
         </ProtectedRoute>
       } />
       
-      <Route path="/pacientes" element={
-        !user ? <Navigate to="/auth" replace /> :
-        needsOnboarding ? <Navigate to="/onboarding" replace /> :
+      <Route path="/app/pacientes" element={
+        !user ? <Navigate to="/app/auth" replace /> :
+        needsOnboarding ? <Navigate to="/app/onboarding" replace /> :
         <ProtectedRoute allowedRoles={['admin', 'profissional', 'recepcionista']}>
           <Layout><Pacientes /></Layout>
         </ProtectedRoute>
       } />
       
-      <Route path="/agenda" element={
-        !user ? <Navigate to="/auth" replace /> :
-        needsOnboarding ? <Navigate to="/onboarding" replace /> :
+      <Route path="/app/agenda" element={
+        !user ? <Navigate to="/app/auth" replace /> :
+        needsOnboarding ? <Navigate to="/app/onboarding" replace /> :
         <ProtectedRoute>
           <Layout><Agenda /></Layout>
         </ProtectedRoute>
       } />
       
-      <Route path="/prontuarios" element={
-        !user ? <Navigate to="/auth" replace /> :
-        needsOnboarding ? <Navigate to="/onboarding" replace /> :
+      <Route path="/app/prontuarios" element={
+        !user ? <Navigate to="/app/auth" replace /> :
+        needsOnboarding ? <Navigate to="/app/onboarding" replace /> :
         <ProtectedRoute allowedRoles={['admin', 'profissional']}>
           <Layout><Prontuarios /></Layout>
         </ProtectedRoute>
       } />
       
-      <Route path="/financeiro" element={
-        !user ? <Navigate to="/auth" replace /> :
-        needsOnboarding ? <Navigate to="/onboarding" replace /> :
+      <Route path="/app/financeiro" element={
+        !user ? <Navigate to="/app/auth" replace /> :
+        needsOnboarding ? <Navigate to="/app/onboarding" replace /> :
         <ProtectedRoute allowedRoles={['admin', 'profissional']}>
           <Layout><Financeiro /></Layout>
         </ProtectedRoute>
       } />
       
-      <Route path="/relatorios" element={
-        !user ? <Navigate to="/auth" replace /> :
-        needsOnboarding ? <Navigate to="/onboarding" replace /> :
+      <Route path="/app/relatorios" element={
+        !user ? <Navigate to="/app/auth" replace /> :
+        needsOnboarding ? <Navigate to="/app/onboarding" replace /> :
         <ProtectedRoute>
           <Layout><Relatorios /></Layout>
         </ProtectedRoute>
       } />
       
-      <Route path="/configuracoes" element={
-        !user ? <Navigate to="/auth" replace /> :
-        needsOnboarding ? <Navigate to="/onboarding" replace /> :
+      <Route path="/app/configuracoes" element={
+        !user ? <Navigate to="/app/auth" replace /> :
+        needsOnboarding ? <Navigate to="/app/onboarding" replace /> :
         <ProtectedRoute>
           <Layout><Configuracoes /></Layout>
         </ProtectedRoute>
       } />
       
-      <Route path="/erros-sistema" element={
-        !user ? <Navigate to="/auth" replace /> :
-        needsOnboarding ? <Navigate to="/onboarding" replace /> :
+      <Route path="/app/erros-sistema" element={
+        !user ? <Navigate to="/app/auth" replace /> :
+        needsOnboarding ? <Navigate to="/app/onboarding" replace /> :
         <ProtectedRoute allowedRoles={['admin', 'profissional']}>
           <Layout><ErrosSistema /></Layout>
         </ProtectedRoute>

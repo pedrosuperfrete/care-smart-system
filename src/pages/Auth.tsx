@@ -31,7 +31,7 @@ export default function Auth() {
           toast.success('Conta criada com sucesso! Redirecionando...');
           // Aguarda um momento para mostrar o toast e depois redireciona
           setTimeout(() => {
-            navigate('/');
+            navigate('/app');
           }, 1500);
         }
       } else {
@@ -39,7 +39,7 @@ export default function Auth() {
         if (error) {
           toast.error(error);
         } else {
-          navigate('/');
+          navigate('/app');
         }
       }
     } catch (error) {
