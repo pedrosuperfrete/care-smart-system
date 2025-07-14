@@ -810,6 +810,63 @@ export type Database = {
           },
         ]
       }
+      whatsapp_mensagens: {
+        Row: {
+          atualizado_em: string | null
+          criado_em: string | null
+          data_hora: string | null
+          id: string
+          mensagem: string
+          numero_paciente: string
+          origem_integracao: string | null
+          paciente_id: string | null
+          profissional_id: string | null
+          status: string | null
+          tipo: string
+        }
+        Insert: {
+          atualizado_em?: string | null
+          criado_em?: string | null
+          data_hora?: string | null
+          id?: string
+          mensagem: string
+          numero_paciente: string
+          origem_integracao?: string | null
+          paciente_id?: string | null
+          profissional_id?: string | null
+          status?: string | null
+          tipo: string
+        }
+        Update: {
+          atualizado_em?: string | null
+          criado_em?: string | null
+          data_hora?: string | null
+          id?: string
+          mensagem?: string
+          numero_paciente?: string
+          origem_integracao?: string | null
+          paciente_id?: string | null
+          profissional_id?: string | null
+          status?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_mensagens_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_mensagens_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profissionais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_profissionais: {
         Row: {
           api_key_n8n: string | null
@@ -894,6 +951,10 @@ export type Database = {
       is_recepcionista: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      normalizar_telefone: {
+        Args: { telefone: string }
+        Returns: string
       }
       user_has_complete_profile: {
         Args: Record<PropertyKey, never>
