@@ -37,7 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [clinicaAtual, setClinicaAtual] = useState<string | null>(null);
   const [clinicasUsuario, setClinicasUsuario] = useState<Array<{ clinica_id: string; tipo_papel: string }>>([]);
 
-  const fetchUserProfile = async (userId: string) => {
+  const fetchUserProfile = async (userId: string, retryCount = 0) => {
     try {
       // Buscar perfil do usuário - usar maybeSingle para evitar erro se não existir
       const { data: userProfileData, error: userError } = await supabase
@@ -51,9 +51,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Se usuário não existe na tabela users, não continuar
+      // Se usuário não existe na tabela users e é a primeira tentativa, aguardar um pouco e tentar novamente
+      if (!userProfileData && retryCount < 3) {
+        console.log(`Usuário não encontrado na tabela users (tentativa ${retryCount + 1}/3), aguardando...`);
+        setTimeout(() => {
+          fetchUserProfile(userId, retryCount + 1);
+        }, 1000 * (retryCount + 1)); // Aguarda progressivamente mais tempo
+        return;
+      }
+
       if (!userProfileData) {
-        console.log('Usuário não encontrado na tabela users, pode estar sendo criado...');
+        console.log('Usuário não encontrado na tabela users após todas as tentativas');
         return;
       }
 
@@ -84,9 +92,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!profError && profissionalData) {
           console.log('Profissional carregado:', profissionalData);
           setProfissional(profissionalData);
+        } else if (!profError && !profissionalData && retryCount < 3) {
+          // Se não encontrou profissional e é usuário profissional, tentar novamente
+          console.log(`Profissional não encontrado (tentativa ${retryCount + 1}/3), aguardando...`);
+          setTimeout(() => {
+            fetchUserProfile(userId, retryCount + 1);
+          }, 1000 * (retryCount + 1));
+          return;
         } else if (!profError) {
-          // Profissional não encontrado, limpar estado
-          console.log('Profissional não encontrado, limpando estado');
+          // Profissional não encontrado após todas as tentativas, limpar estado
+          console.log('Profissional não encontrado após todas as tentativas');
           setProfissional(null);
         }
       } else {
@@ -95,6 +110,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error('Erro ao buscar dados do usuário:', error);
+      // Em caso de erro, tentar novamente se ainda há tentativas
+      if (retryCount < 3) {
+        setTimeout(() => {
+          fetchUserProfile(userId, retryCount + 1);
+        }, 1000 * (retryCount + 1));
+      }
     }
   };
 
