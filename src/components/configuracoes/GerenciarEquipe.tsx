@@ -21,7 +21,7 @@ interface NovoUsuarioForm {
 }
 
 export function GerenciarEquipe() {
-  const { isAdminClinica, clinicaAtual } = useAuth();
+  const { isAdminClinica, isProfissional, clinicaAtual } = useAuth();
   const [novoUsuario, setNovoUsuario] = useState<NovoUsuarioForm>({ 
     email: '', 
     senha: '', 
@@ -249,11 +249,11 @@ export function GerenciarEquipe() {
         <div>
           <CardTitle>Gerenciar Equipe</CardTitle>
           <CardDescription>
-            {isAdminClinica ? 'Gerencie os usuários da clínica' : 'Visualize a equipe da clínica'}
+            {(isAdminClinica || isProfissional) ? 'Gerencie os usuários da clínica' : 'Visualize a equipe da clínica'}
           </CardDescription>
         </div>
         
-        {isAdminClinica && (
+        {(isAdminClinica || isProfissional) && (
           <Dialog open={dialogAberto} onOpenChange={setDialogAberto}>
             <DialogTrigger asChild>
               <Button>
@@ -361,7 +361,7 @@ export function GerenciarEquipe() {
                 </div>
               </div>
               
-              {isAdminClinica && (
+              {(isAdminClinica || isProfissional) && (
                 <div className="flex items-center space-x-2">
                   <Switch 
                     checked={usuarioClinica.ativo} 
