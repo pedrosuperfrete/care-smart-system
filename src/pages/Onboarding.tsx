@@ -59,35 +59,52 @@ export default function Onboarding() {
         isClinicaTemporaria = clinicaAtual?.cnpj?.startsWith('temp-') || clinicaAtual?.nome === 'Clínica Temporária';
       }
 
-      // Criar a nova clínica definitiva
-      const { data: clinicaData, error: clinicaError } = await supabase
-        .from('clinicas')
-        .insert({
-          nome: step2Data.nome_clinica,
-          cnpj: step2Data.cnpj_clinica,
-          endereco: step2Data.endereco_clinica || null,
-        })
-        .select()
-        .single();
+      if (isClinicaTemporaria && clinicaId) {
+        // Atualizar a clínica temporária existente
+        const { error: clinicaError } = await supabase
+          .from('clinicas')
+          .update({
+            nome: step2Data.nome_clinica,
+            cnpj: step2Data.cnpj_clinica,
+            endereco: step2Data.endereco_clinica || null,
+          })
+          .eq('id', clinicaId);
 
-      if (clinicaError) {
-        toast.error('Erro ao criar clínica: ' + clinicaError.message);
-        return;
-      }
+        if (clinicaError) {
+          toast.error('Erro ao atualizar clínica: ' + clinicaError.message);
+          return;
+        }
+      } else {
+        // Criar nova clínica se não existe uma temporária
+        const { data: clinicaData, error: clinicaError } = await supabase
+          .from('clinicas')
+          .insert({
+            nome: step2Data.nome_clinica,
+            cnpj: step2Data.cnpj_clinica,
+            endereco: step2Data.endereco_clinica || null,
+          })
+          .select()
+          .single();
 
-      const novaClinicaId = clinicaData.id;
+        if (clinicaError) {
+          toast.error('Erro ao criar clínica: ' + clinicaError.message);
+          return;
+        }
 
-      // Atualizar associação do usuário para a nova clínica
-      const { error: associacaoError } = await supabase
-        .from('usuarios_clinicas')
-        .update({
-          clinica_id: novaClinicaId,
-          tipo_papel: 'admin_clinica' // Profissional que cria clínica vira admin
-        })
-        .eq('usuario_id', user?.id);
+        clinicaId = clinicaData.id;
 
-      if (associacaoError) {
-        console.error('Erro ao atualizar associação:', associacaoError);
+        // Atualizar associação do usuário para a nova clínica
+        const { error: associacaoError } = await supabase
+          .from('usuarios_clinicas')
+          .update({
+            clinica_id: clinicaId,
+            tipo_papel: 'admin_clinica'
+          })
+          .eq('usuario_id', user?.id);
+
+        if (associacaoError) {
+          console.error('Erro ao atualizar associação:', associacaoError);
+        }
       }
 
       // Atualizar dados do profissional
@@ -96,7 +113,7 @@ export default function Onboarding() {
         mini_bio: step1Data.mini_bio,
         servicos_oferecidos: step1Data.servicos_oferecidos,
         nome_clinica: step2Data.nome_clinica,
-        clinica_id: novaClinicaId,
+        clinica_id: clinicaId,
         horarios_atendimento: step2Data.horarios_atendimento,
         servicos_precos: step2Data.servicos_precos,
         formas_pagamento: step2Data.formas_pagamento,
@@ -105,19 +122,6 @@ export default function Onboarding() {
       };
 
       await updateProfissional(completeData);
-
-      // Se havia uma clínica temporária, deletá-la
-      if (isClinicaTemporaria && clinicaId && clinicaId !== novaClinicaId) {
-        const { error: deleteError } = await supabase
-          .from('clinicas')
-          .delete()
-          .eq('id', clinicaId);
-
-        if (deleteError) {
-          console.error('Erro ao deletar clínica temporária:', deleteError);
-        }
-      }
-
       toast.success('Sua clínica foi criada com sucesso!');
       navigate('/app/dashboard');
     } catch (error) {
