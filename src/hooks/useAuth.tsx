@@ -190,20 +190,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { error: 'Erro ao criar usuário' };
       }
 
-      // Para novos usuários, associar à primeira clínica disponível temporariamente
-      // A clínica definitiva será criada durante o onboarding para profissionais
-      const { data: clinicas } = await supabase
-        .from('clinicas')
-        .select('id')
-        .limit(1);
-      
+      // Para profissionais, criar uma clínica temporária
+      // Para outros tipos, associar à primeira clínica disponível
       let clinicaId: string | null = null;
-      if (clinicas && clinicas.length > 0) {
-        clinicaId = clinicas[0].id;
+      
+      if (tipoUsuario === 'profissional') {
+        // Criar clínica temporária para o profissional
+        const { data: clinicaTemp, error: clinicaError } = await supabase
+          .from('clinicas')
+          .insert({
+            nome: 'Clínica Temporária',
+            cnpj: `temp-${data.user.id.substring(0, 8)}`,
+            endereco: 'Aguardando definição no onboarding',
+          })
+          .select()
+          .single();
+
+        if (clinicaError) {
+          console.error('Erro ao criar clínica temporária:', clinicaError);
+          return { error: 'Erro ao criar clínica temporária: ' + clinicaError.message };
+        }
+        
+        clinicaId = clinicaTemp.id;
+      } else {
+        // Para outros usuários, buscar primeira clínica disponível
+        const { data: clinicas } = await supabase
+          .from('clinicas')
+          .select('id')
+          .limit(1);
+        
+        if (clinicas && clinicas.length > 0) {
+          clinicaId = clinicas[0].id;
+        }
       }
 
       if (!clinicaId) {
-        return { error: 'Erro: nenhuma clínica disponível' };
+        return { error: 'Erro: não foi possível definir clínica' };
       }
 
       // Criar perfil na tabela users
