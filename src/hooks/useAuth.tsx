@@ -39,15 +39,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchUserProfile = async (userId: string) => {
     try {
-      // Buscar perfil do usuário
+      // Buscar perfil do usuário - usar maybeSingle para evitar erro se não existir
       const { data: userProfileData, error: userError } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (userError) {
         console.error('Erro ao buscar perfil do usuário:', userError);
+        return;
+      }
+
+      // Se usuário não existe na tabela users, não continuar
+      if (!userProfileData) {
+        console.log('Usuário não encontrado na tabela users, pode estar sendo criado...');
         return;
       }
 
