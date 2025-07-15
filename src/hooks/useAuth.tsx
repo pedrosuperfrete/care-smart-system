@@ -84,7 +84,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!profError && profissionalData) {
           console.log('Profissional carregado:', profissionalData);
           setProfissional(profissionalData);
+        } else if (!profError) {
+          // Profissional não encontrado, limpar estado
+          console.log('Profissional não encontrado, limpando estado');
+          setProfissional(null);
         }
+      } else {
+        // Não é profissional, limpar estado
+        setProfissional(null);
       }
     } catch (error) {
       console.error('Erro ao buscar dados do usuário:', error);
