@@ -279,7 +279,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isProfissional = userProfile?.tipo_usuario === 'profissional';
   const isRecepcionista = userProfile?.tipo_usuario === 'recepcionista';
   const isAdminClinica = clinicasUsuario.some(c => c.tipo_papel === 'admin_clinica');
-  const needsOnboarding = isProfissional && !profissional?.onboarding_completo;
+  const needsOnboarding = isProfissional && (!profissional || !profissional?.onboarding_completo);
 
   return (
     <AuthContext.Provider value={{
