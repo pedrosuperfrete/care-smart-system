@@ -7,7 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import { Layout } from "./components/Layout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import LandingPage from "./pages/LandingPage";
+import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
@@ -36,7 +36,7 @@ function AppRoutes() {
   return (
     <Routes>
       {/* Landing Page - Home pública */}
-      <Route path="/app" element={<LandingPage />} />
+      <Route path="/app" element={<Index />} />
       
       {/* Rotas da Plataforma - /app/* */}
       <Route path="/app/auth" element={
