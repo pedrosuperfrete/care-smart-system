@@ -112,7 +112,7 @@ export function AppSidebar() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <img 
-                src="/src/assets/donee-logo.png" 
+                src="/src/assets/donee-logo-new.png" 
                 alt="Donee" 
                 className="h-8 w-auto"
               />
