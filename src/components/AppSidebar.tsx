@@ -109,7 +109,7 @@ export function AppSidebar() {
           <img 
             src="/lovable-uploads/df33c00a-881c-4c3a-8f60-77fcd8835e1b.png" 
             alt="Donee" 
-            className="h-8 w-auto"
+            className="w-full h-full"
           />
         </div>
       </SidebarHeader>
