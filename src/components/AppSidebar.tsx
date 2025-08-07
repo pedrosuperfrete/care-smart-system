@@ -110,8 +110,20 @@ export function AppSidebar() {
             <User className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">HealthClinic</h2>
-            <p className="text-sm text-gray-500">Sistema de Gestão</p>
+            <div className="flex items-center gap-2 mb-1">
+              <svg width="80" height="24" viewBox="0 0 120 40" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-primary">
+                <g fill="currentColor">
+                  <path d="M4 8h8c6.627 0 12 5.373 12 12s-5.373 12-12 12H4V8zm8 20c4.418 0 8-3.582 8-8s-3.582-8-8-8H8v16h4z"/>
+                  <circle cx="36" cy="20" r="10" fill="currentColor" opacity="0.8"/>
+                  <circle cx="36" cy="20" r="6" fill="white"/>
+                  <path d="M52 8h4v12l8-12h4v24h-4V20l-8 12h-4V8z"/>
+                  <path d="M76 8h12v4h-8v4h6v4h-6v4h8v4H76V8z"/>
+                  <path d="M96 8h12v4h-8v4h6v4h-6v4h8v4H96V8z"/>
+                  <path d="M32 20l2 2 4-4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+              </svg>
+            </div>
+            <p className="text-sm text-muted-foreground">Sistema de Gestão</p>
           </div>
         </div>
       </SidebarHeader>
