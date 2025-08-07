@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Check, Calendar, MessageSquare, BarChart3, Users, Clock, Shield, Zap, Star } from "lucide-react";
+import { Check, Calendar, MessageSquare, BarChart3, Users, Clock, Shield, Zap, Star, Phone, Mail, MapPin } from "lucide-react";
 
 const Index = () => {
   return (
@@ -8,11 +8,8 @@ const Index = () => {
       {/* Header */}
       <header className="bg-card border-b border-border px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">D</span>
-            </div>
-            <span className="text-xl font-bold text-foreground">doace</span>
+          <div className="flex items-center space-x-3">
+            <img src="/lovable-uploads/df33c00a-881c-4c3a-8f60-77fcd8835e1b.png" alt="Donee" className="h-8" />
           </div>
           <nav className="hidden md:flex items-center space-x-6">
             <a href="#" className="text-muted-foreground hover:text-foreground">Início</a>
@@ -52,9 +49,13 @@ const Index = () => {
               </div>
             </div>
             <div className="relative">
-              <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-8 shadow-2xl">
-                <div className="w-full h-64 bg-gradient-to-br from-primary/20 to-primary/5 rounded-2xl flex items-center justify-center">
-                  <Calendar className="w-24 h-24 text-primary" />
+              <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-2xl">
+                <div className="w-full h-80 bg-gradient-to-br from-teal-100 to-blue-100 rounded-2xl flex items-center justify-center relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-tr from-teal-200/30 to-blue-200/30"></div>
+                  <div className="relative z-10 text-center">
+                    <Calendar className="w-24 h-24 text-teal-600 mx-auto mb-4" />
+                    <p className="text-sm text-teal-700 font-medium">Agenda Inteligente</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -109,7 +110,26 @@ const Index = () => {
                   </ul>
                 </div>
                 <div className="bg-gradient-to-br from-primary/10 to-primary/5 p-8 h-full flex items-center justify-center">
-                  <BarChart3 className="w-32 h-32 text-primary" />
+                  <div className="bg-white rounded-lg p-6 shadow-lg w-80">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-semibold text-gray-800">Dashboard</h4>
+                      <div className="text-xs text-gray-500">+ add</div>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                        <span className="text-sm text-gray-700">Pacientes hoje</span>
+                        <span className="text-sm font-medium text-gray-900">12</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                        <span className="text-sm text-gray-700">Faturamento</span>
+                        <span className="text-sm font-medium text-gray-900">R$ 2.400</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                        <span className="text-sm text-gray-700">Próximo paciente</span>
+                        <span className="text-sm font-medium text-gray-900">14:30</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -151,25 +171,34 @@ const Index = () => {
                   </span>
                 </li>
               </ul>
-              <Button size="lg">
-                Começar grátis
+              <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white">
+                Ver como
               </Button>
             </div>
             <div className="relative">
-              <div className="bg-card border border-border rounded-3xl p-6 shadow-lg max-w-sm mx-auto">
-                <div className="bg-primary/10 rounded-2xl p-6 h-96 flex flex-col justify-between">
-                  <div className="flex items-center space-x-3 mb-4">
-                    <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-                      <MessageSquare className="w-5 h-5 text-primary-foreground" />
+              <div className="bg-white rounded-3xl p-6 shadow-lg max-w-sm mx-auto border">
+                <div className="bg-green-50 rounded-2xl p-6 h-96 flex flex-col">
+                  <div className="flex items-center space-x-3 mb-6">
+                    <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
+                      <MessageSquare className="w-5 h-5 text-white" />
                     </div>
-                    <span className="font-semibold text-foreground">Dr. Assistente</span>
+                    <div>
+                      <span className="font-semibold text-gray-800">Dr. Assistente</span>
+                      <p className="text-xs text-gray-500">online</p>
+                    </div>
                   </div>
-                  <div className="space-y-3">
-                    <div className="bg-white/20 backdrop-blur-sm rounded-lg p-3">
-                      <p className="text-sm text-foreground">Olá! Sua consulta está confirmada para amanhã às 14h.</p>
+                  <div className="space-y-4 flex-1">
+                    <div className="bg-white rounded-lg p-3 shadow-sm">
+                      <p className="text-sm text-gray-800">Olá Maria! Sua consulta com Dr. João está confirmada para amanhã às 14:00h.</p>
+                      <p className="text-xs text-gray-500 mt-1">Hoje 10:30</p>
                     </div>
-                    <div className="bg-primary/20 rounded-lg p-3 ml-8">
-                      <p className="text-sm text-foreground">Obrigado! Estarei lá.</p>
+                    <div className="bg-green-500 text-white rounded-lg p-3 ml-8">
+                      <p className="text-sm">Obrigada! Estarei lá no horário ✓</p>
+                      <p className="text-xs text-green-100 mt-1">Hoje 10:32</p>
+                    </div>
+                    <div className="bg-white rounded-lg p-3 shadow-sm">
+                      <p className="text-sm text-gray-800">Perfeito! Lembrando que você pode cancelar ou reagendar até 2h antes pelo WhatsApp.</p>
+                      <p className="text-xs text-gray-500 mt-1">Hoje 10:33</p>
                     </div>
                   </div>
                 </div>
@@ -184,26 +213,36 @@ const Index = () => {
         <div className="max-w-6xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="relative order-2 lg:order-1">
-              <Card className="p-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-primary/10 rounded-lg">
-                    <span className="font-semibold text-foreground">Dashboard</span>
-                    <BarChart3 className="w-5 h-5 text-primary" />
+              <div className="bg-gradient-to-br from-orange-100 to-red-100 rounded-3xl p-8">
+                <div className="bg-white rounded-2xl p-6 shadow-lg">
+                  <div className="flex items-center justify-between mb-6">
+                    <h4 className="text-xl font-bold text-gray-800">Plataforma</h4>
+                    <div className="flex space-x-2">
+                      <div className="w-3 h-3 bg-red-400 rounded-full"></div>
+                      <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
+                      <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-                    <span className="font-semibold text-foreground">Pacientes</span>
-                    <Users className="w-5 h-5 text-primary" />
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-                    <span className="font-semibold text-foreground">Agenda</span>
-                    <Calendar className="w-5 h-5 text-primary" />
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-                    <span className="font-semibold text-foreground">Financeiro</span>
-                    <BarChart3 className="w-5 h-5 text-primary" />
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border-l-4 border-orange-400">
+                      <span className="font-medium text-gray-800">Dashboard</span>
+                      <BarChart3 className="w-5 h-5 text-orange-600" />
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <span className="font-medium text-gray-800">Pacientes</span>
+                      <Users className="w-5 h-5 text-gray-600" />
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <span className="font-medium text-gray-800">Agenda</span>
+                      <Calendar className="w-5 h-5 text-gray-600" />
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <span className="font-medium text-gray-800">Financeiro</span>
+                      <BarChart3 className="w-5 h-5 text-gray-600" />
+                    </div>
                   </div>
                 </div>
-              </Card>
+              </div>
             </div>
             <div className="order-1 lg:order-2">
               <h2 className="text-4xl font-bold text-foreground mb-6">
@@ -235,7 +274,7 @@ const Index = () => {
                   </span>
                 </li>
               </ul>
-              <Button size="lg">
+              <Button size="lg" className="bg-orange-600 hover:bg-orange-700 text-white">
                 Conhecer plataforma
               </Button>
             </div>
@@ -251,21 +290,27 @@ const Index = () => {
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
             <Card className="p-6 text-center">
-              <Clock className="w-12 h-12 text-primary mx-auto mb-4" />
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Clock className="w-8 h-8 text-red-600" />
+              </div>
               <h3 className="font-semibold text-foreground mb-2">Tempo é precioso</h3>
               <p className="text-muted-foreground text-sm">
                 Menos tempo com burocracia, mais tempo cuidando de pessoas
               </p>
             </Card>
             <Card className="p-6 text-center">
-              <Shield className="w-12 h-12 text-primary mx-auto mb-4" />
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Shield className="w-8 h-8 text-blue-600" />
+              </div>
               <h3 className="font-semibold text-foreground mb-2">Segurança total</h3>
               <p className="text-muted-foreground text-sm">
                 Dados protegidos e em conformidade com a LGPD
               </p>
             </Card>
             <Card className="p-6 text-center">
-              <Zap className="w-12 h-12 text-primary mx-auto mb-4" />
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Zap className="w-8 h-8 text-green-600" />
+              </div>
               <h3 className="font-semibold text-foreground mb-2">Eficiência máxima</h3>
               <p className="text-muted-foreground text-sm">
                 Automatize processos e aumente sua produtividade
@@ -285,8 +330,8 @@ const Index = () => {
 
         <div className="max-w-6xl mx-auto grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           <Card className="p-6 text-center">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Check className="w-8 h-8 text-primary" />
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Check className="w-8 h-8 text-green-600" />
             </div>
             <h3 className="font-semibold text-foreground mb-2">Mais consultas</h3>
             <p className="text-muted-foreground text-sm">
@@ -295,8 +340,8 @@ const Index = () => {
           </Card>
 
           <Card className="p-6 text-center">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <BarChart3 className="w-8 h-8 text-primary" />
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <BarChart3 className="w-8 h-8 text-blue-600" />
             </div>
             <h3 className="font-semibold text-foreground mb-2">Controle financeiro</h3>
             <p className="text-muted-foreground text-sm">
@@ -305,8 +350,8 @@ const Index = () => {
           </Card>
 
           <Card className="p-6 text-center">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Users className="w-8 h-8 text-primary" />
+            <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Users className="w-8 h-8 text-purple-600" />
             </div>
             <h3 className="font-semibold text-foreground mb-2">Relacionamento</h3>
             <p className="text-muted-foreground text-sm">
@@ -315,8 +360,8 @@ const Index = () => {
           </Card>
 
           <Card className="p-6 text-center">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Shield className="w-8 h-8 text-primary" />
+            <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Shield className="w-8 h-8 text-orange-600" />
             </div>
             <h3 className="font-semibold text-foreground mb-2">Conformidade</h3>
             <p className="text-muted-foreground text-sm">
@@ -325,8 +370,8 @@ const Index = () => {
           </Card>
 
           <Card className="p-6 text-center">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Clock className="w-8 h-8 text-primary" />
+            <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Clock className="w-8 h-8 text-teal-600" />
             </div>
             <h3 className="font-semibold text-foreground mb-2">Economia de tempo</h3>
             <p className="text-muted-foreground text-sm">
@@ -335,8 +380,8 @@ const Index = () => {
           </Card>
 
           <Card className="p-6 text-center">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Star className="w-8 h-8 text-primary" />
+            <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Star className="w-8 h-8 text-yellow-600" />
             </div>
             <h3 className="font-semibold text-foreground mb-2">Qualidade</h3>
             <p className="text-muted-foreground text-sm">
@@ -361,8 +406,8 @@ const Index = () => {
           
           <Card className="p-8">
             <div className="flex flex-col md:flex-row items-center gap-8">
-              <div className="w-32 h-32 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0">
-                <Users className="w-16 h-16 text-primary" />
+              <div className="w-32 h-32 bg-gradient-to-br from-pink-100 to-purple-100 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                <img src="/lovable-uploads/65e05e81-18b0-4ef9-a06f-f137ba0eb5b3.png" alt="Dra. Carla Pedroza" className="w-full h-full object-cover" />
               </div>
               <div>
                 <p className="text-lg text-muted-foreground mb-4 italic">
@@ -379,72 +424,112 @@ const Index = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 px-6 bg-primary text-primary-foreground">
+      {/* Final CTA Section */}
+      <section className="py-20 px-6 bg-gradient-to-br from-teal-600 to-blue-700 text-white">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl font-bold mb-4">
+          <h2 className="text-4xl font-bold mb-8">
             Quanto vale ter a agenda cheia sem estresse?
           </h2>
           <p className="text-xl mb-8 opacity-90">
-            Comece agora a junta a diferença em 7 dias.
+            Comece agora e sinta a diferença em 7 dias.
           </p>
-          <Button size="lg" variant="secondary" className="text-lg px-8 py-3">
-            Começar teste grátis
-          </Button>
+          <div className="grid md:grid-cols-2 gap-8 items-center">
+            <div className="text-left">
+              <ul className="space-y-3">
+                <li className="flex items-center space-x-3">
+                  <Check className="w-5 h-5 text-white" />
+                  <span>14 dias de teste grátis</span>
+                </li>
+                <li className="flex items-center space-x-3">
+                  <Check className="w-5 h-5 text-white" />
+                  <span>Sem taxa de adesão</span>
+                </li>
+                <li className="flex items-center space-x-3">
+                  <Check className="w-5 h-5 text-white" />
+                  <span>Cancele quando quiser</span>
+                </li>
+                <li className="flex items-center space-x-3">
+                  <Check className="w-5 h-5 text-white" />
+                  <span>Suporte especializado incluído</span>
+                </li>
+              </ul>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
+              <h3 className="text-2xl font-bold mb-4">Teste por 14 dias</h3>
+              <p className="mb-6 opacity-90">Sem compromisso, sem cartão de crédito</p>
+              <Button size="lg" className="w-full bg-white text-teal-600 hover:bg-gray-100 text-lg px-8 py-3">
+                Começar teste grátis
+              </Button>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-card border-t border-border py-12 px-6">
+      <footer className="bg-gray-900 text-white py-16 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                  <span className="text-primary-foreground font-bold text-sm">D</span>
-                </div>
-                <span className="text-xl font-bold text-foreground">doace</span>
+              <div className="flex items-center space-x-3 mb-6">
+                <img src="/lovable-uploads/df33c00a-881c-4c3a-8f60-77fcd8835e1b.png" alt="Donee" className="h-8 brightness-0 invert" />
               </div>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-gray-300 mb-4">
                 Sistema completo para gestão de clínicas e consultórios médicos.
               </p>
+              <div className="flex space-x-4">
+                <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
+                  <span className="text-xs font-bold">f</span>
+                </div>
+                <div className="w-8 h-8 bg-blue-400 rounded flex items-center justify-center">
+                  <span className="text-xs font-bold">t</span>
+                </div>
+                <div className="w-8 h-8 bg-blue-700 rounded flex items-center justify-center">
+                  <span className="text-xs font-bold">in</span>
+                </div>
+              </div>
             </div>
             
             <div>
-              <h3 className="font-semibold text-foreground mb-4">Produto</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground">Recursos</a></li>
-                <li><a href="#" className="hover:text-foreground">Preços</a></li>
-                <li><a href="#" className="hover:text-foreground">Integrações</a></li>
-                <li><a href="#" className="hover:text-foreground">API</a></li>
+              <h4 className="font-semibold mb-4">Produto</h4>
+              <ul className="space-y-2 text-gray-300">
+                <li><a href="#" className="hover:text-white">Recursos</a></li>
+                <li><a href="#" className="hover:text-white">Preços</a></li>
+                <li><a href="#" className="hover:text-white">Integrações</a></li>
+                <li><a href="#" className="hover:text-white">API</a></li>
               </ul>
             </div>
             
             <div>
-              <h3 className="font-semibold text-foreground mb-4">Empresa</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground">Sobre nós</a></li>
-                <li><a href="#" className="hover:text-foreground">Blog</a></li>
-                <li><a href="#" className="hover:text-foreground">Carreiras</a></li>
-                <li><a href="#" className="hover:text-foreground">Contato</a></li>
+              <h4 className="font-semibold mb-4">Empresa</h4>
+              <ul className="space-y-2 text-gray-300">
+                <li><a href="#" className="hover:text-white">Sobre nós</a></li>
+                <li><a href="#" className="hover:text-white">Blog</a></li>
+                <li><a href="#" className="hover:text-white">Carreiras</a></li>
+                <li><a href="#" className="hover:text-white">Imprensa</a></li>
               </ul>
             </div>
             
             <div>
-              <h3 className="font-semibold text-foreground mb-4">Suporte</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground">Central de ajuda</a></li>
-                <li><a href="#" className="hover:text-foreground">Documentação</a></li>
-                <li><a href="#" className="hover:text-foreground">Status</a></li>
-                <li><a href="#" className="hover:text-foreground">Privacidade</a></li>
+              <h4 className="font-semibold mb-4">Suporte</h4>
+              <ul className="space-y-2 text-gray-300">
+                <li><a href="#" className="hover:text-white">Central de ajuda</a></li>
+                <li><a href="#" className="hover:text-white">Contato</a></li>
+                <li><a href="#" className="hover:text-white">Status</a></li>
+                <li><a href="#" className="hover:text-white">Privacidade</a></li>
               </ul>
             </div>
           </div>
           
-          <div className="border-t border-border mt-8 pt-8 text-center">
-            <p className="text-sm text-muted-foreground">
-              © 2024 Doace. Todos os direitos reservados.
-            </p>
+          <div className="border-t border-gray-700 mt-12 pt-8">
+            <div className="flex flex-col md:flex-row justify-between items-center">
+              <p className="text-gray-400 text-sm">
+                © 2024 Donee. Todos os direitos reservados.
+              </p>
+              <div className="flex space-x-6 mt-4 md:mt-0">
+                <a href="#" className="text-gray-400 hover:text-white text-sm">Termos de uso</a>
+                <a href="#" className="text-gray-400 hover:text-white text-sm">Política de privacidade</a>
+              </div>
+            </div>
           </div>
         </div>
       </footer>
