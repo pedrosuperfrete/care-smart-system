@@ -105,20 +105,12 @@ export function AppSidebar() {
   return (
     <Sidebar className="border-r border-gray-200">
       <SidebarHeader className="p-6 border-b border-gray-200">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <User className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <img 
-                src="/lovable-uploads/df33c00a-881c-4c3a-8f60-77fcd8835e1b.png" 
-                alt="Donee" 
-                className="h-8 w-auto"
-              />
-            </div>
-            <p className="text-sm text-muted-foreground">Sistema de Gestão</p>
-          </div>
+        <div className="flex items-center justify-center">
+          <img 
+            src="/lovable-uploads/df33c00a-881c-4c3a-8f60-77fcd8835e1b.png" 
+            alt="Donee" 
+            className="h-8 w-auto"
+          />
         </div>
       </SidebarHeader>
       
