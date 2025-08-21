@@ -81,11 +81,14 @@ export function useProximosAgendamentos(limit = 5) {
       // Buscar profissional atual
       const { data: profissionalId } = await supabase.rpc('get_current_profissional_id');
       
+      console.log('Profissional ID para próximas consultas:', profissionalId);
+      
       if (!profissionalId) {
         return [];
       }
 
       const agora = new Date().toISOString();
+      console.log('Data atual para filtro:', agora);
       
       const { data, error } = await supabase
         .from('agendamentos')
@@ -96,9 +99,13 @@ export function useProximosAgendamentos(limit = 5) {
         `)
         .eq('profissional_id', profissionalId)
         .eq('desmarcada', false)
+        .in('status', ['pendente', 'confirmado'])
         .gte('data_inicio', agora)
         .order('data_inicio', { ascending: true })
         .limit(limit);
+
+      console.log('Próximas consultas - dados:', data);
+      console.log('Próximas consultas - erro:', error);
       
       if (error) throw error;
       return data || [];
