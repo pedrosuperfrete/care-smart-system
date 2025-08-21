@@ -3,12 +3,18 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { CalendarIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useCreatePaciente, useUpdatePaciente } from '@/hooks/usePacientes';
 import { LimiteAssinaturaModal } from '@/components/modals/LimiteAssinaturaModal';
 import { useAuth } from '@/hooks/useAuth';
@@ -19,7 +25,7 @@ type Paciente = Tables<'pacientes'>;
 const pacienteSchema = z.object({
   nome: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
   cpf: z.string().min(11, 'CPF deve ter 11 dígitos'),
-  data_nascimento: z.string().optional(),
+  data_nascimento: z.date().optional(),
   email: z.string().email('Email inválido').optional().or(z.literal('')),
   telefone: z.string().optional(),
   endereco: z.string().optional(),
@@ -46,13 +52,14 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
     handleSubmit,
     setValue,
     watch,
+    control,
     formState: { errors },
   } = useForm<PacienteFormData>({
     resolver: zodResolver(pacienteSchema),
     defaultValues: paciente ? {
       nome: paciente.nome,
       cpf: paciente.cpf,
-      data_nascimento: paciente.data_nascimento || '',
+      data_nascimento: paciente.data_nascimento ? new Date(paciente.data_nascimento) : undefined,
       email: paciente.email || '',
       telefone: paciente.telefone || '',
       endereco: paciente.endereco || '',
@@ -64,6 +71,7 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
   });
 
   const tipoPaciente = watch('tipo_paciente');
+  const dataNascimento = watch('data_nascimento');
 
   const onSubmit = async (data: PacienteFormData) => {
     if (!clinicaAtual) {
@@ -77,7 +85,7 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
         cpf: data.cpf,
         clinica_id: clinicaAtual,
         email: data.email || null,
-        data_nascimento: data.data_nascimento || null,
+        data_nascimento: data.data_nascimento ? data.data_nascimento.toISOString().split('T')[0] : null,
         telefone: data.telefone || null,
         endereco: data.endereco || null,
         observacoes: data.observacoes || null,
@@ -143,12 +151,35 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="data_nascimento">Data de Nascimento</Label>
-              <Input
-                id="data_nascimento"
-                type="date"
-                {...register('data_nascimento')}
-              />
+              <Label>Data de Nascimento</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !dataNascimento && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dataNascimento ? (
+                      format(dataNascimento, "dd/MM/yyyy", { locale: ptBR })
+                    ) : (
+                      <span>Selecione a data</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dataNascimento}
+                    onSelect={(date) => setValue('data_nascimento', date)}
+                    disabled={(date) => date > new Date()}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="space-y-1">
