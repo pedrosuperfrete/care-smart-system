@@ -8,6 +8,8 @@ import { useFinanceiroStats } from '@/hooks/useFinanceiro';
 import { useAtividadesRecentes } from '@/hooks/useAtividades';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, Users, FileText, DollarSign, Plus, BarChart3, Clock } from 'lucide-react';
+import { Tables } from '@/integrations/supabase/types';
+import { formatDateTimeLocal } from '@/lib/dateUtils';
 
 export default function Dashboard() {
   const { userProfile, isAdmin, isProfissional } = useAuth();
@@ -160,13 +162,7 @@ export default function Dashboard() {
                           {(agendamento as any).pacientes?.nome}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {new Date(agendamento.data_inicio).toLocaleString('pt-BR', {
-                            weekday: 'short',
-                            day: '2-digit',
-                            month: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
+                          {formatDateTimeLocal(agendamento.data_inicio)}
                         </div>
                       </div>
                     </div>

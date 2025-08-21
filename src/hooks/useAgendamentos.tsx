@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
+import { getStartOfDayLocal, getEndOfDayLocal } from '@/lib/dateUtils';
 
 type Agendamento = Tables<'agendamentos'>;
 type InsertAgendamento = Omit<Agendamento, 'id' | 'criado_em' | 'atualizado_em'> & {
@@ -51,7 +52,9 @@ export function useAgendamentosHoje() {
       }
 
       const clinicaIds = clinicasUsuario.map(c => c.clinica_id);
-      const hoje = new Date().toISOString().split('T')[0];
+      const hoje = new Date();
+      const inicioHoje = getStartOfDayLocal(hoje).toISOString();
+      const fimHoje = getEndOfDayLocal(hoje).toISOString();
       
       const { data, error } = await supabase
         .from('agendamentos')
@@ -61,8 +64,8 @@ export function useAgendamentosHoje() {
           profissionais!inner(id, nome, especialidade, clinica_id)
         `)
         .in('profissionais.clinica_id', clinicaIds)
-        .gte('data_inicio', `${hoje}T00:00:00`)
-        .lt('data_inicio', `${hoje}T23:59:59`)
+        .gte('data_inicio', inicioHoje)
+        .lt('data_inicio', fimHoje)
         .order('data_inicio', { ascending: true });
       
       if (error) throw error;
@@ -318,7 +321,9 @@ export function useAgendamentosStats() {
       }
 
       const clinicaIds = clinicasUsuario.map(c => c.clinica_id);
-      const hoje = new Date().toISOString().split('T')[0];
+      const hoje = new Date();
+      const inicioHoje = getStartOfDayLocal(hoje).toISOString();
+      const fimHoje = getEndOfDayLocal(hoje).toISOString();
       
       // Consultas hoje
       const { data: consultasHoje, error: hojeError } = await supabase
@@ -329,8 +334,8 @@ export function useAgendamentosStats() {
           profissionais!inner(clinica_id)
         `)
         .in('profissionais.clinica_id', clinicaIds)
-        .gte('data_inicio', `${hoje}T00:00:00`)
-        .lt('data_inicio', `${hoje}T23:59:59`);
+        .gte('data_inicio', inicioHoje)
+        .lt('data_inicio', fimHoje);
       
       if (hojeError) throw hojeError;
 

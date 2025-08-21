@@ -1,6 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tables } from '@/integrations/supabase/types';
+import { isSameDayLocal } from '@/lib/dateUtils';
 
 type Agendamento = Tables<'agendamentos'>;
 
@@ -35,7 +36,7 @@ export function VisaoMensal({ agendamentos, mesAno, onDiaClick }: VisaoMensalPro
   const getAgendamentosDoDia = (data: Date | null) => {
     if (!data) return [];
     return agendamentos.filter(ag => 
-      new Date(ag.data_inicio).toDateString() === data.toDateString()
+      isSameDayLocal(ag.data_inicio, data)
     );
   };
 

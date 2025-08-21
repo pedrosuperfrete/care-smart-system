@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Clock, User } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
+import { formatTimeLocal, isSameDayLocal } from '@/lib/dateUtils';
 
 type Agendamento = Tables<'agendamentos'>;
 
@@ -35,7 +36,7 @@ export function VisaoSemanal({
 
   const getAgendamentosDoDia = (data: Date) => {
     return agendamentos.filter(ag => 
-      new Date(ag.data_inicio).toDateString() === data.toDateString()
+      isSameDayLocal(ag.data_inicio, data)
     );
   };
 
@@ -87,10 +88,7 @@ export function VisaoSemanal({
                     }`}
                   >
                     <div className={`font-medium ${agendamento.desmarcada ? 'line-through' : ''}`}>
-                      {new Date(agendamento.data_inicio).toLocaleTimeString('pt-BR', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
+                      {formatTimeLocal(agendamento.data_inicio)}
                     </div>
                     <div className={`text-gray-600 ${agendamento.desmarcada ? 'line-through' : ''}`}>
                       {(agendamento as any).pacientes?.nome}

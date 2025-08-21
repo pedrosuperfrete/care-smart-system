@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { History, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import { useState } from 'react';
+import { formatDateTimeLocal } from '@/lib/dateUtils';
 
 type Agendamento = Tables<'agendamentos'>;
 
@@ -77,7 +78,7 @@ export function HistoricoAtendimentos({ agendamentos }: HistoricoAtendimentosPro
                   <History className="h-4 w-4 text-gray-500" />
                   <div>
                     <div className="font-medium">
-                      {new Date(agendamento.data_inicio).toLocaleDateString('pt-BR')}
+                      {formatDateTimeLocal(agendamento.data_inicio).split(' ')[0]}
                     </div>
                     <div className="text-sm text-gray-500">
                       {agendamento.tipo_servico} - {(agendamento as any).profissionais?.nome || 'Profissional não informado'}

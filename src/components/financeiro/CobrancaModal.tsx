@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from '@/components/ui/button';
 import { MessageCircle, Copy, QrCode } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatDateTimeLocal } from '@/lib/dateUtils';
 
 interface CobrancaModalProps {
   open: boolean;
@@ -31,7 +32,7 @@ export function CobrancaModal({ open, onOpenChange, pagamento }: CobrancaModalPr
   const valorTotal = Number(pagamento.valor_total) || 0;
   const valorPendente = valorTotal - (Number(pagamento.valor_pago) || 0);
   const dataServico = pagamento.agendamentos?.data_inicio 
-    ? new Date(pagamento.agendamentos.data_inicio).toLocaleDateString('pt-BR')
+    ? formatDateTimeLocal(pagamento.agendamentos.data_inicio).split(' ')[0]
     : 'Data não disponível';
 
   // Link de pagamento fictício (aqui seria integrado com gateway de pagamento)

@@ -7,6 +7,7 @@ import { AgendamentoForm } from '@/components/forms/AgendamentoForm';
 import { Calendar, Plus, User, CheckCircle, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import { useState } from 'react';
+import { formatDateTimeLocal } from '@/lib/dateUtils';
 
 type Agendamento = Tables<'agendamentos'>;
 
@@ -117,7 +118,7 @@ export function ProximosAgendamentos({ agendamentos, pacienteNome, pacienteId, o
                     <Calendar className="h-5 w-5 text-primary" />
                     <div>
                       <div className="font-semibold text-gray-900">
-                        {new Date(agendamento.data_inicio).toLocaleString('pt-BR')}
+                        {formatDateTimeLocal(agendamento.data_inicio)}
                       </div>
                       <div className="text-sm text-gray-600 mt-1">
                         {agendamento.tipo_servico}

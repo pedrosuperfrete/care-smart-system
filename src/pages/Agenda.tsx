@@ -12,6 +12,7 @@ import { usePacientes } from '@/hooks/usePacientes';
 import { useProfissionais } from '@/hooks/useProfissionais';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { toDateTimeLocalString, fromDateTimeLocalString, formatTimeLocal, isSameDayLocal } from '@/lib/dateUtils';
 import { VisaoSemanal } from '@/components/agenda/VisaoSemanal';
 import { VisaoMensal } from '@/components/agenda/VisaoMensal';
 import { EditarAgendamentoDialog } from '@/components/agenda/EditarAgendamentoDialog';
@@ -53,8 +54,8 @@ export default function Agenda() {
       await createAgendamento.mutateAsync({
         paciente_id: newConsulta.paciente_id,
         profissional_id: newConsulta.profissional_id,
-        data_inicio: newConsulta.data_inicio,
-        data_fim: newConsulta.data_fim,
+        data_inicio: fromDateTimeLocalString(newConsulta.data_inicio),
+        data_fim: fromDateTimeLocalString(newConsulta.data_fim),
         tipo_servico: newConsulta.tipo_servico,
         valor: newConsulta.valor ? parseFloat(newConsulta.valor) : null,
         observacoes: newConsulta.observacoes || null,
@@ -130,7 +131,7 @@ export default function Agenda() {
   const getAgendamentosCount = () => {
     if (viewMode === 'dia') {
       return agendamentos.filter(ag => 
-        new Date(ag.data_inicio).toDateString() === selectedDate.toDateString()
+        isSameDayLocal(ag.data_inicio, selectedDate)
       ).length;
     } else if (viewMode === 'semana') {
       const startOfWeek = new Date(selectedDate);
@@ -140,6 +141,7 @@ export default function Agenda() {
       
       return agendamentos.filter(ag => {
         const agendamentoDate = new Date(ag.data_inicio);
+        // Comparar considerando apenas a data, sem o horário
         return agendamentoDate >= startOfWeek && agendamentoDate <= endOfWeek;
       }).length;
     } else {
@@ -148,6 +150,7 @@ export default function Agenda() {
       
       return agendamentos.filter(ag => {
         const agendamentoDate = new Date(ag.data_inicio);
+        // Comparar considerando apenas a data, sem o horário
         return agendamentoDate >= startOfMonth && agendamentoDate <= endOfMonth;
       }).length;
     }
@@ -174,7 +177,7 @@ export default function Agenda() {
   };
 
   const todayAgendamentos = agendamentos.filter(ag => 
-    new Date(ag.data_inicio).toDateString() === selectedDate.toDateString()
+    isSameDayLocal(ag.data_inicio, selectedDate)
   );
 
   const getStartOfWeek = () => {
@@ -273,7 +276,7 @@ export default function Agenda() {
                       onChange={(e) => setNewConsulta(prev => ({ 
                         ...prev, 
                         data_inicio: e.target.value,
-                        data_fim: e.target.value ? new Date(new Date(e.target.value).getTime() + 60*60*1000).toISOString().slice(0, 16) : ''
+                        data_fim: e.target.value ? toDateTimeLocalString(new Date(new Date(e.target.value).getTime() + 60*60*1000)) : ''
                       }))}
                     />
                   </div>
@@ -400,13 +403,7 @@ export default function Agenda() {
                         <div className="flex items-center space-x-3 mb-2">
                           <Clock className="h-5 w-5 text-gray-500" />
                           <span className={`font-semibold ${agendamento.desmarcada ? 'line-through' : ''}`}>
-                            {new Date(agendamento.data_inicio).toLocaleTimeString('pt-BR', {
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })} - {new Date(agendamento.data_fim).toLocaleTimeString('pt-BR', {
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
+                            {formatTimeLocal(agendamento.data_inicio)} - {formatTimeLocal(agendamento.data_fim)}
                           </span>
                           <Badge className={agendamento.desmarcada ? 'bg-gray-100 text-gray-600' : getStatusColor(agendamento.status || 'pendente')}>
                             {agendamento.desmarcada ? 'Desmarcada' : getStatusText(agendamento.status || 'pendente')}

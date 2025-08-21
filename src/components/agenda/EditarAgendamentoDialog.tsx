@@ -9,6 +9,7 @@ import { Tables } from '@/integrations/supabase/types';
 import { useProfissionais } from '@/hooks/useProfissionais';
 import { useUpdateAgendamento } from '@/hooks/useAgendamentos';
 import { toast } from 'sonner';
+import { toDateTimeLocalString, fromDateTimeLocalString } from '@/lib/dateUtils';
 
 type Agendamento = Tables<'agendamentos'>;
 
@@ -37,8 +38,8 @@ export function EditarAgendamentoDialog({
   useEffect(() => {
     if (agendamento) {
       setFormData({
-        data_inicio: new Date(agendamento.data_inicio).toISOString().slice(0, 16),
-        data_fim: new Date(agendamento.data_fim).toISOString().slice(0, 16),
+        data_inicio: toDateTimeLocalString(agendamento.data_inicio),
+        data_fim: toDateTimeLocalString(agendamento.data_fim),
         tipo_servico: agendamento.tipo_servico,
         profissional_id: agendamento.profissional_id,
         valor: agendamento.valor?.toString() || '',
@@ -52,8 +53,8 @@ export function EditarAgendamentoDialog({
     
     try {
       const updateData = {
-        data_inicio: formData.data_inicio,
-        data_fim: formData.data_fim,
+        data_inicio: fromDateTimeLocalString(formData.data_inicio),
+        data_fim: fromDateTimeLocalString(formData.data_fim),
         tipo_servico: formData.tipo_servico,
         profissional_id: formData.profissional_id,
         valor: formData.valor ? parseFloat(formData.valor) : null,
@@ -90,7 +91,7 @@ export function EditarAgendamentoDialog({
                 onChange={(e) => setFormData(prev => ({ 
                   ...prev, 
                   data_inicio: e.target.value,
-                  data_fim: e.target.value ? new Date(new Date(e.target.value).getTime() + 60*60*1000).toISOString().slice(0, 16) : prev.data_fim
+                  data_fim: e.target.value ? toDateTimeLocalString(new Date(new Date(e.target.value).getTime() + 60*60*1000)) : prev.data_fim
                 }))}
               />
             </div>

@@ -15,6 +15,7 @@ import { TemplateModal } from './TemplateModal';
 import { useDeleteTemplate } from '@/hooks/useProntuarios';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
+import { formatDateTimeLocal } from '@/lib/dateUtils';
 
 interface ProntuarioModalProps {
   isOpen: boolean;
@@ -226,7 +227,7 @@ export function ProntuarioModal({ isOpen, onClose }: ProntuarioModalProps) {
                 <SelectContent>
                   {agendamentosRealizados.filter(agendamento => agendamento.id).map((agendamento: any) => (
                     <SelectItem key={agendamento.id} value={agendamento.id}>
-                      {agendamento.tipo_servico} - {new Date(agendamento.data_inicio).toLocaleDateString('pt-BR')}
+                      {agendamento.tipo_servico} - {formatDateTimeLocal(agendamento.data_inicio).split(' ')[0]}
                     </SelectItem>
                   ))}
                 </SelectContent>
