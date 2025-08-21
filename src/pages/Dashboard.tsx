@@ -29,7 +29,7 @@ export default function Dashboard() {
     },
     {
       title: 'Consultas Hoje',
-      value: `${agendamentosStats?.consultasHoje || 0} (${agendamentosStats?.confirmadasHoje || 0} confirmadas)`,
+      value: agendamentosStats?.consultasHoje || 0,
       icon: Calendar,
       description: 'Agendamentos para hoje',
     },
