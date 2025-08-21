@@ -136,28 +136,12 @@ export default function Agenda() {
   const getAgendamentosCount = () => {
     if (viewMode === 'dia') {
       return agendamentos.filter(ag => 
-        isSameDayLocal(ag.data_inicio, selectedDate)
+        isSameDayLocal(ag.data_inicio, selectedDate) && !ag.desmarcada
       ).length;
     } else if (viewMode === 'semana') {
-      const startOfWeek = new Date(selectedDate);
-      startOfWeek.setDate(selectedDate.getDate() - selectedDate.getDay());
-      const endOfWeek = new Date(startOfWeek);
-      endOfWeek.setDate(startOfWeek.getDate() + 6);
-      
-      return agendamentos.filter(ag => {
-        const agendamentoDate = new Date(ag.data_inicio);
-        // Comparar considerando apenas a data, sem o horário
-        return agendamentoDate >= startOfWeek && agendamentoDate <= endOfWeek;
-      }).length;
+      return getWeekAgendamentos().length;
     } else {
-      const startOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
-      const endOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
-      
-      return agendamentos.filter(ag => {
-        const agendamentoDate = new Date(ag.data_inicio);
-        // Comparar considerando apenas a data, sem o horário
-        return agendamentoDate >= startOfMonth && agendamentoDate <= endOfMonth;
-      }).length;
+      return getMonthAgendamentos().length;
     }
   };
 
@@ -181,14 +165,38 @@ export default function Agenda() {
     return texts[status as keyof typeof texts] || 'Pendente';
   };
 
+  // Filtrar agendamentos por data selecionada e não desmarcados
   const todayAgendamentos = agendamentos.filter(ag => 
-    isSameDayLocal(ag.data_inicio, selectedDate)
+    isSameDayLocal(ag.data_inicio, selectedDate) && !ag.desmarcada
   );
 
   const getStartOfWeek = () => {
     const date = new Date(selectedDate);
     date.setDate(selectedDate.getDate() - selectedDate.getDay());
     return date;
+  };
+
+  const getWeekAgendamentos = () => {
+    const startOfWeek = getStartOfWeek();
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+    
+    return agendamentos.filter(ag => {
+      const agendamentoDate = new Date(ag.data_inicio);
+      return agendamentoDate >= startOfWeek && agendamentoDate <= endOfWeek && !ag.desmarcada;
+    });
+  };
+
+  const getMonthAgendamentos = () => {
+    const startOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+    const endOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
+    endOfMonth.setHours(23, 59, 59, 999);
+    
+    return agendamentos.filter(ag => {
+      const agendamentoDate = new Date(ag.data_inicio);
+      return agendamentoDate >= startOfMonth && agendamentoDate <= endOfMonth && !ag.desmarcada;
+    });
   };
 
   return (
@@ -480,7 +488,7 @@ export default function Agenda() {
 
       {viewMode === 'semana' && (
         <VisaoSemanal
-          agendamentos={agendamentos}
+          agendamentos={getWeekAgendamentos()}
           semanaInicio={getStartOfWeek()}
           onEditarAgendamento={handleEditarAgendamento}
           onConfirmarAgendamento={handleConfirmar}
@@ -491,7 +499,7 @@ export default function Agenda() {
 
       {viewMode === 'mes' && (
         <VisaoMensal
-          agendamentos={agendamentos}
+          agendamentos={getMonthAgendamentos()}
           mesAno={selectedDate}
           onDiaClick={(data) => {
             setSelectedDate(data);
