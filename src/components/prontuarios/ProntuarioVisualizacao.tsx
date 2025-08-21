@@ -68,12 +68,6 @@ export function ProntuarioVisualizacao({ pacienteId, prontuarioId, onVoltar }: P
     }));
   };
 
-  const getTemplateName = (templateId: string | null) => {
-    if (!templateId) return 'Livre';
-    if (templateId.includes('soap')) return 'SOAP';
-    if (templateId.includes('odonto')) return 'Odontológico';
-    return 'Livre';
-  };
 
   if (isLoading) {
     return (
@@ -165,9 +159,6 @@ export function ProntuarioVisualizacao({ pacienteId, prontuarioId, onVoltar }: P
                           <CardTitle className="text-lg">
                             Prontuário #{prontuarios.length - index}
                           </CardTitle>
-                          <Badge variant="outline">
-                            {getTemplateName(prontuario.template_id)}
-                          </Badge>
                         </div>
                         
                         <div className="flex items-center space-x-4 text-sm text-muted-foreground ml-7">

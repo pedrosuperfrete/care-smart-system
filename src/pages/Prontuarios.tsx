@@ -137,7 +137,6 @@ export default function Prontuarios() {
                 <SelectItem value="todos">Todos os tipos</SelectItem>
                 <SelectItem value="soap">SOAP</SelectItem>
                 <SelectItem value="odonto">Odontológico</SelectItem>
-                <SelectItem value="livre">Livre</SelectItem>
               </SelectContent>
             </Select>
           </div>
