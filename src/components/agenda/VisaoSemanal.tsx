@@ -101,7 +101,7 @@ export function VisaoSemanal({
                       {getStatusText(agendamento.status || 'pendente', agendamento.desmarcada)}
                     </Badge>
                     
-                    <div className="flex gap-1 mt-2">
+                    <div className="flex flex-col gap-1 mt-2">
                       {!agendamento.desmarcada && agendamento.status === 'pendente' && (
                         <button
                           onClick={() => onConfirmarAgendamento(agendamento.id)}
