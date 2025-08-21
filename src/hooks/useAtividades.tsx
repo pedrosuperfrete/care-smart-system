@@ -31,6 +31,7 @@ export function useAtividadesRecentes(limit = 5) {
         descricao: string;
         data: string;
         icone: string;
+        timestamp: number;
       }> = [];
 
       // Pacientes recentes da clínica
@@ -43,12 +44,14 @@ export function useAtividadesRecentes(limit = 5) {
 
       pacientesRecentes?.forEach(paciente => {
         const tempoDecorrido = getTempoDecorrido(paciente.criado_em);
+        const timestamp = new Date(paciente.criado_em).getTime();
         atividades.push({
           id: `paciente-${paciente.id}`,
           tipo: 'paciente',
           descricao: `Novo paciente cadastrado: ${paciente.nome}`,
           data: tempoDecorrido,
           icone: '👤',
+          timestamp,
         });
       });
 
@@ -66,12 +69,14 @@ export function useAtividadesRecentes(limit = 5) {
 
       agendamentosRecentes?.forEach(agendamento => {
         const tempoDecorrido = getTempoDecorrido(agendamento.atualizado_em);
+        const timestamp = new Date(agendamento.atualizado_em).getTime();
         atividades.push({
           id: `agendamento-${agendamento.id}`,
           tipo: 'agendamento',
           descricao: `Consulta confirmada: ${(agendamento as any).pacientes?.nome}`,
           data: tempoDecorrido,
           icone: '✅',
+          timestamp,
         });
       });
 
@@ -100,6 +105,7 @@ export function useAtividadesRecentes(limit = 5) {
         pagamentosRecentes?.forEach(pagamento => {
           if (pagamento.data_pagamento) {
             const tempoDecorrido = getTempoDecorrido(pagamento.data_pagamento);
+            const timestamp = new Date(pagamento.data_pagamento).getTime();
             const pacienteNome = (pagamento as any).agendamentos?.pacientes?.nome;
             const valor = Number(pagamento.valor_pago).toLocaleString('pt-BR', {
               style: 'currency',
@@ -111,14 +117,15 @@ export function useAtividadesRecentes(limit = 5) {
               descricao: `Pagamento recebido: ${pacienteNome} - ${valor}`,
               data: tempoDecorrido,
               icone: '💰',
+              timestamp,
             });
           }
         });
       }
 
-      // Ordenar por data e limitar
+      // Ordenar por timestamp (mais recente primeiro) e limitar
       return atividades
-        .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
+        .sort((a, b) => b.timestamp - a.timestamp)
         .slice(0, limit);
     },
   });
