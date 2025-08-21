@@ -24,7 +24,7 @@ const pacienteSchema = z.object({
   telefone: z.string().optional(),
   endereco: z.string().optional(),
   observacoes: z.string().optional(),
-  risco: z.enum(['baixo', 'medio', 'alto']).optional(),
+  tipo_paciente: z.enum(['novo', 'recorrente', 'antigo']).optional(),
 });
 
 type PacienteFormData = z.infer<typeof pacienteSchema>;
@@ -57,13 +57,13 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
       telefone: paciente.telefone || '',
       endereco: paciente.endereco || '',
       observacoes: paciente.observacoes || '',
-      risco: paciente.risco || 'baixo',
+      tipo_paciente: paciente.tipo_paciente || 'novo',
     } : {
-      risco: 'baixo',
+      tipo_paciente: 'novo',
     },
   });
 
-  const risco = watch('risco');
+  const tipoPaciente = watch('tipo_paciente');
 
   const onSubmit = async (data: PacienteFormData) => {
     if (!clinicaAtual) {
@@ -81,7 +81,7 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
         telefone: data.telefone || null,
         endereco: data.endereco || null,
         observacoes: data.observacoes || null,
-        risco: data.risco || 'baixo' as const,
+        tipo_paciente: data.tipo_paciente || 'novo' as const,
         ativo: true,
       };
 
@@ -174,15 +174,15 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="risco">Nível de Risco</Label>
-              <Select value={risco} onValueChange={(value) => setValue('risco', value as any)}>
+              <Label htmlFor="tipo_paciente">Tipo de Paciente</Label>
+              <Select value={tipoPaciente} onValueChange={(value) => setValue('tipo_paciente', value as any)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione o risco" />
+                  <SelectValue placeholder="Selecione o tipo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="baixo">Baixo</SelectItem>
-                  <SelectItem value="medio">Médio</SelectItem>
-                  <SelectItem value="alto">Alto</SelectItem>
+                  <SelectItem value="novo">Novo</SelectItem>
+                  <SelectItem value="recorrente">Recorrente</SelectItem>
+                  <SelectItem value="antigo">Antigo</SelectItem>
                 </SelectContent>
               </Select>
             </div>

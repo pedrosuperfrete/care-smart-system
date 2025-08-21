@@ -16,22 +16,22 @@ interface PacienteInfoProps {
 }
 
 export function PacienteInfo({ paciente, onClose }: PacienteInfoProps) {
-  const getRiscoColor = (risco: string | null) => {
+  const getTipoPacienteColor = (tipoPaciente: string | null) => {
     const colors = {
-      baixo: 'bg-green-100 text-green-800',
-      medio: 'bg-yellow-100 text-yellow-800',
-      alto: 'bg-red-100 text-red-800'
+      novo: 'bg-blue-100 text-blue-800',
+      recorrente: 'bg-yellow-100 text-yellow-800',
+      antigo: 'bg-green-100 text-green-800'
     };
-    return colors[risco as keyof typeof colors] || colors.baixo;
+    return colors[tipoPaciente as keyof typeof colors] || colors.novo;
   };
 
-  const getRiscoText = (risco: string | null) => {
+  const getTipoPacienteText = (tipoPaciente: string | null) => {
     const texts = {
-      baixo: 'Baixo',
-      medio: 'Médio',
-      alto: 'Alto'
+      novo: 'Novo',
+      recorrente: 'Recorrente',
+      antigo: 'Antigo'
     };
-    return texts[risco as keyof typeof texts] || 'Baixo';
+    return texts[tipoPaciente as keyof typeof texts] || 'Novo';
   };
 
   return (
@@ -40,8 +40,8 @@ export function PacienteInfo({ paciente, onClose }: PacienteInfoProps) {
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <CardTitle className="text-2xl font-bold text-gray-900 mb-2">{paciente.nome}</CardTitle>
-            <Badge className={`${getRiscoColor(paciente.risco)} mb-4`}>
-              Risco {getRiscoText(paciente.risco)}
+            <Badge className={`${getTipoPacienteColor(paciente.tipo_paciente)} mb-4`}>
+              {getTipoPacienteText(paciente.tipo_paciente)}
             </Badge>
           </div>
           <Dialog>

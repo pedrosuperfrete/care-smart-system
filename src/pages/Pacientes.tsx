@@ -51,22 +51,22 @@ export default function Pacientes() {
     return true;
   });
 
-  const getRiscoColor = (risco: string | null) => {
+  const getTipoPacienteColor = (tipoPaciente: string | null) => {
     const colors = {
-      baixo: 'bg-green-100 text-green-800',
-      medio: 'bg-yellow-100 text-yellow-800',
-      alto: 'bg-red-100 text-red-800'
+      novo: 'bg-blue-100 text-blue-800',
+      recorrente: 'bg-yellow-100 text-yellow-800',
+      antigo: 'bg-green-100 text-green-800'
     };
-    return colors[risco as keyof typeof colors] || colors.baixo;
+    return colors[tipoPaciente as keyof typeof colors] || colors.novo;
   };
 
-  const getRiscoText = (risco: string | null) => {
+  const getTipoPacienteText = (tipoPaciente: string | null) => {
     const texts = {
-      baixo: 'Baixo',
-      medio: 'Médio',
-      alto: 'Alto'
+      novo: 'Novo',
+      recorrente: 'Recorrente',
+      antigo: 'Antigo'
     };
-    return texts[risco as keyof typeof texts] || 'Baixo';
+    return texts[tipoPaciente as keyof typeof texts] || 'Novo';
   };
 
   if (isLoading) {
@@ -190,8 +190,8 @@ export default function Pacientes() {
                   <div className="flex-1 w-full">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-3">
                       <h3 className="text-lg font-semibold">{paciente.nome}</h3>
-                      <Badge className={getRiscoColor(paciente.risco)}>
-                        Risco {getRiscoText(paciente.risco)}
+                      <Badge className={getTipoPacienteColor(paciente.tipo_paciente)}>
+                        {getTipoPacienteText(paciente.tipo_paciente)}
                       </Badge>
                       {paciente.inadimplente && (
                         <Badge className="bg-red-100 text-red-800">

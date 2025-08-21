@@ -412,8 +412,8 @@ export type Database = {
           inadimplente: boolean | null
           nome: string
           observacoes: string | null
-          risco: Database["public"]["Enums"]["risco_paciente"] | null
           telefone: string | null
+          tipo_paciente: Database["public"]["Enums"]["tipo_paciente"]
         }
         Insert: {
           ativo?: boolean
@@ -428,8 +428,8 @@ export type Database = {
           inadimplente?: boolean | null
           nome: string
           observacoes?: string | null
-          risco?: Database["public"]["Enums"]["risco_paciente"] | null
           telefone?: string | null
+          tipo_paciente?: Database["public"]["Enums"]["tipo_paciente"]
         }
         Update: {
           ativo?: boolean
@@ -444,8 +444,8 @@ export type Database = {
           inadimplente?: boolean | null
           nome?: string
           observacoes?: string | null
-          risco?: Database["public"]["Enums"]["risco_paciente"] | null
           telefone?: string | null
+          tipo_paciente?: Database["public"]["Enums"]["tipo_paciente"]
         }
         Relationships: [
           {
@@ -966,10 +966,10 @@ export type Database = {
     }
     Enums: {
       forma_pagamento: "pix" | "cartao" | "dinheiro" | "link"
-      risco_paciente: "baixo" | "medio" | "alto"
       status_agendamento: "pendente" | "confirmado" | "realizado" | "faltou"
       status_emissao_nf: "emitida" | "pendente" | "erro"
       status_pagamento: "pendente" | "pago" | "vencido" | "estornado"
+      tipo_paciente: "novo" | "recorrente" | "antigo"
       tipo_usuario: "admin" | "profissional" | "recepcionista"
     }
     CompositeTypes: {
@@ -1099,10 +1099,10 @@ export const Constants = {
   public: {
     Enums: {
       forma_pagamento: ["pix", "cartao", "dinheiro", "link"],
-      risco_paciente: ["baixo", "medio", "alto"],
       status_agendamento: ["pendente", "confirmado", "realizado", "faltou"],
       status_emissao_nf: ["emitida", "pendente", "erro"],
       status_pagamento: ["pendente", "pago", "vencido", "estornado"],
+      tipo_paciente: ["novo", "recorrente", "antigo"],
       tipo_usuario: ["admin", "profissional", "recepcionista"],
     },
   },

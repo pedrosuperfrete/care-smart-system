@@ -178,7 +178,7 @@ export const useExportarRelatorios = () => {
         'Consultas Realizadas': paciente.consultasRealizadas,
         'Última Consulta': paciente.ultimaConsulta ? 
           format(new Date(paciente.ultimaConsulta), 'dd/MM/yyyy') : 'N/A',
-        'Risco': paciente.risco || 'baixo',
+        'Tipo Paciente': paciente.tipo_paciente || 'novo',
         'Observações': paciente.observacoes || ''
       }))
     };
