@@ -45,7 +45,7 @@ export default function Pacientes() {
     if (filtroStatus === 'inadimplentes' && !paciente.inadimplente) {
       return false;
     }
-    if (filtroStatus === 'adimplentes' && paciente.inadimplente) {
+    if (filtroStatus === 'adimplentes' && (paciente.inadimplente !== false)) {
       return false;
     }
     
@@ -130,7 +130,7 @@ export default function Pacientes() {
                 onClick={() => setFiltroStatus('todos')}
                 className="flex items-center justify-center space-x-2 w-full sm:w-auto"
               >
-                <span>Todos ({filteredPacientes.length})</span>
+                <span>Todos ({stats?.total || 0})</span>
               </Button>
               <Button
                 variant={filtroStatus === 'adimplentes' ? 'default' : 'outline'}
