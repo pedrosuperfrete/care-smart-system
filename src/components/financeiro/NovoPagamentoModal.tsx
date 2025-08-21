@@ -52,7 +52,6 @@ export function NovoPagamentoModal({ open, onOpenChange, onSave }: NovoPagamento
     defaultValues: {
       paciente_id: '',
       servico_prestado: '',
-      valor_total: 0,
       forma_pagamento: 'dinheiro',
       status: 'pendente',
     },
@@ -145,9 +144,12 @@ export function NovoPagamentoModal({ open, onOpenChange, onSave }: NovoPagamento
                     <Input 
                       type="number" 
                       step="0.01" 
-                      placeholder="0.00"
+                      placeholder="Digite o valor"
                       {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        field.onChange(value === '' ? undefined : parseFloat(value) || 0);
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -294,9 +296,12 @@ export function NovoPagamentoModal({ open, onOpenChange, onSave }: NovoPagamento
                         <Input 
                           type="number" 
                           step="0.01" 
-                          placeholder="0.00"
+                          placeholder="Digite o valor pago"
                           {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            field.onChange(value === '' ? undefined : parseFloat(value) || 0);
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
