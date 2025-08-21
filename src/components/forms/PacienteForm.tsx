@@ -14,7 +14,7 @@ import { useCreatePaciente, useUpdatePaciente } from '@/hooks/usePacientes';
 import { LimiteAssinaturaModal } from '@/components/modals/LimiteAssinaturaModal';
 import { useAuth } from '@/hooks/useAuth';
 import { Tables } from '@/integrations/supabase/types';
-import { toLocalDateString } from '@/lib/dateUtils';
+import { toLocalDateString, fromLocalDateString } from '@/lib/dateUtils';
 
 type Paciente = Tables<'pacientes'>;
 
@@ -55,7 +55,7 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
     defaultValues: paciente ? {
       nome: paciente.nome,
       cpf: paciente.cpf,
-      data_nascimento: paciente.data_nascimento ? new Date(paciente.data_nascimento) : undefined,
+      data_nascimento: paciente.data_nascimento ? fromLocalDateString(paciente.data_nascimento) : undefined,
       email: paciente.email || '',
       telefone: paciente.telefone || '',
       endereco: paciente.endereco || '',

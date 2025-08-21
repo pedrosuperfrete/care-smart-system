@@ -16,6 +16,20 @@ export function toLocalDateString(date: Date): string {
 }
 
 /**
+ * Converte uma string de data (YYYY-MM-DD) para Date object local
+ * Usado para carregar datas do banco sem problemas de timezone
+ */
+export function fromLocalDateString(dateString: string): Date {
+  if (!dateString) return new Date();
+  
+  // Parse manual para evitar problemas de timezone
+  const [year, month, day] = dateString.split('-').map(Number);
+  
+  // Criar data como horário local, não UTC
+  return new Date(year, month - 1, day);
+}
+
+/**
  * Converte uma data para o formato datetime-local (sem conversão de timezone)
  * Usado em inputs datetime-local para manter o horário local
  */
