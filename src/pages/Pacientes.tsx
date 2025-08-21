@@ -40,11 +40,15 @@ export default function Pacientes() {
       }
     }
     
-    // Simplificado: assumir que todos são adimplentes por enquanto
-    // TODO: Implementar lógica real baseada em pagamentos
-    const matchesStatus = filtroStatus === 'todos' || filtroStatus === 'adimplentes';
+    // Filtro por status de inadimplência
+    if (filtroStatus === 'inadimplentes' && !paciente.inadimplente) {
+      return false;
+    }
+    if (filtroStatus === 'adimplentes' && paciente.inadimplente) {
+      return false;
+    }
     
-    return matchesStatus;
+    return true;
   });
 
   const getRiscoColor = (risco: string | null) => {
@@ -189,6 +193,11 @@ export default function Pacientes() {
                       <Badge className={getRiscoColor(paciente.risco)}>
                         Risco {getRiscoText(paciente.risco)}
                       </Badge>
+                      {paciente.inadimplente && (
+                        <Badge className="bg-red-100 text-red-800">
+                          Inadimplente
+                        </Badge>
+                      )}
                     </div>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm text-gray-600">

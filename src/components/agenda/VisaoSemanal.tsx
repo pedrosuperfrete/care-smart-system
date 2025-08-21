@@ -13,6 +13,7 @@ interface VisaoSemanalProps {
   onEditarAgendamento: (agendamento: Agendamento) => void;
   onConfirmarAgendamento: (id: string) => void;
   onDesmarcarAgendamento: (id: string) => void;
+  onMarcarRealizado: (id: string) => void;
 }
 
 export function VisaoSemanal({ 
@@ -20,7 +21,8 @@ export function VisaoSemanal({
   semanaInicio,
   onEditarAgendamento,
   onConfirmarAgendamento, 
-  onDesmarcarAgendamento 
+  onDesmarcarAgendamento,
+  onMarcarRealizado
 }: VisaoSemanalProps) {
   const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
   
@@ -117,12 +119,20 @@ export function VisaoSemanal({
                         </button>
                       )}
                       {!agendamento.desmarcada && agendamento.status === 'confirmado' && (
-                        <button
-                          onClick={() => onDesmarcarAgendamento(agendamento.id)}
-                          className="text-xs bg-destructive text-destructive-foreground px-2 py-1 rounded hover:bg-destructive/90"
-                        >
-                          Desmarcar
-                        </button>
+                        <>
+                          <button
+                            onClick={() => onMarcarRealizado(agendamento.id)}
+                            className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded hover:bg-primary/90"
+                          >
+                            Realizado
+                          </button>
+                          <button
+                            onClick={() => onDesmarcarAgendamento(agendamento.id)}
+                            className="text-xs bg-destructive text-destructive-foreground px-2 py-1 rounded hover:bg-destructive/90"
+                          >
+                            Desmarcar
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>

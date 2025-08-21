@@ -178,34 +178,22 @@ export function usePacientesStats() {
 
       if (totalError) throw totalError;
 
-      // Calcular adimplentes vs inadimplentes baseado em pagamentos
-      const { data: pacientesComPagamentos, error: pagamentosError } = await supabase
+      // Contar pacientes adimplentes e inadimplentes usando a coluna direta
+      const { count: inadimplentes, error: inadimplentesError } = await supabase
         .from('pacientes')
-        .select(`
-          id,
-          nome,
-          agendamentos!inner(
-            id,
-            pagamentos!fk_pagamento_agendamento(status)
-          )
-        `)
+        .select('*', { count: 'exact', head: true })
         .in('clinica_id', clinicaIds)
-        .eq('ativo', true);
+        .eq('ativo', true)
+        .eq('inadimplente', true);
 
-      if (pagamentosError) throw pagamentosError;
+      if (inadimplentesError) throw inadimplentesError;
 
-      // Contar adimplentes (pacientes sem pagamentos pendentes)
-      const adimplentes = pacientesComPagamentos?.filter(paciente => {
-        const pagamentosPendentes = paciente.agendamentos.some((ag: any) => 
-          ag.pagamentos?.some((p: any) => p.status === 'pendente')
-        );
-        return !pagamentosPendentes;
-      }).length || 0;
+      const adimplentes = (total || 0) - (inadimplentes || 0);
 
       return {
         total: total || 0,
         adimplentes,
-        inadimplentes: (total || 0) - adimplentes,
+        inadimplentes: inadimplentes || 0,
       };
     },
   });

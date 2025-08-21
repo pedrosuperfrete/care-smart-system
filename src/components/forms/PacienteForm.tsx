@@ -91,7 +91,11 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
           data: pacienteData 
         });
       } else {
-        await createPaciente.mutateAsync({ ...pacienteData, verificarLimite: true });
+        await createPaciente.mutateAsync({ 
+          ...pacienteData, 
+          verificarLimite: true,
+          inadimplente: false
+        });
       }
       
       onSuccess?.();

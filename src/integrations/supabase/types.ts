@@ -409,6 +409,7 @@ export type Database = {
           email: string | null
           endereco: string | null
           id: string
+          inadimplente: boolean | null
           nome: string
           observacoes: string | null
           risco: Database["public"]["Enums"]["risco_paciente"] | null
@@ -424,6 +425,7 @@ export type Database = {
           email?: string | null
           endereco?: string | null
           id?: string
+          inadimplente?: boolean | null
           nome: string
           observacoes?: string | null
           risco?: Database["public"]["Enums"]["risco_paciente"] | null
@@ -439,6 +441,7 @@ export type Database = {
           email?: string | null
           endereco?: string | null
           id?: string
+          inadimplente?: boolean | null
           nome?: string
           observacoes?: string | null
           risco?: Database["public"]["Enums"]["risco_paciente"] | null

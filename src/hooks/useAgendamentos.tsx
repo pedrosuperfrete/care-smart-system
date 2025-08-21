@@ -288,7 +288,7 @@ export function useDesmarcarAgendamento() {
           },
         });
       } catch (calendarError) {
-        console.warn('Erro ao excluir evento no Google Calendar:', calendarError);
+        console.warn('Erro ao excluir evento do Google Calendar:', calendarError);
       }
 
       return data;
@@ -301,6 +301,39 @@ export function useDesmarcarAgendamento() {
     },
     onError: (error: any) => {
       toast.error('Erro ao desmarcar agendamento: ' + error.message);
+    },
+  });
+}
+
+export function useMarcarRealizado() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data, error } = await supabase
+        .from('agendamentos')
+        .update({ status: 'realizado' })
+        .eq('id', id)
+        .select(`
+          *,
+          pacientes(id, nome, telefone, email),
+          profissionais(id, nome, especialidade)
+        `)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agendamentos'] });
+      queryClient.invalidateQueries({ queryKey: ['agendamentos-hoje'] });
+      queryClient.invalidateQueries({ queryKey: ['proximos-agendamentos'] });
+      queryClient.invalidateQueries({ queryKey: ['pagamentos'] });
+      queryClient.invalidateQueries({ queryKey: ['financeiro-stats'] });
+      toast.success('Consulta marcada como realizada! Pagamento pendente criado automaticamente.');
+    },
+    onError: (error: any) => {
+      toast.error('Erro ao marcar como realizada: ' + error.message);
     },
   });
 }

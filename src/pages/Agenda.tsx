@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Plus, Clock, User, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useAgendamentos, useCreateAgendamento, useConfirmarAgendamento, useDesmarcarAgendamento } from '@/hooks/useAgendamentos';
+import { useAgendamentos, useCreateAgendamento, useConfirmarAgendamento, useDesmarcarAgendamento, useMarcarRealizado } from '@/hooks/useAgendamentos';
 import { usePacientes } from '@/hooks/usePacientes';
 import { useProfissionais } from '@/hooks/useProfissionais';
 import { useAuth } from '@/hooks/useAuth';
@@ -28,6 +28,7 @@ export default function Agenda() {
   const createAgendamento = useCreateAgendamento();
   const confirmarAgendamento = useConfirmarAgendamento();
   const desmarcarAgendamento = useDesmarcarAgendamento();
+  const marcarRealizado = useMarcarRealizado();
   const { profissional: currentProfissional, isAdmin } = useAuth();
 
   const [viewMode, setViewMode] = useState<'dia' | 'semana' | 'mes'>('dia');
@@ -88,6 +89,10 @@ export default function Agenda() {
 
   const handleDesmarcar = async (id: string) => {
     await desmarcarAgendamento.mutateAsync(id);
+  };
+
+  const handleMarcarRealizado = async (id: string) => {
+    await marcarRealizado.mutateAsync(id);
   };
 
   const handleEditarAgendamento = (agendamento: Agendamento) => {
@@ -448,13 +453,21 @@ export default function Agenda() {
                           </Button>
                         )}
                         {!agendamento.desmarcada && agendamento.status === 'confirmado' && (
-                          <Button 
-                            size="sm" 
-                            variant="destructive"
-                            onClick={() => handleDesmarcar(agendamento.id)}
-                          >
-                            Desmarcar
-                          </Button>
+                          <>
+                            <Button 
+                              size="sm"
+                              onClick={() => handleMarcarRealizado(agendamento.id)}
+                            >
+                              Realizado
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="destructive"
+                              onClick={() => handleDesmarcar(agendamento.id)}
+                            >
+                              Desmarcar
+                            </Button>
+                          </>
                         )}
                       </div>
                     </div>
@@ -472,6 +485,7 @@ export default function Agenda() {
           onEditarAgendamento={handleEditarAgendamento}
           onConfirmarAgendamento={handleConfirmar}
           onDesmarcarAgendamento={handleDesmarcar}
+          onMarcarRealizado={handleMarcarRealizado}
         />
       )}
 
