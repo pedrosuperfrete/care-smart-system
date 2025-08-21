@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Trash2 } from 'lucide-react';
+import { HorarioAtendimento } from '../configuracoes/HorarioAtendimento';
 
 const formasPagamentoDisponiveis = [
   'PIX',
@@ -26,7 +27,7 @@ interface OnboardingStep2Props {
     nome_clinica: string;
     cnpj_clinica: string;
     endereco_clinica: string;
-    horarios_atendimento: string;
+    horarios_atendimento: any;
     servicos_precos: ServicoPreco[];
     formas_pagamento: string[];
     planos_saude: string;
@@ -52,7 +53,7 @@ export function OnboardingStep2({ data, onDataChange, onSubmit, onBack, loading 
       newErrors.cnpj_clinica = 'CNPJ da clínica é obrigatório';
     }
 
-    if (!data.horarios_atendimento.trim()) {
+    if (!data.horarios_atendimento || Object.keys(data.horarios_atendimento).length === 0) {
       newErrors.horarios_atendimento = 'Horários de atendimento são obrigatórios';
     }
 
@@ -146,13 +147,9 @@ export function OnboardingStep2({ data, onDataChange, onSubmit, onBack, loading 
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="horarios_atendimento">Horários de Atendimento *</Label>
-            <Textarea
-              id="horarios_atendimento"
+            <HorarioAtendimento
               value={data.horarios_atendimento}
-              onChange={(e) => onDataChange({ ...data, horarios_atendimento: e.target.value })}
-              placeholder="Ex: Segunda a Sexta: 8h às 18h&#10;Sábado: 8h às 12h"
-              rows={3}
+              onChange={(horarios) => onDataChange({ ...data, horarios_atendimento: horarios })}
             />
             {errors.horarios_atendimento && (
               <p className="text-sm text-red-600">{errors.horarios_atendimento}</p>

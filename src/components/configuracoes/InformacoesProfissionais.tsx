@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { HorarioAtendimento } from './HorarioAtendimento';
 
 const servicosDisponiveis = [
   'Consulta presencial',
@@ -51,15 +52,10 @@ export function InformacoesProfissionais({ profileData, setProfileData, handleSe
           />
         </div>
 
-        <div className="space-y-2">
-          <Label>Horários de Atendimento</Label>
-          <Textarea
-            value={profileData.horarios_atendimento}
-            onChange={(e) => setProfileData({ ...profileData, horarios_atendimento: e.target.value })}
-            placeholder="Ex: Segunda a Sexta: 8h às 18h&#10;Sábado: 8h às 12h"
-            rows={3}
-          />
-        </div>
+        <HorarioAtendimento
+          value={profileData.horarios_atendimento}
+          onChange={(horarios) => setProfileData({ ...profileData, horarios_atendimento: horarios })}
+        />
 
         <div className="space-y-4">
           <Label>Serviços Oferecidos</Label>
