@@ -13,6 +13,7 @@ import { AgendamentoForm } from '@/components/forms/AgendamentoForm';
 import { usePacientes, usePacientesStats } from '@/hooks/usePacientes';
 import { Users, Plus, Search, MoreVertical, Eye, Edit, Calendar, History, Phone, Mail, MapPin } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
+import { fromLocalDateString } from '@/lib/dateUtils';
 
 type Paciente = Tables<'pacientes'>;
 
@@ -204,7 +205,7 @@ export default function Pacientes() {
                       <div className="space-y-2">
                         <p><strong>CPF:</strong> {paciente.cpf}</p>
                         {paciente.data_nascimento && (
-                          <p><strong>Nascimento:</strong> {new Date(paciente.data_nascimento).toLocaleDateString('pt-BR')}</p>
+                          <p><strong>Nascimento:</strong> {fromLocalDateString(paciente.data_nascimento).toLocaleDateString('pt-BR')}</p>
                         )}
                       </div>
                       
