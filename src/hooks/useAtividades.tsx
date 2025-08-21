@@ -55,29 +55,63 @@ export function useAtividadesRecentes(limit = 5) {
         });
       });
 
-      // Agendamentos confirmados recentes do profissional
+      // Agendamentos recentes do profissional (criados, editados, confirmados, desmarcados)
       const { data: agendamentosRecentes } = await supabase
         .from('agendamentos')
         .select(`
-          id, confirmado_pelo_paciente, atualizado_em,
+          id, confirmado_pelo_paciente, atualizado_em, criado_em, desmarcada, status,
           pacientes(nome)
         `)
         .eq('profissional_id', profissionalId)
-        .eq('confirmado_pelo_paciente', true)
         .order('atualizado_em', { ascending: false })
-        .limit(3);
+        .limit(5);
 
       agendamentosRecentes?.forEach(agendamento => {
         const tempoDecorrido = getTempoDecorrido(agendamento.atualizado_em);
         const timestamp = new Date(agendamento.atualizado_em).getTime();
-        atividades.push({
-          id: `agendamento-${agendamento.id}`,
-          tipo: 'agendamento',
-          descricao: `Consulta confirmada: ${(agendamento as any).pacientes?.nome}`,
-          data: tempoDecorrido,
-          icone: '✅',
-          timestamp,
-        });
+        const pacienteNome = (agendamento as any).pacientes?.nome;
+        
+        // Verificar se foi criado recentemente (menos de 2 horas)
+        const criadoRecentemente = new Date().getTime() - new Date(agendamento.criado_em).getTime() < 2 * 60 * 60 * 1000;
+        const editadoRecentemente = agendamento.criado_em !== agendamento.atualizado_em;
+        
+        if (agendamento.desmarcada) {
+          atividades.push({
+            id: `agendamento-desmarcado-${agendamento.id}`,
+            tipo: 'agendamento',
+            descricao: `Consulta desmarcada: ${pacienteNome}`,
+            data: tempoDecorrido,
+            icone: '❌',
+            timestamp,
+          });
+        } else if (agendamento.confirmado_pelo_paciente) {
+          atividades.push({
+            id: `agendamento-confirmado-${agendamento.id}`,
+            tipo: 'agendamento',
+            descricao: `Consulta confirmada: ${pacienteNome}`,
+            data: tempoDecorrido,
+            icone: '✅',
+            timestamp,
+          });
+        } else if (editadoRecentemente && !criadoRecentemente) {
+          atividades.push({
+            id: `agendamento-editado-${agendamento.id}`,
+            tipo: 'agendamento',
+            descricao: `Consulta editada: ${pacienteNome}`,
+            data: tempoDecorrido,
+            icone: '✏️',
+            timestamp,
+          });
+        } else if (criadoRecentemente) {
+          atividades.push({
+            id: `agendamento-criado-${agendamento.id}`,
+            tipo: 'agendamento',
+            descricao: `Nova consulta agendada: ${pacienteNome}`,
+            data: tempoDecorrido,
+            icone: '📅',
+            timestamp,
+          });
+        }
       });
 
       // Pagamentos recentes do profissional

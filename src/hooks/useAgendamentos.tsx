@@ -95,6 +95,7 @@ export function useProximosAgendamentos(limit = 5) {
           profissionais(id, nome, especialidade)
         `)
         .eq('profissional_id', profissionalId)
+        .eq('desmarcada', false)
         .gte('data_inicio', agora)
         .order('data_inicio', { ascending: true })
         .limit(limit);
@@ -177,6 +178,8 @@ export function useCreateAgendamento() {
       queryClient.invalidateQueries({ queryKey: ['agendamentos'] });
       queryClient.invalidateQueries({ queryKey: ['agendamentos-hoje'] });
       queryClient.invalidateQueries({ queryKey: ['proximos-agendamentos'] });
+      queryClient.invalidateQueries({ queryKey: ['agendamentos-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['atividades-recentes'] });
       toast.success('Agendamento criado com sucesso!');
     },
     onError: (error: any) => {
@@ -222,6 +225,8 @@ export function useUpdateAgendamento() {
       queryClient.invalidateQueries({ queryKey: ['agendamentos'] });
       queryClient.invalidateQueries({ queryKey: ['agendamentos-hoje'] });
       queryClient.invalidateQueries({ queryKey: ['proximos-agendamentos'] });
+      queryClient.invalidateQueries({ queryKey: ['agendamentos-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['atividades-recentes'] });
       toast.success('Agendamento atualizado com sucesso!');
     },
     onError: (error: any) => {
@@ -253,6 +258,8 @@ export function useConfirmarAgendamento() {
       queryClient.invalidateQueries({ queryKey: ['agendamentos'] });
       queryClient.invalidateQueries({ queryKey: ['agendamentos-hoje'] });
       queryClient.invalidateQueries({ queryKey: ['proximos-agendamentos'] });
+      queryClient.invalidateQueries({ queryKey: ['agendamentos-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['atividades-recentes'] });
       toast.success('Agendamento confirmado com sucesso!');
     },
     onError: (error: any) => {
@@ -297,6 +304,8 @@ export function useDesmarcarAgendamento() {
       queryClient.invalidateQueries({ queryKey: ['agendamentos'] });
       queryClient.invalidateQueries({ queryKey: ['agendamentos-hoje'] });
       queryClient.invalidateQueries({ queryKey: ['proximos-agendamentos'] });
+      queryClient.invalidateQueries({ queryKey: ['agendamentos-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['atividades-recentes'] });
       toast.success('Agendamento desmarcado com sucesso!');
     },
     onError: (error: any) => {
@@ -367,6 +376,7 @@ export function useAgendamentosStats() {
           profissionais!inner(clinica_id)
         `)
         .in('profissionais.clinica_id', clinicaIds)
+        .eq('desmarcada', false)
         .gte('data_inicio', inicioHoje)
         .lt('data_inicio', fimHoje);
       
@@ -380,6 +390,7 @@ export function useAgendamentosStats() {
           profissionais!inner(clinica_id)
         `, { count: 'exact', head: true })
         .in('profissionais.clinica_id', clinicaIds)
+        .eq('desmarcada', false)
         .eq('status', 'pendente');
       
       if (pendentesError) throw pendentesError;
