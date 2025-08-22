@@ -131,6 +131,9 @@ export function GerenciarEquipe() {
         return;
       }
 
+      // Salvar a sessão atual antes de criar o novo usuário
+      const { data: currentSession } = await supabase.auth.getSession();
+      
       // Criar novo usuário no Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: novoUsuario.email,
@@ -153,6 +156,12 @@ export function GerenciarEquipe() {
       if (!authData.user) {
         toast.error('Erro ao criar usuário');
         return;
+      }
+
+      // Fazer logout do usuário recém-criado e restaurar a sessão anterior
+      await supabase.auth.signOut();
+      if (currentSession.session) {
+        await supabase.auth.setSession(currentSession.session);
       }
 
       // Criar registro na tabela users

@@ -19,11 +19,12 @@ export function useUsuariosClinicas(clinicaId?: string) {
         query = query.eq('clinica_id', clinicaId);
       }
 
-      const { data, error } = await query.eq('ativo', true);
+      const { data, error } = await query;
 
       if (error) throw error;
       return data || [];
     },
+    enabled: !!clinicaId, // Só executa se clinicaId estiver definido
   });
 }
 
