@@ -444,26 +444,27 @@ export default function Agenda() {
             
             return allItems.map((item) => {
               if (item.type === 'bloqueio') {
+                const bloqueio = item as any; // Type assertion for bloqueio
                 return (
-                  <Card key={`bloqueio-${item.id}`} className="border-orange-200 bg-orange-50">
+                  <Card key={`bloqueio-${bloqueio.id}`} className="border-orange-200 bg-orange-50">
                     <CardContent className="pt-6">
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <div className="flex items-center space-x-3 mb-2">
                             <Clock className="h-5 w-5 text-orange-600" />
                             <span className="font-semibold text-orange-800">
-                              {formatTimeLocal(item.data_inicio)} - {formatTimeLocal(item.data_fim)}
+                              {formatTimeLocal(bloqueio.data_inicio)} - {formatTimeLocal(bloqueio.data_fim)}
                             </span>
                             <Badge variant="outline" className="text-orange-700 border-orange-300 bg-orange-100">
                               Bloqueado
                             </Badge>
                           </div>
                           <div className="text-orange-700 font-medium ml-8">
-                            {item.titulo}
+                            {bloqueio.titulo}
                           </div>
-                          {item.descricao && (
+                          {bloqueio.descricao && (
                             <div className="text-orange-600 text-sm ml-8 mt-1">
-                              {item.descricao}
+                              {bloqueio.descricao}
                             </div>
                           )}
                         </div>
