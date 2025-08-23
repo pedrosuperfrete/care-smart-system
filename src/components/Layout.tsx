@@ -8,6 +8,7 @@ import { Navigate } from "react-router-dom";
 import { Menu } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useClinica } from "@/hooks/useClinica";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface LayoutProps {
   children: ReactNode;
@@ -16,6 +17,7 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const { user, clinicaAtual } = useAuth();
   const { data: clinicasData } = useClinica();
+  const isMobile = useIsMobile();
 
   if (!user) {
     return <Navigate to="/app/auth" replace />;
@@ -28,10 +30,28 @@ export function Layout({ children }: LayoutProps) {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
-        <main className="flex-1 p-6 overflow-auto bg-background">
-          <AlertaAssinatura />
-          {children}
-        </main>
+        <div className="flex-1 flex flex-col">
+          {/* Mobile Header */}
+          {isMobile && (
+            <header className="flex items-center justify-between p-4 border-b bg-background lg:hidden">
+              <SidebarTrigger className="p-2 hover:bg-muted rounded-md">
+                <Menu className="h-6 w-6" />
+              </SidebarTrigger>
+              <div className="flex items-center">
+                <img 
+                  src="/lovable-uploads/df33c00a-881c-4c3a-8f60-77fcd8835e1b.png" 
+                  alt="Donee" 
+                  className="h-8 w-auto"
+                />
+              </div>
+            </header>
+          )}
+          
+          <main className="flex-1 p-4 lg:p-6 overflow-auto bg-background">
+            <AlertaAssinatura />
+            {children}
+          </main>
+        </div>
       </div>
     </SidebarProvider>
   );

@@ -103,13 +103,13 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar className="border-r border-gray-200">
-      <SidebarHeader className="p-6 border-b border-gray-200">
+    <Sidebar className="border-r border-border">
+      <SidebarHeader className="p-6 border-b border-border hidden lg:block">
         <div className="flex items-center justify-center">
           <img 
             src="/lovable-uploads/df33c00a-881c-4c3a-8f60-77fcd8835e1b.png" 
             alt="Donee" 
-            className="w-full h-full"
+            className="w-full h-full max-w-32"
           />
         </div>
       </SidebarHeader>
