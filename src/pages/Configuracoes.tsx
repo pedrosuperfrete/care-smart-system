@@ -36,9 +36,7 @@ export default function Configuracoes() {
       : '',
     servicos_precos: (profissional?.servicos_precos as Array<{nome: string, preco: string}>) || [],
     formas_pagamento: (profissional?.formas_pagamento as string[]) || [],
-    planos_saude: typeof profissional?.planos_saude === 'string' 
-      ? profissional.planos_saude 
-      : (profissional?.planos_saude as string[])?.join(', ') || '',
+    planos_saude: (profissional?.planos_saude as string[]) || [],
   });
 
   const handleSaveProfile = async () => {
@@ -47,7 +45,7 @@ export default function Configuracoes() {
       if (profissional) {
         const updateData = {
           ...profileData,
-          planos_saude: profileData.planos_saude.split(',').map(p => p.trim()).filter(p => p),
+          planos_saude: profileData.planos_saude,
         };
         await updateProfissional(updateData);
       }
@@ -91,6 +89,24 @@ export default function Configuracoes() {
     const newServicos = [...profileData.servicos_precos];
     newServicos[index][field] = value;
     setProfileData({ ...profileData, servicos_precos: newServicos });
+  };
+
+  const addPlanoSaude = () => {
+    setProfileData({
+      ...profileData,
+      planos_saude: [...profileData.planos_saude, '']
+    });
+  };
+
+  const removePlanoSaude = (index: number) => {
+    const newPlanos = profileData.planos_saude.filter((_, i) => i !== index);
+    setProfileData({ ...profileData, planos_saude: newPlanos });
+  };
+
+  const updatePlanoSaude = (index: number, value: string) => {
+    const newPlanos = [...profileData.planos_saude];
+    newPlanos[index] = value;
+    setProfileData({ ...profileData, planos_saude: newPlanos });
   };
 
   return (
@@ -155,6 +171,9 @@ export default function Configuracoes() {
                   removeServicoPreco={removeServicoPreco}
                   updateServicoPreco={updateServicoPreco}
                   handleFormaPagamentoChange={handleFormaPagamentoChange}
+                  addPlanoSaude={addPlanoSaude}
+                  removePlanoSaude={removePlanoSaude}
+                  updatePlanoSaude={updatePlanoSaude}
                 />
               </>
             )}

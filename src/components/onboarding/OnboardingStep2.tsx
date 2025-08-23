@@ -30,7 +30,7 @@ interface OnboardingStep2Props {
     horarios_atendimento: any;
     servicos_precos: ServicoPreco[];
     formas_pagamento: string[];
-    planos_saude: string;
+    planos_saude: string[];
   };
   onDataChange: (data: any) => void;
   onSubmit: () => void;
@@ -221,15 +221,49 @@ export function OnboardingStep2({ data, onDataChange, onSubmit, onBack, loading 
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="planos_saude">Planos de Saúde Aceitos</Label>
-            <Textarea
-              id="planos_saude"
-              value={data.planos_saude}
-              onChange={(e) => onDataChange({ ...data, planos_saude: e.target.value })}
-              placeholder="Lista os planos de saúde que você aceita (opcional)"
-              rows={3}
-            />
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label>Planos de Saúde Aceitos</Label>
+              <Button 
+                type="button" 
+                onClick={() => {
+                  const newPlanos = [...data.planos_saude, ''];
+                  onDataChange({ ...data, planos_saude: newPlanos });
+                }}
+                size="sm" 
+                variant="outline"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Adicionar
+              </Button>
+            </div>
+            
+            {data.planos_saude.map((plano: string, index: number) => (
+              <div key={index} className="flex gap-2 items-center">
+                <div className="flex-1">
+                  <Input
+                    placeholder="Nome do plano de saúde"
+                    value={plano}
+                    onChange={(e) => {
+                      const newPlanos = [...data.planos_saude];
+                      newPlanos[index] = e.target.value;
+                      onDataChange({ ...data, planos_saude: newPlanos });
+                    }}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    const newPlanos = data.planos_saude.filter((_, i) => i !== index);
+                    onDataChange({ ...data, planos_saude: newPlanos });
+                  }}
+                  size="sm"
+                  variant="outline"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
           </div>
 
           <div className="flex gap-4">

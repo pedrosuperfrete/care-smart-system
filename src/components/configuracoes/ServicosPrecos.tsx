@@ -22,6 +22,9 @@ interface ServicosPrecosProps {
   removeServicoPreco: (index: number) => void;
   updateServicoPreco: (index: number, field: 'nome' | 'preco', value: string) => void;
   handleFormaPagamentoChange: (forma: string, checked: boolean) => void;
+  addPlanoSaude: () => void;
+  removePlanoSaude: (index: number) => void;
+  updatePlanoSaude: (index: number, value: string) => void;
 }
 
 export function ServicosPrecos({ 
@@ -30,7 +33,10 @@ export function ServicosPrecos({
   addServicoPreco, 
   removeServicoPreco, 
   updateServicoPreco, 
-  handleFormaPagamentoChange 
+  handleFormaPagamentoChange,
+  addPlanoSaude,
+  removePlanoSaude,
+  updatePlanoSaude
 }: ServicosPrecosProps) {
   return (
     <Card>
@@ -99,14 +105,34 @@ export function ServicosPrecos({
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Label>Planos de Saúde Aceitos</Label>
-          <Textarea
-            value={profileData.planos_saude}
-            onChange={(e) => setProfileData({ ...profileData, planos_saude: e.target.value })}
-            placeholder="Lista os planos de saúde que você aceita (separados por vírgula)"
-            rows={3}
-          />
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <Label>Planos de Saúde Aceitos</Label>
+            <Button type="button" onClick={addPlanoSaude} size="sm" variant="outline">
+              <Plus className="h-4 w-4 mr-2" />
+              Adicionar
+            </Button>
+          </div>
+          
+          {profileData.planos_saude.map((plano: string, index: number) => (
+            <div key={index} className="flex gap-2 items-center">
+              <div className="flex-1">
+                <Input
+                  placeholder="Nome do plano de saúde"
+                  value={plano}
+                  onChange={(e) => updatePlanoSaude(index, e.target.value)}
+                />
+              </div>
+              <Button
+                type="button"
+                onClick={() => removePlanoSaude(index)}
+                size="sm"
+                variant="outline"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
         </div>
       </CardContent>
     </Card>

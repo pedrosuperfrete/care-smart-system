@@ -28,9 +28,7 @@ export default function Onboarding() {
       : '',
     servicos_precos: (profissional?.servicos_precos as Array<{nome: string, preco: string}>) || [],
     formas_pagamento: (profissional?.formas_pagamento as string[]) || [],
-    planos_saude: typeof profissional?.planos_saude === 'string' 
-      ? profissional.planos_saude 
-      : (profissional?.planos_saude as string[])?.join(', ') || '',
+    planos_saude: (profissional?.planos_saude as string[]) || [],
   });
 
   const handleStep1Next = () => {
@@ -117,7 +115,7 @@ export default function Onboarding() {
         horarios_atendimento: step2Data.horarios_atendimento,
         servicos_precos: step2Data.servicos_precos,
         formas_pagamento: step2Data.formas_pagamento,
-        planos_saude: step2Data.planos_saude.split(',').map(p => p.trim()).filter(p => p),
+        planos_saude: step2Data.planos_saude,
         onboarding_completo: true,
       };
 
