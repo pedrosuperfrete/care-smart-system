@@ -37,9 +37,12 @@ export function VisaoSemanal({
   };
 
   const getAgendamentosDoDia = (data: Date) => {
-    return agendamentos.filter(ag => 
-      isSameDayLocal(ag.data_inicio, data)
-    );
+    return agendamentos.filter(ag => {
+      const agendamentoDate = new Date(ag.data_inicio);
+      return agendamentoDate.getFullYear() === data.getFullYear() &&
+             agendamentoDate.getMonth() === data.getMonth() &&
+             agendamentoDate.getDate() === data.getDate();
+    });
   };
 
   const getStatusColor = (status: string, desmarcada: boolean) => {

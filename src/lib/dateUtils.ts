@@ -93,12 +93,10 @@ export function isSameDayLocal(date1: string | Date, date2: string | Date): bool
   const d1 = typeof date1 === 'string' ? new Date(date1) : date1;
   const d2 = typeof date2 === 'string' ? new Date(date2) : date2;
   
-  // Converter para timezone local do Brasil
-  const options: Intl.DateTimeFormatOptions = { timeZone: 'America/Sao_Paulo' };
-  const local1 = new Date(d1.toLocaleString('en-CA', options));
-  const local2 = new Date(d2.toLocaleString('en-CA', options));
-  
-  return local1.toDateString() === local2.toDateString();
+  // Comparar apenas ano, mês e dia diretamente sem conversões de timezone
+  return d1.getFullYear() === d2.getFullYear() &&
+         d1.getMonth() === d2.getMonth() &&
+         d1.getDate() === d2.getDate();
 }
 
 /**

@@ -35,9 +35,12 @@ export function VisaoMensal({ agendamentos, mesAno, onDiaClick }: VisaoMensalPro
 
   const getAgendamentosDoDia = (data: Date | null) => {
     if (!data) return [];
-    return agendamentos.filter(ag => 
-      isSameDayLocal(ag.data_inicio, data)
-    );
+    return agendamentos.filter(ag => {
+      const agendamentoDate = new Date(ag.data_inicio);
+      return agendamentoDate.getFullYear() === data.getFullYear() &&
+             agendamentoDate.getMonth() === data.getMonth() &&
+             agendamentoDate.getDate() === data.getDate();
+    });
   };
 
   const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
