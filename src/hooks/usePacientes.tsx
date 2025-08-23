@@ -3,40 +3,49 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
+import { useErrorLogger } from './useErrorLogger';
 
 type Paciente = Tables<'pacientes'>;
 type InsertPaciente = Omit<Paciente, 'id' | 'criado_em' | 'atualizado_em'>;
 type UpdatePaciente = Partial<InsertPaciente>;
 
 export function usePacientes() {
+  const { logSupabaseError } = useErrorLogger();
+  
   return useQuery({
     queryKey: ['pacientes'],
     queryFn: async () => {
-      // Buscar clínicas do usuário
-      const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
-      console.log('Clínicas do usuário na query de pacientes:', clinicasUsuario);
-      
-      if (!clinicasUsuario || clinicasUsuario.length === 0) {
-        console.log('Usuário não tem clínicas associadas');
-        return [];
-      }
+      try {
+        // Buscar clínicas do usuário
+        const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
+        console.log('Clínicas do usuário na query de pacientes:', clinicasUsuario);
+        
+        if (!clinicasUsuario || clinicasUsuario.length === 0) {
+          console.log('Usuário não tem clínicas associadas');
+          return [];
+        }
 
-      // Filtrar pacientes pelas clínicas do usuário
-      const clinicaIds = clinicasUsuario.map(c => c.clinica_id);
-      
-      const { data, error } = await supabase
-        .from('pacientes')
-        .select('*')
-        .in('clinica_id', clinicaIds)
-        .eq('ativo', true)
-        .order('criado_em', { ascending: false });
-      
-      console.log('Pacientes filtrados por clínica:', data);
-      if (error) {
-        console.error('Erro ao buscar pacientes:', error);
+        // Filtrar pacientes pelas clínicas do usuário
+        const clinicaIds = clinicasUsuario.map(c => c.clinica_id);
+        
+        const { data, error } = await supabase
+          .from('pacientes')
+          .select('*')
+          .in('clinica_id', clinicaIds)
+          .eq('ativo', true)
+          .order('criado_em', { ascending: false });
+        
+        console.log('Pacientes filtrados por clínica:', data);
+        if (error) {
+          console.error('Erro ao buscar pacientes:', error);
+          await logSupabaseError('buscar_pacientes', error, { clinicaIds });
+          throw error;
+        }
+        return data || [];
+      } catch (error: any) {
+        await logSupabaseError('buscar_pacientes_catch', error);
         throw error;
       }
-      return data || [];
     },
   });
 }
@@ -60,57 +69,85 @@ export function usePaciente(id: string) {
 
 export function useCreatePaciente() {
   const queryClient = useQueryClient();
+  const { logSupabaseError, logCustomError } = useErrorLogger();
   
   return useMutation({
     mutationFn: async (paciente: InsertPaciente & { verificarLimite?: boolean }) => {
-      // Verificar limite se solicitado
-      if (paciente.verificarLimite) {
-        // Buscar dados do profissional
-        const { data: user } = await supabase.auth.getUser();
-        if (!user.user) throw new Error("Usuário não autenticado");
+      try {
+        // Verificar limite se solicitado
+        if (paciente.verificarLimite) {
+          // Buscar dados do profissional
+          const { data: user } = await supabase.auth.getUser();
+          if (!user.user) {
+            const error = new Error("Usuário não autenticado");
+            await logCustomError('PACIENTE_CREATE_AUTH', error.message);
+            throw error;
+          }
 
-        const { data: profissional, error: profError } = await supabase
-          .from('profissionais')
-          .select('assinatura_ativa')
-          .eq('user_id', user.user.id)
-          .single();
+          const { data: profissional, error: profError } = await supabase
+            .from('profissionais')
+            .select('assinatura_ativa')
+            .eq('user_id', user.user.id)
+            .single();
 
-        if (profError) throw profError;
+          if (profError) {
+            await logSupabaseError('verificar_profissional_limite', profError, { user_id: user.user.id });
+            throw profError;
+          }
 
-        // Contar pacientes atuais
-        const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
-        
-        if (clinicasUsuario && clinicasUsuario.length > 0) {
-          const clinicaIds = clinicasUsuario.map(c => c.clinica_id);
+          // Contar pacientes atuais
+          const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
           
-          const { count: totalPacientes, error: countError } = await supabase
-            .from('pacientes')
-            .select('*', { count: 'exact', head: true })
-            .in('clinica_id', clinicaIds)
-            .eq('ativo', true);
+          if (clinicasUsuario && clinicasUsuario.length > 0) {
+            const clinicaIds = clinicasUsuario.map(c => c.clinica_id);
+            
+            const { count: totalPacientes, error: countError } = await supabase
+              .from('pacientes')
+              .select('*', { count: 'exact', head: true })
+              .in('clinica_id', clinicaIds)
+              .eq('ativo', true);
 
-          if (countError) throw countError;
+            if (countError) {
+              await logSupabaseError('contar_pacientes_limite', countError, { clinicaIds });
+              throw countError;
+            }
 
-          const assinaturaAtiva = profissional?.assinatura_ativa || false;
-          
-          // Se não tem assinatura ativa e já tem 2 ou mais pacientes, bloquear
-          if (!assinaturaAtiva && (totalPacientes || 0) >= 2) {
-            throw new Error("LIMITE_ATINGIDO");
+            const assinaturaAtiva = profissional?.assinatura_ativa || false;
+            
+            // Se não tem assinatura ativa e já tem 2 ou mais pacientes, bloquear
+            if (!assinaturaAtiva && (totalPacientes || 0) >= 2) {
+              await logCustomError('LIMITE_PACIENTES_ATINGIDO', 'Limite de pacientes atingido', { 
+                assinaturaAtiva, 
+                totalPacientes,
+                user_id: user.user.id 
+              });
+              throw new Error("LIMITE_ATINGIDO");
+            }
           }
         }
-      }
 
-      // Remover campo de verificação antes de inserir
-      const { verificarLimite, ...pacienteData } = paciente;
-      
-      const { data, error } = await supabase
-        .from('pacientes')
-        .insert(pacienteData)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
+        // Remover campo de verificação antes de inserir
+        const { verificarLimite, ...pacienteData } = paciente;
+        
+        const { data, error } = await supabase
+          .from('pacientes')
+          .insert(pacienteData)
+          .select()
+          .single();
+        
+        if (error) {
+          await logSupabaseError('inserir_paciente', error, { pacienteData });
+          throw error;
+        }
+        
+        return data;
+      } catch (error: any) {
+        // Log do erro se ainda não foi logado
+        if (error.message !== "LIMITE_ATINGIDO") {
+          await logCustomError('PACIENTE_CREATE_ERROR', error.message, { paciente });
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pacientes'] });

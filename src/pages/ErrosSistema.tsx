@@ -3,10 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertTriangle, CheckCircle, RefreshCw, Filter } from "lucide-react";
+import { AlertTriangle, CheckCircle, RefreshCw, Filter, Activity } from "lucide-react";
 import { useErrosSistema } from "@/hooks/useErrosSistema";
 import { AlertErroSistema } from "@/components/ui/alert-erro-sistema";
 import { Skeleton } from "@/components/ui/skeleton";
+import { LogsErrosList } from "@/components/admin/LogsErrosList";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -134,22 +135,20 @@ export default function ErrosSistema() {
         <CardContent>
           <Tabs value={filtroTipo} onValueChange={setFiltroTipo} className="space-y-4">
             <TabsList>
-              <TabsTrigger value="todos">Todos</TabsTrigger>
-              <TabsTrigger value="calendar_sync">Google Calendar</TabsTrigger>
-              <TabsTrigger value="pagamento">Pagamentos</TabsTrigger>
-              <TabsTrigger value="sistema">Sistema</TabsTrigger>
+              <TabsTrigger value="todos">Erros Legados</TabsTrigger>
+              <TabsTrigger value="sistema-novo">
+                <Activity className="h-4 w-4 mr-2" />
+                Sistema Completo
+              </TabsTrigger>
             </TabsList>
 
-            <TabsContent value={filtroTipo} className="space-y-4">
+            <TabsContent value="todos" className="space-y-4">
               {errosFiltrados.length === 0 ? (
                 <div className="text-center py-8">
                   <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
                   <h3 className="text-lg font-medium">Nenhum erro encontrado</h3>
                   <p className="text-muted-foreground">
-                    {filtroTipo === 'todos' 
-                      ? 'Não há erros pendentes no sistema.'
-                      : `Não há erros do tipo "${filtroTipo}" pendentes.`
-                    }
+                    Não há erros legados pendentes no sistema.
                   </p>
                 </div>
               ) : (
@@ -164,6 +163,10 @@ export default function ErrosSistema() {
                   ))}
                 </div>
               )}
+            </TabsContent>
+
+            <TabsContent value="sistema-novo">
+              <LogsErrosList />
             </TabsContent>
           </Tabs>
         </CardContent>

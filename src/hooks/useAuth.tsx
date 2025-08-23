@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
 import { Tables } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
+import { useErrorLogger } from './useErrorLogger';
 
 type UserProfile = Tables<'users'>;
 type Profissional = Tables<'profissionais'>;
@@ -37,7 +38,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [clinicaAtual, setClinicaAtual] = useState<string | null>(null);
   const [clinicasUsuario, setClinicasUsuario] = useState<Array<{ clinica_id: string; tipo_papel: string }>>([]);
 
+  // Hook de logging de erros (inicializado sem usuário aqui, será usado nas funções)
+  const createErrorLogger = () => {
+    return {
+      logSupabaseError: async (operation: string, error: any, context?: any) => {
+        try {
+          let profissionalId = null;
+          if (user) {
+            const { data: profissional } = await supabase
+              .from('profissionais')
+              .select('id')
+              .eq('user_id', user.id)
+              .eq('ativo', true)
+              .single();
+            
+            profissionalId = profissional?.id;
+          }
+
+          await supabase
+            .from('erros_sistema')
+            .insert({
+              user_id: user?.id,
+              profissional_id: profissionalId,
+              tipo: 'AUTH_ERROR',
+              mensagem_erro: `${operation}: ${error.message || JSON.stringify(error)}`,
+              data_ocorrencia: new Date().toISOString(),
+              resolvido: false,
+              tentativas_retry: 0
+            });
+
+          console.error(`🔥 Erro de autenticação capturado:`, {
+            operation,
+            error: error.message,
+            context,
+            user_id: user?.id
+          });
+        } catch (logError) {
+          console.error('Erro ao salvar log de autenticação:', logError);
+        }
+      }
+    };
+  };
+
   const fetchUserProfile = async (userId: string, retryCount = 0) => {
+    const errorLogger = createErrorLogger();
+    
     try {
       // Buscar perfil do usuário - usar maybeSingle para evitar erro se não existir
       const { data: userProfileData, error: userError } = await supabase
@@ -48,6 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (userError) {
         console.error('Erro ao buscar perfil do usuário:', userError);
+        await errorLogger.logSupabaseError('fetchUserProfile', userError, { userId, retryCount });
         return;
       }
 
@@ -110,6 +156,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error('Erro ao buscar dados do usuário:', error);
+      const errorLogger = createErrorLogger();
+      await errorLogger.logSupabaseError('fetchUserProfile_catch', error, { userId, retryCount });
+      
       // Em caso de erro, tentar novamente se ainda há tentativas
       if (retryCount < 3) {
         setTimeout(() => {
@@ -147,6 +196,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
+    const errorLogger = createErrorLogger();
+    
     try {
       setLoading(true);
       const { error } = await supabase.auth.signInWithPassword({
@@ -155,6 +206,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (error) {
+        await errorLogger.logSupabaseError('signIn', error, { email });
         return { error: error.message };
       }
 
@@ -162,6 +214,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return {};
     } catch (error: any) {
       console.error('Erro no login:', error);
+      await errorLogger.logSupabaseError('signIn_catch', error, { email });
       return { error: error.message };
     } finally {
       setLoading(false);
@@ -173,6 +226,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     password: string, 
     tipoUsuario: 'admin' | 'profissional' | 'recepcionista' = 'profissional'
   ) => {
+    const errorLogger = createErrorLogger();
+    
     try {
       setLoading(true);
       
@@ -183,10 +238,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (error) {
+        await errorLogger.logSupabaseError('signUp_auth', error, { email, tipoUsuario });
         return { error: error.message };
       }
 
       if (!data.user) {
+        await errorLogger.logSupabaseError('signUp_no_user', { message: 'Usuário não retornado' }, { email, tipoUsuario });
         return { error: 'Erro ao criar usuário' };
       }
 
@@ -283,6 +340,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return {};
     } catch (error: any) {
       console.error('Erro no cadastro:', error);
+      await errorLogger.logSupabaseError('signUp_catch', error, { email, tipoUsuario });
       return { error: error.message };
     } finally {
       setLoading(false);
