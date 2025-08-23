@@ -180,22 +180,31 @@ export default function Agenda() {
     const startOfWeek = getStartOfWeek();
     const endOfWeek = new Date(startOfWeek);
     endOfWeek.setDate(startOfWeek.getDate() + 6);
-    endOfWeek.setHours(23, 59, 59, 999);
     
     return agendamentos.filter(ag => {
       const agendamentoDate = new Date(ag.data_inicio);
-      return agendamentoDate >= startOfWeek && agendamentoDate <= endOfWeek && !ag.desmarcada;
+      // Verificar se o agendamento está dentro da semana usando comparação por dia
+      for (let i = 0; i < 7; i++) {
+        const dayToCheck = new Date(startOfWeek);
+        dayToCheck.setDate(startOfWeek.getDate() + i);
+        if (isSameDayLocal(ag.data_inicio, dayToCheck)) {
+          return !ag.desmarcada;
+        }
+      }
+      return false;
     });
   };
 
   const getMonthAgendamentos = () => {
-    const startOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
-    const endOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
-    endOfMonth.setHours(23, 59, 59, 999);
+    const year = selectedDate.getFullYear();
+    const month = selectedDate.getMonth();
     
     return agendamentos.filter(ag => {
       const agendamentoDate = new Date(ag.data_inicio);
-      return agendamentoDate >= startOfMonth && agendamentoDate <= endOfMonth && !ag.desmarcada;
+      const agendamentoYear = agendamentoDate.getFullYear();
+      const agendamentoMonth = agendamentoDate.getMonth();
+      
+      return agendamentoYear === year && agendamentoMonth === month && !ag.desmarcada;
     });
   };
 
