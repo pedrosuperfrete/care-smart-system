@@ -961,6 +961,10 @@ export type Database = {
           user_tipo: string
         }[]
       }
+      debug_can_create_patient: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       get_current_profissional_id: {
         Args: Record<PropertyKey, never>
         Returns: string
