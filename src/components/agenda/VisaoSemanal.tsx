@@ -1,14 +1,19 @@
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Tables } from "@/integrations/supabase/types";
+import { formatTimeLocal, isSameDayLocal } from "@/lib/dateUtils";
+import { CheckCircle, XCircle, Eye, Edit } from "lucide-react";
+import { BloqueioAgenda } from "@/hooks/useBloqueiosAgenda";
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Clock, User } from 'lucide-react';
-import { Tables } from '@/integrations/supabase/types';
-import { formatTimeLocal, isSameDayLocal } from '@/lib/dateUtils';
-
-type Agendamento = Tables<'agendamentos'>;
+type Agendamento = Tables<"agendamentos"> & {
+  pacientes: { nome: string } | null;
+  profissionais: { nome: string } | null;
+};
 
 interface VisaoSemanalProps {
   agendamentos: Agendamento[];
+  bloqueios: BloqueioAgenda[];
   semanaInicio: Date;
   onEditarAgendamento: (agendamento: Agendamento) => void;
   onConfirmarAgendamento: (id: string) => void;
@@ -18,133 +23,165 @@ interface VisaoSemanalProps {
 
 export function VisaoSemanal({ 
   agendamentos, 
-  semanaInicio,
-  onEditarAgendamento,
+  bloqueios,
+  semanaInicio, 
+  onEditarAgendamento, 
   onConfirmarAgendamento, 
-  onDesmarcarAgendamento,
-  onMarcarRealizado
+  onDesmarcarAgendamento, 
+  onMarcarRealizado 
 }: VisaoSemanalProps) {
   const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
   
   const getDiasSemanaDatas = () => {
-    const dias = [];
+    const datas = [];
     for (let i = 0; i < 7; i++) {
-      const dia = new Date(semanaInicio);
-      dia.setDate(semanaInicio.getDate() + i);
-      dias.push(dia);
+      const data = new Date(semanaInicio);
+      data.setDate(semanaInicio.getDate() - semanaInicio.getDay() + i);
+      datas.push(data);
     }
-    return dias;
+    return datas;
   };
 
   const getAgendamentosDoDia = (data: Date) => {
-    return agendamentos.filter(ag => {
-      const agendamentoDate = new Date(ag.data_inicio);
-      return agendamentoDate.getFullYear() === data.getFullYear() &&
-             agendamentoDate.getMonth() === data.getMonth() &&
-             agendamentoDate.getDate() === data.getDate();
+    return agendamentos.filter(agendamento => {
+      const agendamentoDate = new Date(agendamento.data_inicio);
+      const agendamentoYear = agendamentoDate.getFullYear();
+      const agendamentoMonth = agendamentoDate.getMonth();
+      const agendamentoDay = agendamentoDate.getDate();
+      
+      return (
+        agendamentoYear === data.getFullYear() &&
+        agendamentoMonth === data.getMonth() &&
+        agendamentoDay === data.getDate()
+      );
     });
   };
 
-  const getStatusColor = (status: string, desmarcada: boolean) => {
-    if (desmarcada) return 'bg-gray-100 text-gray-600';
-    const colors = {
-      pendente: 'bg-yellow-100 text-yellow-800',
-      confirmado: 'bg-primary/10 text-primary',
-      realizado: 'bg-success/10 text-success',
-      faltou: 'bg-destructive/10 text-destructive'
-    };
-    return colors[status as keyof typeof colors] || colors.pendente;
+  const getBloqueiosDoDia = (data: Date) => {
+    return bloqueios.filter(bloqueio => {
+      const bloqueioDate = new Date(bloqueio.data_inicio);
+      const bloqueioYear = bloqueioDate.getFullYear();
+      const bloqueioMonth = bloqueioDate.getMonth();
+      const bloqueioDay = bloqueioDate.getDate();
+      
+      return (
+        bloqueioYear === data.getFullYear() &&
+        bloqueioMonth === data.getMonth() &&
+        bloqueioDay === data.getDate()
+      );
+    });
   };
 
-  const getStatusText = (status: string, desmarcada: boolean) => {
-    if (desmarcada) return 'Desmarcada';
-    const texts = {
-      pendente: 'Pendente',
-      confirmado: 'Confirmado',
-      realizado: 'Realizado',
-      faltou: 'Faltou'
-    };
-    return texts[status as keyof typeof texts] || 'Pendente';
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'confirmado': return 'bg-primary';
+      case 'pendente': return 'bg-warning';
+      case 'realizado': return 'bg-success';
+      default: return 'bg-destructive';
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'confirmado': return 'Confirmado';
+      case 'pendente': return 'Pendente';
+      case 'realizado': return 'Realizado';
+      default: return 'Cancelado';
+    }
   };
 
   return (
     <div className="grid grid-cols-7 gap-2">
-      {getDiasSemanaDatas().map((data, index) => {
-        const agendamentosDia = getAgendamentosDoDia(data);
-        return (
-          <Card key={index} className="min-h-[200px]">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-center">
-                {diasSemana[data.getDay()]}
-                <div className="text-xs text-gray-500 font-normal">
-                  {data.getDate()}/{data.getMonth() + 1}
+      {getDiasSemanaDatas().map((dia, index) => (
+        <Card key={index} className="min-h-[300px]">
+          <div className="p-4 min-h-[200px]">
+            <h3 className="font-medium text-sm mb-3">
+              {dia.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric' })}
+            </h3>
+            <div className="space-y-2">
+              {/* Renderizar bloqueios */}
+              {getBloqueiosDoDia(dia).map((bloqueio) => (
+                <div
+                  key={`bloqueio-${bloqueio.id}`}
+                  className="p-2 rounded border border-orange-200 bg-orange-50 text-xs"
+                >
+                  <div className="font-medium text-orange-800">{bloqueio.titulo}</div>
+                  <div className="text-orange-600">
+                    {formatTimeLocal(bloqueio.data_inicio)} - {formatTimeLocal(bloqueio.data_fim)}
+                  </div>
+                  <Badge variant="outline" className="text-xs mt-1 text-orange-700 border-orange-300">
+                    Bloqueado
+                  </Badge>
                 </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0 space-y-2">
-              {agendamentosDia.length === 0 ? (
-                <p className="text-xs text-gray-400 text-center">Sem consultas</p>
-              ) : (
-                agendamentosDia.map((agendamento) => (
-                  <div
-                    key={agendamento.id}
-                    className={`p-2 border rounded text-xs ${
-                      agendamento.desmarcada ? 'opacity-50' : ''
-                    }`}
-                  >
-                    <div className={`font-medium ${agendamento.desmarcada ? 'line-through' : ''}`}>
-                      {formatTimeLocal(agendamento.data_inicio)}
+              ))}
+              
+              {/* Renderizar agendamentos */}
+              {getAgendamentosDoDia(dia).map((agendamento) => (
+                <Card 
+                  key={agendamento.id} 
+                  className={`p-3 text-xs ${agendamento.desmarcada ? 'opacity-50' : ''}`}
+                >
+                  <div className="space-y-2">
+                    <div>
+                      <div className="font-medium">{agendamento.pacientes?.nome}</div>
+                      <div className="text-muted-foreground">
+                        {formatTimeLocal(agendamento.data_inicio)}
+                      </div>
                     </div>
-                    <div className={`text-gray-600 ${agendamento.desmarcada ? 'line-through' : ''}`}>
-                      {(agendamento as any).pacientes?.nome}
-                    </div>
+                    
                     <Badge 
-                      className={`${getStatusColor(agendamento.status || 'pendente', agendamento.desmarcada)} text-xs mt-1`}
+                      variant="secondary" 
+                      className={`text-xs ${getStatusColor(agendamento.status || 'pendente')}`}
                     >
-                      {getStatusText(agendamento.status || 'pendente', agendamento.desmarcada)}
+                      {getStatusText(agendamento.status || 'pendente')}
                     </Badge>
                     
-                    <div className="flex flex-col gap-1 mt-2">
-                      {!agendamento.desmarcada && agendamento.status === 'pendente' && (
-                        <button
-                          onClick={() => onConfirmarAgendamento(agendamento.id)}
-                          className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded hover:bg-primary/90"
-                        >
-                          Confirmar
-                        </button>
-                      )}
-                      {!agendamento.desmarcada && (
-                        <button
+                    {!agendamento.desmarcada && (
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
                           onClick={() => onEditarAgendamento(agendamento)}
-                          className="text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600"
                         >
-                          Editar
-                        </button>
-                      )}
-                      {!agendamento.desmarcada && agendamento.status === 'confirmado' && (
-                        <>
-                          <button
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                        
+                        {agendamento.status === 'pendente' && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => onConfirmarAgendamento(agendamento.id)}
+                          >
+                            <CheckCircle className="h-3 w-3" />
+                          </Button>
+                        )}
+                        
+                        {agendamento.status === 'confirmado' && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
                             onClick={() => onMarcarRealizado(agendamento.id)}
-                            className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded hover:bg-primary/90"
                           >
-                            Realizado
-                          </button>
-                          <button
-                            onClick={() => onDesmarcarAgendamento(agendamento.id)}
-                            className="text-xs bg-destructive text-destructive-foreground px-2 py-1 rounded hover:bg-destructive/90"
-                          >
-                            Desmarcar
-                          </button>
-                        </>
-                      )}
-                    </div>
+                            <CheckCircle className="h-3 w-3" />
+                          </Button>
+                        )}
+                        
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => onDesmarcarAgendamento(agendamento.id)}
+                        >
+                          <XCircle className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-        );
-      })}
+                </Card>
+              ))}
+            </div>
+          </div>
+        </Card>
+      ))}
     </div>
   );
 }

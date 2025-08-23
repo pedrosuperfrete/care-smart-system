@@ -86,6 +86,39 @@ export type Database = {
           },
         ]
       }
+      bloqueios_agenda: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          data_fim: string
+          data_inicio: string
+          descricao: string | null
+          id: string
+          profissional_id: string
+          titulo: string
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          data_fim: string
+          data_inicio: string
+          descricao?: string | null
+          id?: string
+          profissional_id: string
+          titulo: string
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          data_fim?: string
+          data_inicio?: string
+          descricao?: string | null
+          id?: string
+          profissional_id?: string
+          titulo?: string
+        }
+        Relationships: []
+      }
       clinicas: {
         Row: {
           cnpj: string

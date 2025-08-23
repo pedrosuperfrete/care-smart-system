@@ -10,6 +10,7 @@ import { Calendar, Plus, Clock, User, Filter, ChevronLeft, ChevronRight } from '
 import { useAgendamentos, useCreateAgendamento, useConfirmarAgendamento, useDesmarcarAgendamento, useMarcarRealizado } from '@/hooks/useAgendamentos';
 import { usePacientes } from '@/hooks/usePacientes';
 import { useProfissionais } from '@/hooks/useProfissionais';
+import { useBloqueiosAgenda } from '@/hooks/useBloqueiosAgenda';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { toDateTimeLocalString, fromDateTimeLocalString, formatTimeLocal, isSameDayLocal } from '@/lib/dateUtils';
@@ -17,6 +18,7 @@ import { VisaoSemanal } from '@/components/agenda/VisaoSemanal';
 import { VisaoMensal } from '@/components/agenda/VisaoMensal';
 import { EditarAgendamentoDialog } from '@/components/agenda/EditarAgendamentoDialog';
 import { GoogleCalendarConnect } from '@/components/agenda/GoogleCalendarConnect';
+import { BloqueioAgendaModal } from '@/components/agenda/BloqueioAgendaModal';
 import { Tables } from '@/integrations/supabase/types';
 
 type Agendamento = Tables<'agendamentos'>;
@@ -25,6 +27,7 @@ export default function Agenda() {
   const { data: agendamentos = [] } = useAgendamentos();
   const { data: pacientes = [] } = usePacientes();
   const { data: profissionais = [] } = useProfissionais();
+  const { data: bloqueios = [] } = useBloqueiosAgenda();
   const createAgendamento = useCreateAgendamento();
   const confirmarAgendamento = useConfirmarAgendamento();
   const desmarcarAgendamento = useDesmarcarAgendamento();
@@ -237,6 +240,13 @@ export default function Agenda() {
             </Button>
           )}
 
+          <BloqueioAgendaModal defaultDate={selectedDate}>
+            <Button variant="outline">
+              <Plus className="mr-2 h-4 w-4" />
+              Bloquear Horário
+            </Button>
+          </BloqueioAgendaModal>
+
           <Dialog open={isNewConsultaOpen} onOpenChange={setIsNewConsultaOpen}>
             <DialogTrigger asChild>
               <Button>
@@ -396,108 +406,157 @@ export default function Agenda() {
       {/* Conteúdo baseado na visualização */}
       {viewMode === 'dia' && (
         <div className="space-y-4">
-          {todayAgendamentos.length === 0 ? (
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-center py-8">
-                  <Calendar className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    Nenhuma consulta agendada
-                  </h3>
-                  <p className="text-gray-600 mb-4">
-                    Não há consultas agendadas para esta data.
-                  </p>
-                  <Button onClick={() => setIsNewConsultaOpen(true)}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Agendar Nova Consulta
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            todayAgendamentos
-              .sort((a, b) => new Date(a.data_inicio).getTime() - new Date(b.data_inicio).getTime())
-              .map((agendamento) => (
-                <Card key={agendamento.id} className={`hover:shadow-md transition-shadow ${agendamento.desmarcada ? 'opacity-50' : ''}`}>
+          {(() => {
+            const agendamentosDia = todayAgendamentos;
+            const bloqueiosDia = bloqueios.filter(bloqueio => {
+              const bloqueioDate = new Date(bloqueio.data_inicio);
+              return isSameDayLocal(bloqueioDate, selectedDate);
+            });
+            
+            const hasItems = agendamentosDia.length > 0 || bloqueiosDia.length > 0;
+            
+            if (!hasItems) {
+              return (
+                <Card>
                   <CardContent className="pt-6">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-2">
-                          <Clock className="h-5 w-5 text-gray-500" />
-                          <span className={`font-semibold ${agendamento.desmarcada ? 'line-through' : ''}`}>
-                            {formatTimeLocal(agendamento.data_inicio)} - {formatTimeLocal(agendamento.data_fim)}
-                          </span>
-                          <Badge className={agendamento.desmarcada ? 'bg-gray-100 text-gray-600' : getStatusColor(agendamento.status || 'pendente')}>
-                            {agendamento.desmarcada ? 'Desmarcada' : getStatusText(agendamento.status || 'pendente')}
-                          </Badge>
-                        </div>
-                        
-                        <div className="flex items-center space-x-3 mb-2">
-                          <User className="h-4 w-4 text-gray-500" />
-                          <span className={`font-medium ${agendamento.desmarcada ? 'line-through' : ''}`}>
-                            {(agendamento as any).pacientes?.nome}
-                          </span>
-                        </div>
-                        
-                        <div className={`text-sm text-gray-600 space-y-1 ${agendamento.desmarcada ? 'line-through' : ''}`}>
-                          <p><strong>Tipo:</strong> {agendamento.tipo_servico}</p>
-                          <p><strong>Profissional:</strong> {(agendamento as any).profissionais?.nome}</p>
-                          {agendamento.valor && (
-                            <p><strong>Valor:</strong> R$ {agendamento.valor.toFixed(2)}</p>
-                          )}
-                          {agendamento.observacoes && (
-                            <p><strong>Obs:</strong> {agendamento.observacoes}</p>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="flex space-x-2">
-                        {!agendamento.desmarcada && (
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleEditarAgendamento(agendamento)}
-                          >
-                            Editar
-                          </Button>
-                        )}
-                        {!agendamento.desmarcada && agendamento.status === 'pendente' && (
-                          <Button 
-                            size="sm"
-                            onClick={() => handleConfirmar(agendamento.id)}
-                          >
-                            Confirmar
-                          </Button>
-                        )}
-                        {!agendamento.desmarcada && agendamento.status === 'confirmado' && (
-                          <>
-                            <Button 
-                              size="sm"
-                              onClick={() => handleMarcarRealizado(agendamento.id)}
-                            >
-                              Realizado
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="destructive"
-                              onClick={() => handleDesmarcar(agendamento.id)}
-                            >
-                              Desmarcar
-                            </Button>
-                          </>
-                        )}
-                      </div>
+                    <div className="text-center py-8">
+                      <Calendar className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        Nenhuma consulta agendada
+                      </h3>
+                      <p className="text-gray-600 mb-4">
+                        Não há consultas agendadas para esta data.
+                      </p>
+                      <Button onClick={() => setIsNewConsultaOpen(true)}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Agendar Nova Consulta
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
-              ))
-          )}
+              );
+            }
+            
+            const allItems = [
+              ...bloqueiosDia.map(b => ({ ...b, type: 'bloqueio', data_inicio: b.data_inicio })),
+              ...agendamentosDia.map(a => ({ ...a, type: 'agendamento' }))
+            ].sort((a, b) => new Date(a.data_inicio).getTime() - new Date(b.data_inicio).getTime());
+            
+            return allItems.map((item) => {
+              if (item.type === 'bloqueio') {
+                return (
+                  <Card key={`bloqueio-${item.id}`} className="border-orange-200 bg-orange-50">
+                    <CardContent className="pt-6">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <Clock className="h-5 w-5 text-orange-600" />
+                            <span className="font-semibold text-orange-800">
+                              {formatTimeLocal(item.data_inicio)} - {formatTimeLocal(item.data_fim)}
+                            </span>
+                            <Badge variant="outline" className="text-orange-700 border-orange-300 bg-orange-100">
+                              Bloqueado
+                            </Badge>
+                          </div>
+                          <div className="text-orange-700 font-medium ml-8">
+                            {item.titulo}
+                          </div>
+                          {item.descricao && (
+                            <div className="text-orange-600 text-sm ml-8 mt-1">
+                              {item.descricao}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              } else {
+                const agendamento = item as any;
+                 return (
+                 <Card key={agendamento.id} className={`hover:shadow-md transition-shadow ${agendamento.desmarcada ? 'opacity-50' : ''}`}>
+                   <CardContent className="pt-6">
+                     <div className="flex justify-between items-start">
+                       <div className="flex-1">
+                         <div className="flex items-center space-x-3 mb-2">
+                           <Clock className="h-5 w-5 text-gray-500" />
+                           <span className={`font-semibold ${agendamento.desmarcada ? 'line-through' : ''}`}>
+                             {formatTimeLocal(agendamento.data_inicio)} - {formatTimeLocal(agendamento.data_fim)}
+                           </span>
+                           <Badge className={agendamento.desmarcada ? 'bg-gray-100 text-gray-600' : getStatusColor(agendamento.status || 'pendente')}>
+                             {agendamento.desmarcada ? 'Desmarcada' : getStatusText(agendamento.status || 'pendente')}
+                           </Badge>
+                         </div>
+                         
+                         <div className="flex items-center space-x-3 mb-2">
+                           <User className="h-4 w-4 text-gray-500" />
+                           <span className={`font-medium ${agendamento.desmarcada ? 'line-through' : ''}`}>
+                             {(agendamento as any).pacientes?.nome}
+                           </span>
+                         </div>
+                         
+                         <div className={`text-sm text-gray-600 space-y-1 ${agendamento.desmarcada ? 'line-through' : ''}`}>
+                           <p><strong>Tipo:</strong> {agendamento.tipo_servico}</p>
+                           <p><strong>Profissional:</strong> {(agendamento as any).profissionais?.nome}</p>
+                           {agendamento.valor && (
+                             <p><strong>Valor:</strong> R$ {agendamento.valor.toFixed(2)}</p>
+                           )}
+                           {agendamento.observacoes && (
+                             <p><strong>Obs:</strong> {agendamento.observacoes}</p>
+                           )}
+                         </div>
+                       </div>
+                       
+                       <div className="flex space-x-2">
+                         {!agendamento.desmarcada && (
+                           <Button 
+                             variant="outline" 
+                             size="sm"
+                             onClick={() => handleEditarAgendamento(agendamento)}
+                           >
+                             Editar
+                           </Button>
+                         )}
+                         {!agendamento.desmarcada && agendamento.status === 'pendente' && (
+                           <Button 
+                             size="sm"
+                             onClick={() => handleConfirmar(agendamento.id)}
+                           >
+                             Confirmar
+                           </Button>
+                         )}
+                         {!agendamento.desmarcada && agendamento.status === 'confirmado' && (
+                           <>
+                             <Button 
+                               size="sm"
+                               onClick={() => handleMarcarRealizado(agendamento.id)}
+                             >
+                               Realizado
+                             </Button>
+                             <Button 
+                               size="sm" 
+                               variant="destructive"
+                               onClick={() => handleDesmarcar(agendamento.id)}
+                             >
+                               Desmarcar
+                             </Button>
+                           </>
+                         )}
+                       </div>
+                     </div>
+                   </CardContent>
+                 </Card>
+               );
+             }
+            });
+          })()}
         </div>
       )}
 
       {viewMode === 'semana' && (
         <VisaoSemanal
           agendamentos={getWeekAgendamentos()}
+          bloqueios={bloqueios}
           semanaInicio={getStartOfWeek()}
           onEditarAgendamento={handleEditarAgendamento}
           onConfirmarAgendamento={handleConfirmar}
@@ -509,6 +568,7 @@ export default function Agenda() {
       {viewMode === 'mes' && (
         <VisaoMensal
           agendamentos={getMonthAgendamentos()}
+          bloqueios={bloqueios}
           mesAno={selectedDate}
           onDiaClick={(data) => {
             setSelectedDate(data);

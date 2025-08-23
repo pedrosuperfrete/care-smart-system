@@ -141,7 +141,7 @@ export function useCreateAgendamento() {
         throw new Error('Profissional não encontrado ou inativo');
       }
 
-      // Verificar conflito de horário
+      // Verificar conflito de horário com outros agendamentos
       const { data: conflito, error: conflitoError } = await supabase
         .from('agendamentos')
         .select('id')
@@ -153,6 +153,19 @@ export function useCreateAgendamento() {
       
       if (conflito && conflito.length > 0) {
         throw new Error('Já existe um agendamento neste horário para este profissional');
+      }
+
+      // Verificar conflito com bloqueios de agenda
+      const { data: bloqueios, error: bloqueioError } = await supabase
+        .from('bloqueios_agenda')
+        .select('id, titulo')
+        .eq('profissional_id', agendamento.profissional_id)
+        .or(`and(data_inicio.lte.${agendamento.data_inicio},data_fim.gt.${agendamento.data_inicio}),and(data_inicio.lt.${agendamento.data_fim},data_fim.gte.${agendamento.data_fim}),and(data_inicio.gte.${agendamento.data_inicio},data_fim.lte.${agendamento.data_fim})`);
+
+      if (bloqueioError) throw bloqueioError;
+      
+      if (bloqueios && bloqueios.length > 0) {
+        throw new Error('Este horário está bloqueado na agenda do profissional');
       }
 
       const { data, error } = await supabase
