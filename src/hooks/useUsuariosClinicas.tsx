@@ -22,10 +22,14 @@ export function useUsuariosClinicas(clinicaId?: string) {
         .eq('clinica_id', clinicaId)
         .eq('ativo', true);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching usuarios clinicas:', error);
+        throw error;
+      }
       return data || [];
     },
-    enabled: !!clinicaId, // Só executa se clinicaId estiver definido
+    enabled: !!clinicaId,
+    staleTime: 30000, // 30 seconds
   });
 }
 

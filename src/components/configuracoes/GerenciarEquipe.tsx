@@ -49,16 +49,12 @@ export function GerenciarEquipe() {
 
   // Atualizar usuariosDetalhes diretamente dos dados já incluídos
   useEffect(() => {
-    if (usuarios.length > 0) {
-      const detalhes = usuarios.map((usuarioClinica: any) => ({
-        ...usuarioClinica,
-        email: usuarioClinica.users?.email || 'Email não encontrado',
-        tipo_usuario: usuarioClinica.users?.tipo_usuario
-      }));
-      setUsuariosDetalhes(detalhes);
-    } else {
-      setUsuariosDetalhes([]);
-    }
+    const detalhes = usuarios.map((usuarioClinica: any) => ({
+      ...usuarioClinica,
+      email: usuarioClinica.users?.email || 'Email não encontrado',
+      tipo_usuario: usuarioClinica.users?.tipo_usuario
+    }));
+    setUsuariosDetalhes(detalhes);
   }, [usuarios]);
 
 
