@@ -165,14 +165,6 @@ export function VisaoSemanal({
                             <CheckCircle className="h-3 w-3" />
                           </Button>
                         )}
-                        
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => onDesmarcarAgendamento(agendamento.id)}
-                        >
-                          <XCircle className="h-3 w-3" />
-                        </Button>
                       </div>
                     )}
                   </div>
