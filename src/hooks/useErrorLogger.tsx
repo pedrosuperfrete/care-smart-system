@@ -17,17 +17,27 @@ export function useErrorLogger() {
 
   const logError = useCallback(async (errorData: ErrorLogData) => {
     try {
-      // Buscar profissional_id se o usuário for profissional
+      // Buscar profissional_id apenas se o usuário for profissional
       let profissionalId = null;
       if (user) {
-        const { data: profissional } = await supabase
-          .from('profissionais')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('ativo', true)
+        // Primeiro buscar o tipo de usuário
+        const { data: userProfile } = await supabase
+          .from('users')
+          .select('tipo_usuario')
+          .eq('id', user.id)
           .single();
         
-        profissionalId = profissional?.id;
+        // Só buscar profissional se for do tipo 'profissional'
+        if (userProfile?.tipo_usuario === 'profissional') {
+          const { data: profissional } = await supabase
+            .from('profissionais')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('ativo', true)
+            .maybeSingle(); // Usar maybeSingle para não dar erro se não encontrar
+          
+          profissionalId = profissional?.id;
+        }
       }
 
       // Inserir log de erro no banco
