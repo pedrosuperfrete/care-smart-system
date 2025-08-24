@@ -76,58 +76,33 @@ export function useCreatePaciente() {
       try {
         // Verificar limite se solicitado
         if (paciente.verificarLimite) {
-          // Buscar dados do profissional
-          const { data: user } = await supabase.auth.getUser();
-          if (!user.user) {
-            const error = new Error("Usuário não autenticado");
-            await logCustomError('PACIENTE_CREATE_AUTH', error.message);
-            throw error;
-          }
-
-          const { data: profissional, error: profError } = await supabase
-            .from('profissionais')
-            .select('assinatura_ativa')
-            .eq('user_id', user.user.id)
-            .single();
-
-          if (profError) {
-            await logSupabaseError('verificar_profissional_limite', profError, { user_id: user.user.id });
-            throw profError;
-          }
-
-          // Contar pacientes atuais
-          const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
+          // Usar a função can_create_patient que já faz toda a verificação
+          const { data: podeCrear, error: canCreateError } = await supabase.rpc('can_create_patient');
           
-          if (clinicasUsuario && clinicasUsuario.length > 0) {
-            const clinicaIds = clinicasUsuario.map(c => c.clinica_id);
-            
-            const { count: totalPacientes, error: countError } = await supabase
-              .from('pacientes')
-              .select('*', { count: 'exact', head: true })
-              .in('clinica_id', clinicaIds)
-              .eq('ativo', true);
+          if (canCreateError) {
+            await logSupabaseError('verificar_can_create_patient', canCreateError);
+            throw canCreateError;
+          }
 
-            if (countError) {
-              await logSupabaseError('contar_pacientes_limite', countError, { clinicaIds });
-              throw countError;
-            }
-
-            const assinaturaAtiva = profissional?.assinatura_ativa || false;
-            
-            // Se não tem assinatura ativa e já tem 2 ou mais pacientes, bloquear
-            if (!assinaturaAtiva && (totalPacientes || 0) >= 2) {
-              await logCustomError('LIMITE_PACIENTES_ATINGIDO', 'Limite de pacientes atingido', { 
-                assinaturaAtiva, 
-                totalPacientes,
-                user_id: user.user.id 
-              });
-              throw new Error("LIMITE_ATINGIDO");
-            }
+          if (!podeCrear) {
+            await logCustomError('LIMITE_PACIENTES_ATINGIDO', 'Limite de pacientes atingido');
+            throw new Error("LIMITE_ATINGIDO");
           }
         }
 
-        // Remover campo de verificação antes de inserir
-        const { verificarLimite, ...pacienteData } = paciente;
+        // Remover campo de verificação antes de inserir e garantir que tenha clinica_id
+        const { verificarLimite, ...pacienteDataBase } = paciente;
+        
+        // Se não tem clinica_id, pegar da primeira clínica do usuário
+        let pacienteData = { ...pacienteDataBase };
+        if (!pacienteData.clinica_id) {
+          const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
+          if (clinicasUsuario && clinicasUsuario.length > 0) {
+            pacienteData.clinica_id = clinicasUsuario[0].clinica_id;
+          } else {
+            throw new Error("Usuário não tem clínica associada");
+          }
+        }
         
         const { data, error } = await supabase
           .from('pacientes')

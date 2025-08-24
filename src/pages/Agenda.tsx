@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -61,6 +61,16 @@ export default function Agenda() {
     valor: '',
     observacoes: ''
   });
+
+  // Atualizar profissional_id quando currentProfissional muda
+  React.useEffect(() => {
+    if (currentProfissional?.id) {
+      setNewConsulta(prev => ({ 
+        ...prev, 
+        profissional_id: currentProfissional.id 
+      }));
+    }
+  }, [currentProfissional]);
 
   const handleCreateConsulta = async () => {
     try {

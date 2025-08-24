@@ -50,7 +50,6 @@ export function AppSidebar() {
       title: "Financeiro",
       url: "/app/financeiro",
       icon: DollarSign,
-      hideFor: ['recepcionista'],
     },
     {
       title: "Relatórios",

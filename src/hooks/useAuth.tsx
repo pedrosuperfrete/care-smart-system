@@ -150,8 +150,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.log('Profissional não encontrado após todas as tentativas');
           setProfissional(null);
         }
+      } else if (userProfileData?.tipo_usuario === 'recepcionista' && clinicasData?.length > 0) {
+        // Se for recepcionista, buscar o profissional da clínica
+        const clinicaId = clinicasData[0].clinica_id;
+        const { data: profissionalClinica, error: profError } = await supabase
+          .from('profissionais')
+          .select('*')
+          .eq('clinica_id', clinicaId)
+          .eq('ativo', true)
+          .maybeSingle();
+
+        if (!profError && profissionalClinica) {
+          console.log('Profissional da clínica carregado para recepcionista:', profissionalClinica);
+          setProfissional(profissionalClinica);
+        } else {
+          console.log('Nenhum profissional encontrado na clínica para recepcionista');
+          setProfissional(null);
+        }
       } else {
-        // Não é profissional, limpar estado
+        // Não é profissional nem recepcionista, limpar estado
         setProfissional(null);
       }
     } catch (error) {
