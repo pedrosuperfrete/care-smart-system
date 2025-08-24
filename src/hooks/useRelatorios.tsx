@@ -27,7 +27,7 @@ export interface TipoConsulta {
 }
 
 export const useRelatorios = (periodo: string = 'mes') => {
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [estatisticas, setEstatisticas] = useState<EstatisticaRelatorio[]>([]);
@@ -68,7 +68,7 @@ export const useRelatorios = (periodo: string = 'mes') => {
   };
 
   const buscarEstatisticas = async () => {
-    if (!user) return;
+    if (!user || !userProfile) return;
 
     try {
       const { inicio, fim } = getDateRange(periodo);
@@ -80,50 +80,86 @@ export const useRelatorios = (periodo: string = 'mes') => {
         fim: periodo === 'mes' ? endOfMonth(subMonths(fim, 1)) : endOfMonth(subMonths(fim, 1))
       };
 
-      // Buscar profissional atual
-      const { data: profissional } = await supabase
-        .from('profissionais')
-        .select('id, clinica_id')
-        .eq('user_id', user.id)
-        .eq('ativo', true)
-        .single();
+      let profissionalIds: string[] = [];
 
-      if (!profissional) return;
+      // Se for profissional, usar apenas seu ID
+      if (userProfile.tipo_usuario === 'profissional') {
+        const { data: profissional } = await supabase
+          .from('profissionais')
+          .select('id, clinica_id')
+          .eq('user_id', user.id)
+          .eq('ativo', true)
+          .maybeSingle();
 
-      // 1. Total de consultas do período atual - apenas do profissional logado
+        if (!profissional) return;
+        profissionalIds = [profissional.id];
+      } 
+      // Se for recepcionista, buscar profissionais da clínica
+      else if (userProfile.tipo_usuario === 'recepcionista') {
+        // Buscar clínica do usuário
+        const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
+        
+        if (!clinicasUsuario || clinicasUsuario.length === 0) return;
+
+        const clinicaId = clinicasUsuario[0].clinica_id;
+
+        // Buscar profissionais da clínica
+        const { data: profissionais } = await supabase
+          .from('profissionais')
+          .select('id')
+          .eq('clinica_id', clinicaId)
+          .eq('ativo', true);
+
+        if (!profissionais || profissionais.length === 0) return;
+        profissionalIds = profissionais.map(p => p.id);
+      }
+      // Se for admin, buscar todos os profissionais
+      else if (userProfile.tipo_usuario === 'admin') {
+        const { data: profissionais } = await supabase
+          .from('profissionais')
+          .select('id')
+          .eq('ativo', true);
+
+        if (!profissionais || profissionais.length === 0) return;
+        profissionalIds = profissionais.map(p => p.id);
+      }
+
+      if (profissionalIds.length === 0) return;
+
+      // 1. Total de consultas do período atual
       const { data: consultasAtual } = await supabase
         .from('agendamentos')
         .select('id, status')
-        .eq('profissional_id', profissional.id)
+        .in('profissional_id', profissionalIds)
         .gte('data_inicio', inicio.toISOString())
         .lte('data_inicio', fim.toISOString());
 
-      // 2. Total de consultas do período anterior - apenas do profissional logado
+      // 2. Total de consultas do período anterior
       const { data: consultasAnterior } = await supabase
         .from('agendamentos')
         .select('id')
-        .eq('profissional_id', profissional.id)
+        .in('profissional_id', profissionalIds)
         .gte('data_inicio', periodoAnterior.inicio.toISOString())
         .lte('data_inicio', periodoAnterior.fim.toISOString());
 
-      // 3. Novos pacientes (primeira consulta no período) - apenas do profissional logado
+      // 3. Novos pacientes (primeira consulta no período)
       const { data: pacientesNovos } = await supabase
         .from('agendamentos')
         .select('paciente_id')
-        .eq('profissional_id', profissional.id)
+        .in('profissional_id', profissionalIds)
         .gte('data_inicio', inicio.toISOString())
         .lte('data_inicio', fim.toISOString());
 
       const pacientesUnicos = new Set(pacientesNovos?.map(p => p.paciente_id) || []);
 
-      // 4. Receita total do período - apenas do profissional logado
-      console.log('Buscando receita para profissional:', profissional.id, 'período:', inicio, 'até', fim);
+      // 4. Receita total do período
+      console.log('Buscando receita para profissionais:', profissionalIds, 'período:', inicio, 'até', fim);
       
-      // Buscar agendamentos do profissional no período primeiro
+      // Buscar agendamentos dos profissionais no período primeiro
       const { data: agendamentosPeriodo } = await supabase
         .from('agendamentos')
         .select('id')
-        .eq('profissional_id', profissional.id)
+        .in('profissional_id', profissionalIds)
         .gte('data_inicio', inicio.toISOString())
         .lte('data_inicio', fim.toISOString());
 
@@ -157,13 +193,13 @@ export const useRelatorios = (periodo: string = 'mes') => {
       
       console.log('Receita total calculada:', receitaTotal);
 
-      // 5. Taxa de retorno (pacientes que tiveram mais de uma consulta) - apenas do profissional logado
+      // 5. Taxa de retorno (pacientes que tiveram mais de uma consulta)
       const { data: todasConsultas } = await supabase
         .from('agendamentos')
         .select(`
           paciente_id
         `)
-        .eq('profissional_id', profissional.id)
+        .in('profissional_id', profissionalIds)
         .eq('status', 'realizado');
 
       const consultasPorPaciente = todasConsultas?.reduce((acc: any, consulta) => {
@@ -224,17 +260,54 @@ export const useRelatorios = (periodo: string = 'mes') => {
   };
 
   const buscarConsultasPorDia = async () => {
-    if (!user) return;
+    if (!user || !userProfile) return;
 
     try {
-      const { data: profissional } = await supabase
-        .from('profissionais')
-        .select('id, clinica_id')
-        .eq('user_id', user.id)
-        .eq('ativo', true)
-        .single();
+      let profissionalIds: string[] = [];
 
-      if (!profissional) return;
+      // Se for profissional, usar apenas seu ID
+      if (userProfile.tipo_usuario === 'profissional') {
+        const { data: profissional } = await supabase
+          .from('profissionais')
+          .select('id, clinica_id')
+          .eq('user_id', user.id)
+          .eq('ativo', true)
+          .maybeSingle();
+
+        if (!profissional) return;
+        profissionalIds = [profissional.id];
+      } 
+      // Se for recepcionista, buscar profissionais da clínica
+      else if (userProfile.tipo_usuario === 'recepcionista') {
+        // Buscar clínica do usuário
+        const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
+        
+        if (!clinicasUsuario || clinicasUsuario.length === 0) return;
+
+        const clinicaId = clinicasUsuario[0].clinica_id;
+
+        // Buscar profissionais da clínica
+        const { data: profissionais } = await supabase
+          .from('profissionais')
+          .select('id')
+          .eq('clinica_id', clinicaId)
+          .eq('ativo', true);
+
+        if (!profissionais || profissionais.length === 0) return;
+        profissionalIds = profissionais.map(p => p.id);
+      }
+      // Se for admin, buscar todos os profissionais
+      else if (userProfile.tipo_usuario === 'admin') {
+        const { data: profissionais } = await supabase
+          .from('profissionais')
+          .select('id')
+          .eq('ativo', true);
+
+        if (!profissionais || profissionais.length === 0) return;
+        profissionalIds = profissionais.map(p => p.id);
+      }
+
+      if (profissionalIds.length === 0) return;
 
       // Buscar consultas dos últimos 7 dias
       const ultimosDias = Array.from({ length: 7 }, (_, i) => {
@@ -247,7 +320,7 @@ export const useRelatorios = (periodo: string = 'mes') => {
           const { data: consultas } = await supabase
             .from('agendamentos')
             .select('id')
-            .eq('profissional_id', profissional.id)
+            .in('profissional_id', profissionalIds)
             .gte('data_inicio', `${dia}T00:00:00`)
             .lt('data_inicio', `${dia}T23:59:59`);
 
@@ -265,17 +338,54 @@ export const useRelatorios = (periodo: string = 'mes') => {
   };
 
   const buscarReceitaPorMes = async () => {
-    if (!user) return;
+    if (!user || !userProfile) return;
 
     try {
-      const { data: profissional } = await supabase
-        .from('profissionais')
-        .select('id, clinica_id')
-        .eq('user_id', user.id)
-        .eq('ativo', true)
-        .single();
+      let profissionalIds: string[] = [];
 
-      if (!profissional) return;
+      // Se for profissional, usar apenas seu ID
+      if (userProfile.tipo_usuario === 'profissional') {
+        const { data: profissional } = await supabase
+          .from('profissionais')
+          .select('id, clinica_id')
+          .eq('user_id', user.id)
+          .eq('ativo', true)
+          .maybeSingle();
+
+        if (!profissional) return;
+        profissionalIds = [profissional.id];
+      } 
+      // Se for recepcionista, buscar profissionais da clínica
+      else if (userProfile.tipo_usuario === 'recepcionista') {
+        // Buscar clínica do usuário
+        const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
+        
+        if (!clinicasUsuario || clinicasUsuario.length === 0) return;
+
+        const clinicaId = clinicasUsuario[0].clinica_id;
+
+        // Buscar profissionais da clínica
+        const { data: profissionais } = await supabase
+          .from('profissionais')
+          .select('id')
+          .eq('clinica_id', clinicaId)
+          .eq('ativo', true);
+
+        if (!profissionais || profissionais.length === 0) return;
+        profissionalIds = profissionais.map(p => p.id);
+      }
+      // Se for admin, buscar todos os profissionais
+      else if (userProfile.tipo_usuario === 'admin') {
+        const { data: profissionais } = await supabase
+          .from('profissionais')
+          .select('id')
+          .eq('ativo', true);
+
+        if (!profissionais || profissionais.length === 0) return;
+        profissionalIds = profissionais.map(p => p.id);
+      }
+
+      if (profissionalIds.length === 0) return;
 
       // Buscar receita dos últimos 6 meses
       const ultimosMeses = Array.from({ length: 6 }, (_, i) => {
@@ -287,17 +397,17 @@ export const useRelatorios = (periodo: string = 'mes') => {
         };
       });
 
-      console.log('Buscando receita mensal para profissional:', profissional.id);
+      console.log('Buscando receita mensal para profissionais:', profissionalIds);
 
       const dadosPorMes = await Promise.all(
         ultimosMeses.map(async ({ mes, inicio, fim }) => {
           console.log(`Buscando receita para ${mes}: ${inicio.toISOString()} - ${fim.toISOString()}`);
           
-          // Primeiro buscar agendamentos do profissional no período
+          // Primeiro buscar agendamentos dos profissionais no período
           const { data: agendamentos } = await supabase
             .from('agendamentos')
             .select('id')
-            .eq('profissional_id', profissional.id)
+            .in('profissional_id', profissionalIds)
             .gte('data_inicio', inicio.toISOString())
             .lte('data_inicio', fim.toISOString());
 
@@ -337,24 +447,61 @@ export const useRelatorios = (periodo: string = 'mes') => {
   };
 
   const buscarTiposConsulta = async () => {
-    if (!user) return;
+    if (!user || !userProfile) return;
 
     try {
-      const { data: profissional } = await supabase
-        .from('profissionais')
-        .select('id, clinica_id')
-        .eq('user_id', user.id)
-        .eq('ativo', true)
-        .single();
+      let profissionalIds: string[] = [];
 
-      if (!profissional) return;
+      // Se for profissional, usar apenas seu ID
+      if (userProfile.tipo_usuario === 'profissional') {
+        const { data: profissional } = await supabase
+          .from('profissionais')
+          .select('id, clinica_id')
+          .eq('user_id', user.id)
+          .eq('ativo', true)
+          .maybeSingle();
+
+        if (!profissional) return;
+        profissionalIds = [profissional.id];
+      } 
+      // Se for recepcionista, buscar profissionais da clínica
+      else if (userProfile.tipo_usuario === 'recepcionista') {
+        // Buscar clínica do usuário
+        const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
+        
+        if (!clinicasUsuario || clinicasUsuario.length === 0) return;
+
+        const clinicaId = clinicasUsuario[0].clinica_id;
+
+        // Buscar profissionais da clínica
+        const { data: profissionais } = await supabase
+          .from('profissionais')
+          .select('id')
+          .eq('clinica_id', clinicaId)
+          .eq('ativo', true);
+
+        if (!profissionais || profissionais.length === 0) return;
+        profissionalIds = profissionais.map(p => p.id);
+      }
+      // Se for admin, buscar todos os profissionais
+      else if (userProfile.tipo_usuario === 'admin') {
+        const { data: profissionais } = await supabase
+          .from('profissionais')
+          .select('id')
+          .eq('ativo', true);
+
+        if (!profissionais || profissionais.length === 0) return;
+        profissionalIds = profissionais.map(p => p.id);
+      }
+
+      if (profissionalIds.length === 0) return;
 
       const { inicio, fim } = getDateRange(periodo);
 
       const { data: agendamentos } = await supabase
         .from('agendamentos')
         .select('tipo_servico')
-        .eq('profissional_id', profissional.id)
+        .in('profissional_id', profissionalIds)
         .gte('data_inicio', inicio.toISOString())
         .lte('data_inicio', fim.toISOString());
 
@@ -393,10 +540,10 @@ export const useRelatorios = (periodo: string = 'mes') => {
       setLoading(false);
     };
 
-    if (user) {
+    if (user && userProfile) {
       carregarDados();
     }
-  }, [user, periodo]);
+  }, [user, userProfile, periodo]);
 
   return {
     loading,
