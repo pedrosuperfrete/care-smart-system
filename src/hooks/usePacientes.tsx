@@ -166,25 +166,72 @@ export function useCreatePaciente() {
 
 export function useUpdatePaciente() {
   const queryClient = useQueryClient();
+  const { logSupabaseError } = useErrorLogger();
   
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: UpdatePaciente }) => {
-      const { data: updated, error } = await supabase
-        .from('pacientes')
-        .update(data)
-        .eq('id', id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return updated;
+      try {
+        console.log('Tentando atualizar paciente:', { id, data });
+        
+        // Primeiro, verificar se o paciente existe e se temos permissão para vê-lo
+        const { data: existingPaciente, error: findError } = await supabase
+          .from('pacientes')
+          .select('*')
+          .eq('id', id)
+          .maybeSingle();
+        
+        if (findError) {
+          console.error('Erro ao buscar paciente antes da atualização:', findError);
+          await logSupabaseError('buscar_paciente_antes_update', findError, { id });
+          throw findError;
+        }
+        
+        if (!existingPaciente) {
+          const error = new Error('Paciente não encontrado ou sem permissão de acesso');
+          console.error('Paciente não encontrado:', id);
+          await logSupabaseError('paciente_nao_encontrado_update', error, { id });
+          throw error;
+        }
+        
+        console.log('Paciente encontrado:', existingPaciente);
+        
+        // Realizar a atualização
+        const { data: updated, error } = await supabase
+          .from('pacientes')
+          .update(data)
+          .eq('id', id)
+          .select()
+          .maybeSingle();
+        
+        if (error) {
+          console.error('Erro na atualização:', error);
+          await logSupabaseError('update_paciente', error, { id, data });
+          throw error;
+        }
+        
+        if (!updated) {
+          const error = new Error('Nenhuma linha foi atualizada - verifique as permissões RLS');
+          console.error('Update não retornou dados:', { id, data });
+          await logSupabaseError('update_sem_retorno', error, { id, data });
+          throw error;
+        }
+        
+        console.log('Paciente atualizado com sucesso:', updated);
+        return updated;
+      } catch (error: any) {
+        console.error('Erro completo na atualização:', error);
+        await logSupabaseError('update_paciente_catch', error, { id, data });
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pacientes'] });
+      queryClient.invalidateQueries({ queryKey: ['paciente'] });
       toast.success('Paciente atualizado com sucesso!');
     },
     onError: (error: any) => {
-      toast.error('Erro ao atualizar paciente: ' + error.message);
+      console.error('Erro no onError:', error);
+      toast.error('Erro ao salvar paciente: ' + error.message);
     },
   });
 }
