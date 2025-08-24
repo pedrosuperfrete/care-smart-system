@@ -84,7 +84,7 @@ function AppRoutes() {
       <Route path="/app/financeiro" element={
         !user ? <Navigate to="/app/auth" replace /> :
         needsOnboarding ? <Navigate to="/app/onboarding" replace /> :
-        <ProtectedRoute allowedRoles={['admin', 'profissional']}>
+        <ProtectedRoute allowedRoles={['admin', 'profissional', 'recepcionista']}>
           <Layout><Financeiro /></Layout>
         </ProtectedRoute>
       } />
