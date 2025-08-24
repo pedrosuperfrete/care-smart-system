@@ -15,7 +15,7 @@ import { AssinaturaStatus } from '@/components/configuracoes/AssinaturaStatus';
 import { ConfiguracaoWhatsApp } from '@/components/configuracoes/ConfiguracaoWhatsApp';
 
 export default function Configuracoes() {
-  const { userProfile, profissional, isAdmin, updateProfissional } = useAuth();
+  const { userProfile, profissional, isAdmin, isRecepcionista, updateProfissional } = useAuth();
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState(() => {
     const params = new URLSearchParams(window.location.search);
@@ -117,7 +117,7 @@ export default function Configuracoes() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className={`grid w-full ${isRecepcionista ? 'grid-cols-4' : 'grid-cols-6'}`}>
           <TabsTrigger value="perfil">
             <User className="mr-2 h-4 w-4" />
             Perfil
@@ -135,9 +135,11 @@ export default function Configuracoes() {
           <TabsTrigger value="whatsapp">
             WhatsApp
           </TabsTrigger>
-          <TabsTrigger value="sistema">
-            Sistema
-          </TabsTrigger>
+          {!isRecepcionista && (
+            <TabsTrigger value="sistema">
+              Sistema
+            </TabsTrigger>
+          )}
           <TabsTrigger value="assinatura">
             <Crown className="mr-2 h-4 w-4" />
             Assinatura
@@ -202,10 +204,12 @@ export default function Configuracoes() {
           <ConfiguracaoWhatsApp />
         </TabsContent>
 
-        {/* Aba Sistema */}
-        <TabsContent value="sistema">
-          <ConfiguracoesSistema />
-        </TabsContent>
+        {/* Aba Sistema (não para recepcionistas) */}
+        {!isRecepcionista && (
+          <TabsContent value="sistema">
+            <ConfiguracoesSistema />
+          </TabsContent>
+        )}
 
         {/* Aba Assinatura */}
         <TabsContent value="assinatura">

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,7 +29,8 @@ interface EditarUsuarioForm {
 }
 
 export function GerenciarEquipe() {
-  const { isAdminClinica, isProfissional, clinicaAtual } = useAuth();
+  const { isAdminClinica, isProfissional, isRecepcionista, clinicaAtual } = useAuth();
+  const queryClient = useQueryClient();
   const [novoUsuario, setNovoUsuario] = useState<NovoUsuarioForm>({ 
     email: '', 
     senha: '', 
@@ -45,38 +47,20 @@ export function GerenciarEquipe() {
   const removeUsuarioClinica = useRemoveUsuarioClinica();
   const updateUsuarioClinica = useUpdateUsuarioClinica();
 
-  // Buscar detalhes dos usuários
-  const fetchUsuariosDetalhes = async () => {
-    if (usuarios.length === 0) return;
-
-    const detalhes = await Promise.all(
-      usuarios.map(async (usuarioClinica) => {
-        try {
-          const { data: userData } = await supabase
-            .from('users')
-            .select('email')
-            .eq('id', usuarioClinica.usuario_id)
-            .single();
-
-          return {
-            ...usuarioClinica,
-            email: userData?.email || 'Email não encontrado'
-          };
-        } catch (error) {
-          return {
-            ...usuarioClinica,
-            email: 'Erro ao carregar email'
-          };
-        }
-      })
-    );
-
-    setUsuariosDetalhes(detalhes);
-  };
-
+  // Atualizar usuariosDetalhes diretamente dos dados já incluídos
   useEffect(() => {
-    fetchUsuariosDetalhes();
+    if (usuarios.length > 0) {
+      const detalhes = usuarios.map((usuarioClinica: any) => ({
+        ...usuarioClinica,
+        email: usuarioClinica.users?.email || 'Email não encontrado',
+        tipo_usuario: usuarioClinica.users?.tipo_usuario
+      }));
+      setUsuariosDetalhes(detalhes);
+    } else {
+      setUsuariosDetalhes([]);
+    }
   }, [usuarios]);
+
 
   const handleAdicionarUsuario = async () => {
     if (!clinicaAtual) {
@@ -142,8 +126,8 @@ export function GerenciarEquipe() {
         });
         setDialogAberto(false);
         
-        // Invalidar queries para atualizar a lista  
-        fetchUsuariosDetalhes();
+      // Invalidar queries para atualizar a lista
+      queryClient.invalidateQueries({ queryKey: ['usuarios_clinicas'] });
         
         toast.success('Usuário adicionado à clínica com sucesso!');
         return;
@@ -234,17 +218,13 @@ export function GerenciarEquipe() {
       setDialogAberto(false);
       
       // Invalidar queries para atualizar a lista
-      fetchUsuariosDetalhes();
+      queryClient.invalidateQueries({ queryKey: ['usuarios_clinicas'] });
       
       toast.success('Usuário criado e adicionado à clínica com sucesso!');
     } catch (error) {
       console.error('Erro ao adicionar usuário:', error);
       toast.error('Erro inesperado ao criar usuário');
     }
-  };
-
-  const handleRemoverUsuario = async (usuarioClinicaId: string) => {
-    await removeUsuarioClinica.mutateAsync(usuarioClinicaId);
   };
 
   const handleEditarUsuario = async () => {
@@ -277,7 +257,7 @@ export function GerenciarEquipe() {
       setEditandoUsuario(null);
       
       // Invalidar queries para atualizar a lista
-      fetchUsuariosDetalhes();
+      queryClient.invalidateQueries({ queryKey: ['usuarios_clinicas'] });
       
       toast.success('Usuário atualizado com sucesso!');
     } catch (error) {
@@ -524,7 +504,7 @@ export function GerenciarEquipe() {
                 </div>
               </div>
               
-              {(isAdminClinica || isProfissional) && (
+              {(isAdminClinica || isProfissional) && !isRecepcionista && (
                 <div className="flex items-center space-x-2">
                   <Switch 
                     checked={usuarioClinica.ativo} 
@@ -542,14 +522,6 @@ export function GerenciarEquipe() {
                     onClick={() => iniciarEdicao(usuarioClinica)}
                   >
                     <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleRemoverUsuario(usuarioClinica.id)}
-                    disabled={removeUsuarioClinica.isPending}
-                  >
-                    <UserMinus className="h-4 w-4" />
                   </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>

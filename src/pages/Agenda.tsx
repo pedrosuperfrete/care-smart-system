@@ -44,7 +44,7 @@ export default function Agenda() {
   const confirmarAgendamento = useConfirmarAgendamento();
   const desmarcarAgendamento = useDesmarcarAgendamento();
   const marcarRealizado = useMarcarRealizado();
-  const { profissional: currentProfissional, isAdmin } = useAuth();
+  const { profissional: currentProfissional, isAdmin, isRecepcionista } = useAuth();
 
   const [viewMode, setViewMode] = useState<'dia' | 'semana' | 'mes'>('dia');
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -258,12 +258,14 @@ export default function Agenda() {
             </Button>
           )}
 
-          <BloqueioAgendaModal defaultDate={selectedDate}>
-            <Button variant="outline">
-              <Plus className="mr-2 h-4 w-4" />
-              Bloquear Horário
-            </Button>
-          </BloqueioAgendaModal>
+          {!isRecepcionista && (
+            <BloqueioAgendaModal defaultDate={selectedDate}>
+              <Button variant="outline">
+                <Plus className="mr-2 h-4 w-4" />
+                Bloquear Horário
+              </Button>
+            </BloqueioAgendaModal>
+          )}
 
           <Dialog open={isNewConsultaOpen} onOpenChange={setIsNewConsultaOpen}>
             <DialogTrigger asChild>
@@ -418,8 +420,8 @@ export default function Agenda() {
         </CardContent>
       </Card>
 
-      {/* Google Calendar Integration */}
-      <GoogleCalendarConnect />
+      {/* Google Calendar Integration - apenas para profissionais/admins */}
+      {!isRecepcionista && <GoogleCalendarConnect />}
 
       {/* Conteúdo baseado na visualização */}
       {viewMode === 'dia' && (

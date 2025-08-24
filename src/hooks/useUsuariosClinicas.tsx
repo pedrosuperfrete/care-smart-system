@@ -10,13 +10,16 @@ type UsuarioClinicaUpdate = TablesUpdate<'usuarios_clinicas'>;
 export function useUsuariosClinicas(clinicaId?: string) {
   return useQuery({
     queryKey: ['usuarios_clinicas', clinicaId],
-    queryFn: async (): Promise<UsuarioClinica[]> => {
+    queryFn: async () => {
       let query = supabase
         .from('usuarios_clinicas')
-        .select('*');
+        .select(`
+          *,
+          users!inner(id, email, tipo_usuario)
+        `);
 
       if (clinicaId) {
-        query = query.eq('clinica_id', clinicaId);
+        query = query.eq('clinica_id', clinicaId).eq('ativo', true);
       }
 
       const { data, error } = await query;

@@ -12,7 +12,7 @@ import { Tables } from '@/integrations/supabase/types';
 import { formatDateTimeLocal } from '@/lib/dateUtils';
 
 export default function Dashboard() {
-  const { userProfile, isAdmin, isProfissional } = useAuth();
+  const { userProfile, isAdmin, isProfissional, isRecepcionista } = useAuth();
   const { data: pacientesStats } = usePacientesStats();
   const { data: agendamentosStats } = useAgendamentosStats();
   const { data: financeiroStats } = useFinanceiroStats();
@@ -47,7 +47,7 @@ export default function Dashboard() {
       }).format(financeiroStats?.receitaMensal || 0),
       icon: DollarSign,
       description: 'Faturamento atual',
-      hidden: !isAdmin && !isProfissional,
+      hidden: !isAdmin && !isProfissional && !isRecepcionista,
     },
   ];
 
