@@ -62,14 +62,23 @@ export default function Onboarding() {
       // Se existe clinicaId, SEMPRE atualizar (independente se é temporária ou não)
       if (clinicaId) {
         console.log('Atualizando clínica existente com ID:', clinicaId);
-        const { error: clinicaError } = await supabase
+        console.log('Dados para atualização:', {
+          nome: step2Data.nome_clinica,
+          cnpj: step2Data.cnpj_clinica,
+          endereco: step2Data.endereco_clinica || null,
+        });
+
+        const { data: updateResult, error: clinicaError } = await supabase
           .from('clinicas')
           .update({
             nome: step2Data.nome_clinica,
             cnpj: step2Data.cnpj_clinica,
             endereco: step2Data.endereco_clinica || null,
           })
-          .eq('id', clinicaId);
+          .eq('id', clinicaId)
+          .select();
+
+        console.log('Resultado da atualização:', { data: updateResult, error: clinicaError });
 
         if (clinicaError) {
           console.error('Erro ao atualizar clínica:', clinicaError);
@@ -77,7 +86,13 @@ export default function Onboarding() {
           return;
         }
 
-        console.log('Clínica atualizada com sucesso!');
+        if (!updateResult || updateResult.length === 0) {
+          console.error('Nenhuma linha foi atualizada na clínica');
+          toast.error('Erro: não foi possível atualizar a clínica - verifique permissões');
+          return;
+        }
+
+        console.log('Clínica atualizada com sucesso! Dados atualizados:', updateResult);
         toast.success('Clínica atualizada com sucesso!');
       } else {
         // Criar nova clínica apenas se não existe nenhuma
