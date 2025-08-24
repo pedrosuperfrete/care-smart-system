@@ -31,9 +31,7 @@ export default function Configuracoes() {
     mini_bio: profissional?.mini_bio || '',
     servicos_oferecidos: (profissional?.servicos_oferecidos as string[]) || [],
     nome_clinica: profissional?.nome_clinica || '',
-    horarios_atendimento: typeof profissional?.horarios_atendimento === 'string' 
-      ? profissional.horarios_atendimento 
-      : '',
+    horarios_atendimento: profissional?.horarios_atendimento || {},
     servicos_precos: (profissional?.servicos_precos as Array<{nome: string, preco: string}>) || [],
     formas_pagamento: (profissional?.formas_pagamento as string[]) || [],
     planos_saude: (profissional?.planos_saude as string[]) || [],

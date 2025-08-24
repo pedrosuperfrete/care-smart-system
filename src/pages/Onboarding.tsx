@@ -23,9 +23,7 @@ export default function Onboarding() {
     nome_clinica: profissional?.nome_clinica || '',
     cnpj_clinica: '',
     endereco_clinica: '',
-    horarios_atendimento: typeof profissional?.horarios_atendimento === 'string' 
-      ? profissional.horarios_atendimento 
-      : '',
+    horarios_atendimento: profissional?.horarios_atendimento || {},
     servicos_precos: (profissional?.servicos_precos as Array<{nome: string, preco: string}>) || [],
     formas_pagamento: (profissional?.formas_pagamento as string[]) || [],
     planos_saude: (profissional?.planos_saude as string[]) || [],
