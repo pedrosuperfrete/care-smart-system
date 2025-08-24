@@ -75,7 +75,17 @@ export function AppSidebar() {
   });
 
   const getUserDisplayInfo = () => {
-    if (profissional?.nome) {
+    // Se for recepcionista, sempre mostrar informações do recepcionista, não do profissional
+    if (userProfile?.tipo_usuario === 'recepcionista') {
+      return {
+        name: userProfile?.email?.split('@')[0] || 'Recepcionista',
+        role: 'Recepcionista',
+        initials: (userProfile?.email?.split('@')[0] || 'R').substring(0, 2).toUpperCase()
+      };
+    }
+    
+    // Para profissionais, mostrar dados do profissional se disponível
+    if (userProfile?.tipo_usuario === 'profissional' && profissional?.nome) {
       return {
         name: profissional.nome,
         role: profissional.especialidade || 'Profissional',
@@ -83,10 +93,10 @@ export function AppSidebar() {
       };
     }
     
+    // Fallback para outros tipos de usuário
     return {
       name: userProfile?.email?.split('@')[0] || 'Usuário',
-      role: userProfile?.tipo_usuario === 'admin' ? 'Administrador' : 
-            userProfile?.tipo_usuario === 'recepcionista' ? 'Recepcionista' : 'Usuário',
+      role: userProfile?.tipo_usuario === 'admin' ? 'Administrador' : 'Usuário',
       initials: (userProfile?.email?.split('@')[0] || 'U').substring(0, 2).toUpperCase()
     };
   };
