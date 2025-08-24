@@ -61,7 +61,23 @@ serve(async (req) => {
           .eq('ativo', true)
           .maybeSingle();
 
-        if (profError) throw new Error("Erro ao buscar profissional da clínica: " + profError.message);
+        if (profError) {
+          console.log("Erro ao buscar profissional da clínica:", profError);
+          throw new Error("Erro ao buscar profissional da clínica: " + profError.message);
+        }
+        
+        // Se não encontrou profissional, isso pode ser normal para recepcionistas sem profissional principal
+        if (!prof) {
+          console.log("Nenhum profissional encontrado para a clínica:", clinicasUsuario[0].clinica_id);
+          return new Response(JSON.stringify({
+            assinatura_ativa: false,
+            data_vencimento: null,
+          }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          });
+        }
+        
         profissional = prof;
       }
     }
