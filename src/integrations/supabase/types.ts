@@ -1008,6 +1008,10 @@ export type Database = {
         Args: { telefone: string }
         Returns: string
       }
+      update_user_by_admin: {
+        Args: { p_email: string; p_tipo_usuario: string; p_user_id: string }
+        Returns: undefined
+      }
       user_has_complete_profile: {
         Args: Record<PropertyKey, never>
         Returns: boolean

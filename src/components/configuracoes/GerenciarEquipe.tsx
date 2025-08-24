@@ -46,35 +46,35 @@ export function GerenciarEquipe() {
   const updateUsuarioClinica = useUpdateUsuarioClinica();
 
   // Buscar detalhes dos usuários
+  const fetchUsuariosDetalhes = async () => {
+    if (usuarios.length === 0) return;
+
+    const detalhes = await Promise.all(
+      usuarios.map(async (usuarioClinica) => {
+        try {
+          const { data: userData } = await supabase
+            .from('users')
+            .select('email')
+            .eq('id', usuarioClinica.usuario_id)
+            .single();
+
+          return {
+            ...usuarioClinica,
+            email: userData?.email || 'Email não encontrado'
+          };
+        } catch (error) {
+          return {
+            ...usuarioClinica,
+            email: 'Erro ao carregar email'
+          };
+        }
+      })
+    );
+
+    setUsuariosDetalhes(detalhes);
+  };
+
   useEffect(() => {
-    const fetchUsuariosDetalhes = async () => {
-      if (usuarios.length === 0) return;
-
-      const detalhes = await Promise.all(
-        usuarios.map(async (usuarioClinica) => {
-          try {
-            const { data: userData } = await supabase
-              .from('users')
-              .select('email')
-              .eq('id', usuarioClinica.usuario_id)
-              .single();
-
-            return {
-              ...usuarioClinica,
-              email: userData?.email || 'Email não encontrado'
-            };
-          } catch (error) {
-            return {
-              ...usuarioClinica,
-              email: 'Erro ao carregar email'
-            };
-          }
-        })
-      );
-
-      setUsuariosDetalhes(detalhes);
-    };
-
     fetchUsuariosDetalhes();
   }, [usuarios]);
 
@@ -141,6 +141,10 @@ export function GerenciarEquipe() {
           tipo_papel: 'recepcionista' 
         });
         setDialogAberto(false);
+        
+        // Invalidar queries para atualizar a lista  
+        fetchUsuariosDetalhes();
+        
         toast.success('Usuário adicionado à clínica com sucesso!');
         return;
       }
@@ -228,6 +232,10 @@ export function GerenciarEquipe() {
         tipo_papel: 'recepcionista' 
       });
       setDialogAberto(false);
+      
+      // Invalidar queries para atualizar a lista
+      fetchUsuariosDetalhes();
+      
       toast.success('Usuário criado e adicionado à clínica com sucesso!');
     } catch (error) {
       console.error('Erro ao adicionar usuário:', error);
@@ -252,23 +260,25 @@ export function GerenciarEquipe() {
       // Buscar o usuario_id pela associação
       const usuario = usuariosDetalhes.find(u => u.id === editandoUsuario.id);
       if (usuario) {
-        // Atualizar email na tabela users
-        const { error: emailError } = await supabase
-          .from('users')
-          .update({ 
-            email: editandoUsuario.email,
-            tipo_usuario: editandoUsuario.tipo_papel === 'admin_clinica' ? 'admin' : editandoUsuario.tipo_papel
-          })
-          .eq('id', usuario.usuario_id);
+        // Atualizar email na tabela users usando função security definer
+        const { error: emailError } = await supabase.rpc('update_user_by_admin', {
+          p_user_id: usuario.usuario_id,
+          p_email: editandoUsuario.email,
+          p_tipo_usuario: editandoUsuario.tipo_papel === 'admin_clinica' ? 'admin' : editandoUsuario.tipo_papel
+        });
 
         if (emailError) {
-          toast.error('Erro ao atualizar email: ' + emailError.message);
+          toast.error('Erro ao atualizar usuário: ' + emailError.message);
           return;
         }
       }
 
       setDialogEdicaoAberto(false);
       setEditandoUsuario(null);
+      
+      // Invalidar queries para atualizar a lista
+      fetchUsuariosDetalhes();
+      
       toast.success('Usuário atualizado com sucesso!');
     } catch (error) {
       console.error('Erro ao editar usuário:', error);
