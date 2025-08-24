@@ -78,37 +78,34 @@ export function useProximosAgendamentos(limit = 5) {
   return useQuery({
     queryKey: ['proximos-agendamentos', limit],
     queryFn: async () => {
-      // Buscar profissional atual
-      const { data: profissionalId } = await supabase.rpc('get_current_profissional_id');
-      
-      console.log('Profissional ID para próximas consultas:', profissionalId);
-      
-      if (!profissionalId) {
-        return [];
-      }
-
       const agora = new Date().toISOString();
-      console.log('Data atual para filtro:', agora);
       
       const { data, error } = await supabase
         .from('agendamentos')
         .select(`
           *,
           pacientes(id, nome, telefone, email),
-          profissionais(id, nome, especialidade)
+          profissionais(id, nome, especialidade, clinica_id)
         `)
-        .eq('profissional_id', profissionalId)
         .eq('desmarcada', false)
         .in('status', ['pendente', 'confirmado'])
         .gte('data_inicio', agora)
         .order('data_inicio', { ascending: true })
         .limit(limit);
 
-      console.log('Próximas consultas - dados:', data);
-      console.log('Próximas consultas - erro:', error);
-      
       if (error) throw error;
-      return data || [];
+      
+      // Filtrar apenas agendamentos das clínicas do usuário
+      if (!data) return [];
+      
+      const { data: userClinicas } = await supabase.rpc('get_user_clinicas');
+      const clinicasIds = userClinicas?.map((uc: any) => uc.clinica_id) || [];
+      
+      const agendamentosFiltrados = data.filter((agendamento: any) => 
+        clinicasIds.includes(agendamento.profissionais?.clinica_id)
+      );
+      
+      return agendamentosFiltrados || [];
     },
   });
 }
