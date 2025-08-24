@@ -3,10 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Crown, CreditCard, ExternalLink, Loader2 } from 'lucide-react';
 import { useAssinatura, useCreateCheckout, useCustomerPortal } from '@/hooks/useAssinatura';
+import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export function AssinaturaStatus() {
+  const { isRecepcionista } = useAuth();
   const { data: assinatura, isLoading: loadingAssinatura, refetch } = useAssinatura();
   const createCheckout = useCreateCheckout();
   const customerPortal = useCustomerPortal();
@@ -37,7 +39,10 @@ export function AssinaturaStatus() {
           Status da Assinatura
         </CardTitle>
         <CardDescription>
-          Gerencie sua assinatura da plataforma Donee
+          {isRecepcionista 
+            ? "Visualize o status da assinatura da clínica"
+            : "Gerencie sua assinatura da plataforma Donee"
+          }
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -74,38 +79,43 @@ export function AssinaturaStatus() {
         </div>
 
         <div className="flex gap-2 pt-4">
-          {assinatura?.assinatura_ativa ? (
-            <Button 
-              onClick={handleGerenciar}
-              disabled={customerPortal.isPending}
-              className="flex-1"
-            >
-              {customerPortal.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          {!isRecepcionista && (
+            <>
+              {assinatura?.assinatura_ativa ? (
+                <Button 
+                  onClick={handleGerenciar}
+                  disabled={customerPortal.isPending}
+                  className="flex-1"
+                >
+                  {customerPortal.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                  )}
+                  Gerenciar Assinatura
+                </Button>
               ) : (
-                <ExternalLink className="mr-2 h-4 w-4" />
+                <Button 
+                  onClick={handleAssinar}
+                  disabled={createCheckout.isPending}
+                  className="flex-1"
+                >
+                  {createCheckout.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <CreditCard className="mr-2 h-4 w-4" />
+                  )}
+                  Assinar Agora
+                </Button>
               )}
-              Gerenciar Assinatura
-            </Button>
-          ) : (
-            <Button 
-              onClick={handleAssinar}
-              disabled={createCheckout.isPending}
-              className="flex-1"
-            >
-              {createCheckout.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <CreditCard className="mr-2 h-4 w-4" />
-              )}
-              Assinar Agora
-            </Button>
+            </>
           )}
           
           <Button 
             variant="outline" 
             onClick={() => refetch()}
             disabled={loadingAssinatura}
+            className={isRecepcionista ? "flex-1" : ""}
           >
             Atualizar
           </Button>

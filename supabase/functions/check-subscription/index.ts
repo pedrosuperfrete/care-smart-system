@@ -70,6 +70,8 @@ serve(async (req) => {
       throw new Error("Profissional não encontrado");
     }
 
+    console.log("Profissional encontrado:", { id: profissional.id, assinatura_ativa: profissional.assinatura_ativa });
+
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2023-10-16",
     });
