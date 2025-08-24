@@ -44,19 +44,23 @@ export default function Onboarding() {
       let clinicaId = profissional?.clinica_id;
       let isClinicaTemporaria = false;
 
-      // Verificar se a clínica atual é temporária
+      // Verificar se a clínica atual é temporária ou se precisa ser atualizada
       if (clinicaId) {
         const { data: clinicaAtual } = await supabase
           .from('clinicas')
-          .select('cnpj, nome')
+          .select('cnpj, nome, endereco')
           .eq('id', clinicaId)
           .single();
         
-        isClinicaTemporaria = clinicaAtual?.cnpj?.startsWith('temp-') || clinicaAtual?.nome === 'Clínica Temporária';
+        // Verifica se é temporária OU se os dados estão diferentes do onboarding
+        isClinicaTemporaria = clinicaAtual?.cnpj?.startsWith('temp-') || 
+                              clinicaAtual?.nome === 'Clínica Temporária' ||
+                              clinicaAtual?.endereco === 'Aguardando definição no onboarding';
       }
 
-      if (isClinicaTemporaria && clinicaId) {
-        // Atualizar a clínica temporária existente
+      // SEMPRE atualizar a clínica se ela existe e tem dados do onboarding
+      if (clinicaId && step2Data.nome_clinica && step2Data.cnpj_clinica) {
+        console.log('Atualizando clínica com dados do onboarding...');
         const { error: clinicaError } = await supabase
           .from('clinicas')
           .update({
@@ -67,11 +71,15 @@ export default function Onboarding() {
           .eq('id', clinicaId);
 
         if (clinicaError) {
+          console.error('Erro ao atualizar clínica:', clinicaError);
           toast.error('Erro ao atualizar clínica: ' + clinicaError.message);
           return;
         }
-      } else {
-        // Criar nova clínica se não existe uma temporária
+
+        toast.success('Clínica atualizada com sucesso!');
+      } else if (!clinicaId) {
+        // Criar nova clínica apenas se não existe nenhuma
+        console.log('Criando nova clínica...');
         const { data: clinicaData, error: clinicaError } = await supabase
           .from('clinicas')
           .insert({
@@ -83,6 +91,7 @@ export default function Onboarding() {
           .single();
 
         if (clinicaError) {
+          console.error('Erro ao criar clínica:', clinicaError);
           toast.error('Erro ao criar clínica: ' + clinicaError.message);
           return;
         }
@@ -94,13 +103,15 @@ export default function Onboarding() {
           .from('usuarios_clinicas')
           .update({
             clinica_id: clinicaId,
-            tipo_papel: 'admin_clinica'
+            tipo_papel: 'profissional'
           })
           .eq('usuario_id', user?.id);
 
         if (associacaoError) {
           console.error('Erro ao atualizar associação:', associacaoError);
         }
+
+        toast.success('Nova clínica criada com sucesso!');
       }
 
       // Atualizar dados do profissional
