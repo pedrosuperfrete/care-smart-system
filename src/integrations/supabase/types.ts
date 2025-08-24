@@ -984,6 +984,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      debug_can_create_patient_full: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       get_current_profissional_id: {
         Args: Record<PropertyKey, never>
         Returns: string
