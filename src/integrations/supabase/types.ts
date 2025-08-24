@@ -954,6 +954,14 @@ export type Database = {
         Args: { p_email: string; p_tipo_usuario: string; p_user_id: string }
         Returns: string
       }
+      create_usuario_clinica_by_admin: {
+        Args: {
+          p_clinica_id: string
+          p_tipo_papel: string
+          p_usuario_id: string
+        }
+        Returns: string
+      }
       debug_auth_status: {
         Args: Record<PropertyKey, never>
         Returns: {

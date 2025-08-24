@@ -122,12 +122,17 @@ export function GerenciarEquipe() {
           return;
         }
 
-        // Se não está associado, apenas associar à clínica
-        await createUsuarioClinica.mutateAsync({
-          usuario_id: existingUser.id,
-          clinica_id: clinicaAtual,
-          tipo_papel: novoUsuario.tipo_papel,
+        // Se não está associado, usar função security definer para associar à clínica
+        const { data: novaAssociacao, error: associacaoError } = await supabase.rpc('create_usuario_clinica_by_admin', {
+          p_usuario_id: existingUser.id,
+          p_clinica_id: clinicaAtual,
+          p_tipo_papel: novoUsuario.tipo_papel
         });
+
+        if (associacaoError) {
+          toast.error('Erro ao associar usuário à clínica: ' + associacaoError.message);
+          return;
+        }
 
         setNovoUsuario({ 
           email: '', 
@@ -186,12 +191,17 @@ export function GerenciarEquipe() {
         return;
       }
 
-      // Associar usuário à clínica
-      await createUsuarioClinica.mutateAsync({
-        usuario_id: authData.user.id,
-        clinica_id: clinicaAtual,
-        tipo_papel: novoUsuario.tipo_papel,
+      // Associar usuário à clínica usando função security definer
+      const { data: novaAssociacao, error: associacaoError } = await supabase.rpc('create_usuario_clinica_by_admin', {
+        p_usuario_id: authData.user.id,
+        p_clinica_id: clinicaAtual,
+        p_tipo_papel: novoUsuario.tipo_papel
       });
+
+      if (associacaoError) {
+        toast.error('Erro ao associar usuário à clínica: ' + associacaoError.message);
+        return;
+      }
 
       // Se for profissional, criar registro na tabela profissionais
       if (novoUsuario.tipo_papel === 'profissional') {
