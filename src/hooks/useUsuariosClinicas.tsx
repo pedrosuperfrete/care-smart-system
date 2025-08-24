@@ -11,18 +11,16 @@ export function useUsuariosClinicas(clinicaId?: string) {
   return useQuery({
     queryKey: ['usuarios_clinicas', clinicaId],
     queryFn: async () => {
-      let query = supabase
+      if (!clinicaId) return [];
+
+      const { data, error } = await supabase
         .from('usuarios_clinicas')
         .select(`
           *,
-          users!inner(id, email, tipo_usuario)
-        `);
-
-      if (clinicaId) {
-        query = query.eq('clinica_id', clinicaId).eq('ativo', true);
-      }
-
-      const { data, error } = await query;
+          users (id, email, tipo_usuario)
+        `)
+        .eq('clinica_id', clinicaId)
+        .eq('ativo', true);
 
       if (error) throw error;
       return data || [];

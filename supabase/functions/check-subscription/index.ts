@@ -26,14 +26,47 @@ serve(async (req) => {
     
     if (!user) throw new Error("Usuário não autenticado");
 
-    // Buscar dados do profissional
-    const { data: profissional, error: profError } = await supabaseClient
-      .from('profissionais')
-      .select('*')
-      .eq('user_id', user.id)
+    // Buscar dados do usuário primeiro
+    const { data: userProfile, error: userError } = await supabaseClient
+      .from('users')
+      .select('tipo_usuario')
+      .eq('id', user.id)
       .single();
 
-    if (profError || !profissional) {
+    if (userError || !userProfile) {
+      throw new Error("Perfil do usuário não encontrado");
+    }
+
+    let profissional = null;
+
+    if (userProfile.tipo_usuario === 'profissional') {
+      // Buscar dados do profissional diretamente
+      const { data: prof, error: profError } = await supabaseClient
+        .from('profissionais')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (profError) throw new Error("Erro ao buscar profissional: " + profError.message);
+      profissional = prof;
+    } else if (userProfile.tipo_usuario === 'recepcionista') {
+      // Para recepcionistas, buscar o profissional da clínica
+      const { data: clinicasUsuario } = await supabaseClient.rpc('get_user_clinicas');
+      
+      if (clinicasUsuario && clinicasUsuario.length > 0) {
+        const { data: prof, error: profError } = await supabaseClient
+          .from('profissionais')
+          .select('*')
+          .eq('clinica_id', clinicasUsuario[0].clinica_id)
+          .eq('ativo', true)
+          .maybeSingle();
+
+        if (profError) throw new Error("Erro ao buscar profissional da clínica: " + profError.message);
+        profissional = prof;
+      }
+    }
+
+    if (!profissional) {
       throw new Error("Profissional não encontrado");
     }
 
