@@ -9,49 +9,106 @@ type Pagamento = Tables<'pagamentos'>;
 type UpdatePagamento = Partial<Pagamento>;
 
 export function usePagamentos(startDate?: Date, endDate?: Date) {
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   
   return useQuery({
     queryKey: ['pagamentos', startDate, endDate],
     queryFn: async () => {
       console.log('Buscando pagamentos com user:', user);
       
-      if (!user?.id) {
-        console.error('User não disponível para buscar pagamentos');
+      if (!user?.id || !userProfile) {
+        console.error('User ou userProfile não disponível para buscar pagamentos');
         return [];
       }
 
-      // Buscar o profissional atual
-      const { data: profissionalAtual, error: profError } = await supabase
-        .from('profissionais')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
+      let agendamentoIds: string[] = [];
 
-      if (profError || !profissionalAtual) {
-        console.log('Profissional não encontrado para o usuário:', user.id);
+      // Se for profissional, buscar seus próprios agendamentos
+      if (userProfile.tipo_usuario === 'profissional') {
+        const { data: profissionalAtual, error: profError } = await supabase
+          .from('profissionais')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (profError || !profissionalAtual) {
+          console.log('Profissional não encontrado para o usuário:', user.id);
+          return [];
+        }
+
+        console.log('Buscando pagamentos para profissional:', profissionalAtual.id);
+
+        const { data: agendamentos, error: agendamentosError } = await supabase
+          .from('agendamentos')
+          .select('id')
+          .eq('profissional_id', profissionalAtual.id);
+
+        if (agendamentosError) {
+          console.error('Erro ao buscar agendamentos:', agendamentosError);
+          throw agendamentosError;
+        }
+
+        agendamentoIds = agendamentos?.map(a => a.id) || [];
+      } 
+      // Se for recepcionista, buscar agendamentos da clínica
+      else if (userProfile.tipo_usuario === 'recepcionista') {
+        // Buscar clínica do usuário
+        const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
+        
+        if (!clinicasUsuario || clinicasUsuario.length === 0) {
+          console.log('Nenhuma clínica encontrada para recepcionista');
+          return [];
+        }
+
+        const clinicaId = clinicasUsuario[0].clinica_id;
+        console.log('Buscando pagamentos para clínica:', clinicaId);
+
+        // Buscar profissionais da clínica
+        const { data: profissionais, error: profError } = await supabase
+          .from('profissionais')
+          .select('id')
+          .eq('clinica_id', clinicaId)
+          .eq('ativo', true);
+
+        if (profError || !profissionais || profissionais.length === 0) {
+          console.log('Nenhum profissional encontrado na clínica');
+          return [];
+        }
+
+        const profissionalIds = profissionais.map(p => p.id);
+
+        // Buscar agendamentos de todos os profissionais da clínica
+        const { data: agendamentos, error: agendamentosError } = await supabase
+          .from('agendamentos')
+          .select('id')
+          .in('profissional_id', profissionalIds);
+
+        if (agendamentosError) {
+          console.error('Erro ao buscar agendamentos da clínica:', agendamentosError);
+          throw agendamentosError;
+        }
+
+        agendamentoIds = agendamentos?.map(a => a.id) || [];
+      }
+      // Se for admin, buscar todos
+      else if (userProfile.tipo_usuario === 'admin') {
+        const { data: agendamentos, error: agendamentosError } = await supabase
+          .from('agendamentos')
+          .select('id');
+
+        if (agendamentosError) {
+          console.error('Erro ao buscar todos agendamentos:', agendamentosError);
+          throw agendamentosError;
+        }
+
+        agendamentoIds = agendamentos?.map(a => a.id) || [];
+      }
+
+      if (agendamentoIds.length === 0) {
+        console.log('Nenhum agendamento encontrado');
         return [];
       }
 
-      console.log('Buscando pagamentos para profissional:', profissionalAtual.id);
-
-      // Primeiro buscar os agendamentos do profissional
-      const { data: agendamentos, error: agendamentosError } = await supabase
-        .from('agendamentos')
-        .select('id')
-        .eq('profissional_id', profissionalAtual.id);
-
-      if (agendamentosError) {
-        console.error('Erro ao buscar agendamentos:', agendamentosError);
-        throw agendamentosError;
-      }
-
-      if (!agendamentos || agendamentos.length === 0) {
-        console.log('Nenhum agendamento encontrado para o profissional');
-        return [];
-      }
-
-      const agendamentoIds = agendamentos.map(a => a.id);
       console.log('IDs dos agendamentos encontrados:', agendamentoIds);
 
       let query = supabase
@@ -107,7 +164,7 @@ export function usePagamentos(startDate?: Date, endDate?: Date) {
       console.log('Pagamentos carregados:', data);
       return data || [];
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && !!userProfile,
   });
 }
 
@@ -163,15 +220,15 @@ export function useMarcarPago() {
 }
 
 export function useFinanceiroStats(startDate?: Date, endDate?: Date) {
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   
   return useQuery({
     queryKey: ['financeiro-stats', startDate, endDate],
     queryFn: async () => {
       console.log('Calculando estatísticas financeiras com user:', user);
       
-      if (!user?.id) {
-        console.error('User não disponível para calcular estatísticas');
+      if (!user?.id || !userProfile) {
+        console.error('User ou userProfile não disponível para calcular estatísticas');
         return {
           totalRecebido: 0,
           totalPendente: 0,
@@ -180,15 +237,100 @@ export function useFinanceiroStats(startDate?: Date, endDate?: Date) {
         };
       }
 
-      // Buscar o profissional atual
-      const { data: profissionalAtual, error: profError } = await supabase
-        .from('profissionais')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
+      let agendamentoIds: string[] = [];
 
-      if (profError || !profissionalAtual) {
-        console.log('Profissional não encontrado para o usuário:', user.id);
+      // Se for profissional, buscar seus próprios agendamentos
+      if (userProfile.tipo_usuario === 'profissional') {
+        const { data: profissionalAtual, error: profError } = await supabase
+          .from('profissionais')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (profError || !profissionalAtual) {
+          console.log('Profissional não encontrado para o usuário:', user.id);
+          return {
+            totalRecebido: 0,
+            totalPendente: 0,
+            totalVencido: 0,
+            receitaMensal: 0,
+          };
+        }
+
+        const { data: agendamentos, error: agendamentosError } = await supabase
+          .from('agendamentos')
+          .select('id')
+          .eq('profissional_id', profissionalAtual.id);
+
+        if (agendamentosError) {
+          console.error('Erro ao buscar agendamentos para stats:', agendamentosError);
+          throw agendamentosError;
+        }
+
+        agendamentoIds = agendamentos?.map(a => a.id) || [];
+      } 
+      // Se for recepcionista, buscar agendamentos da clínica
+      else if (userProfile.tipo_usuario === 'recepcionista') {
+        // Buscar clínica do usuário
+        const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
+        
+        if (!clinicasUsuario || clinicasUsuario.length === 0) {
+          return {
+            totalRecebido: 0,
+            totalPendente: 0,
+            totalVencido: 0,
+            receitaMensal: 0,
+          };
+        }
+
+        const clinicaId = clinicasUsuario[0].clinica_id;
+
+        // Buscar profissionais da clínica
+        const { data: profissionais, error: profError } = await supabase
+          .from('profissionais')
+          .select('id')
+          .eq('clinica_id', clinicaId)
+          .eq('ativo', true);
+
+        if (profError || !profissionais || profissionais.length === 0) {
+          return {
+            totalRecebido: 0,
+            totalPendente: 0,
+            totalVencido: 0,
+            receitaMensal: 0,
+          };
+        }
+
+        const profissionalIds = profissionais.map(p => p.id);
+
+        // Buscar agendamentos de todos os profissionais da clínica
+        const { data: agendamentos, error: agendamentosError } = await supabase
+          .from('agendamentos')
+          .select('id')
+          .in('profissional_id', profissionalIds);
+
+        if (agendamentosError) {
+          console.error('Erro ao buscar agendamentos da clínica para stats:', agendamentosError);
+          throw agendamentosError;
+        }
+
+        agendamentoIds = agendamentos?.map(a => a.id) || [];
+      }
+      // Se for admin, buscar todos
+      else if (userProfile.tipo_usuario === 'admin') {
+        const { data: agendamentos, error: agendamentosError } = await supabase
+          .from('agendamentos')
+          .select('id');
+
+        if (agendamentosError) {
+          console.error('Erro ao buscar todos agendamentos para stats:', agendamentosError);
+          throw agendamentosError;
+        }
+
+        agendamentoIds = agendamentos?.map(a => a.id) || [];
+      }
+
+      if (agendamentoIds.length === 0) {
         return {
           totalRecebido: 0,
           totalPendente: 0,
@@ -196,28 +338,6 @@ export function useFinanceiroStats(startDate?: Date, endDate?: Date) {
           receitaMensal: 0,
         };
       }
-
-      // Primeiro buscar os agendamentos do profissional
-      const { data: agendamentos, error: agendamentosError } = await supabase
-        .from('agendamentos')
-        .select('id')
-        .eq('profissional_id', profissionalAtual.id);
-
-      if (agendamentosError) {
-        console.error('Erro ao buscar agendamentos para stats:', agendamentosError);
-        throw agendamentosError;
-      }
-
-      if (!agendamentos || agendamentos.length === 0) {
-        return {
-          totalRecebido: 0,
-          totalPendente: 0,
-          totalVencido: 0,
-          receitaMensal: 0,
-        };
-      }
-
-      const agendamentoIds = agendamentos.map(a => a.id);
 
       let query = supabase
         .from('pagamentos')
@@ -288,6 +408,6 @@ export function useFinanceiroStats(startDate?: Date, endDate?: Date) {
       console.log('Estatísticas calculadas:', stats);
       return stats;
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && !!userProfile,
   });
 }
