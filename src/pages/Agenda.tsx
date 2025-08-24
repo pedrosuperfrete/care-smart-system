@@ -6,11 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Plus, Clock, User, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, Plus, Clock, User, Filter, ChevronLeft, ChevronRight, Edit, Trash2 } from 'lucide-react';
 import { useAgendamentos, useCreateAgendamento, useConfirmarAgendamento, useDesmarcarAgendamento, useMarcarRealizado } from '@/hooks/useAgendamentos';
 import { usePacientes } from '@/hooks/usePacientes';
 import { useProfissionais } from '@/hooks/useProfissionais';
-import { useBloqueiosAgenda } from '@/hooks/useBloqueiosAgenda';
+import { useBloqueiosAgenda, useDeleteBloqueio } from '@/hooks/useBloqueiosAgenda';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { toDateTimeLocalString, fromDateTimeLocalString, formatTimeLocal, isSameDayLocal } from '@/lib/dateUtils';
@@ -19,7 +19,18 @@ import { VisaoMensal } from '@/components/agenda/VisaoMensal';
 import { EditarAgendamentoDialog } from '@/components/agenda/EditarAgendamentoDialog';
 import { GoogleCalendarConnect } from '@/components/agenda/GoogleCalendarConnect';
 import { BloqueioAgendaModal } from '@/components/agenda/BloqueioAgendaModal';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Tables } from '@/integrations/supabase/types';
+import { BloqueioAgenda } from '@/hooks/useBloqueiosAgenda';
 
 type Agendamento = Tables<'agendamentos'>;
 
@@ -28,6 +39,7 @@ export default function Agenda() {
   const { data: pacientes = [] } = usePacientes();
   const { data: profissionais = [] } = useProfissionais();
   const { data: bloqueios = [] } = useBloqueiosAgenda();
+  const deleteBloqueio = useDeleteBloqueio();
   const createAgendamento = useCreateAgendamento();
   const confirmarAgendamento = useConfirmarAgendamento();
   const desmarcarAgendamento = useDesmarcarAgendamento();
@@ -38,6 +50,8 @@ export default function Agenda() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isNewConsultaOpen, setIsNewConsultaOpen] = useState(false);
   const [agendamentoParaEditar, setAgendamentoParaEditar] = useState<Agendamento | null>(null);
+  const [bloqueioParaEditar, setBloqueioParaEditar] = useState<BloqueioAgenda | null>(null);
+  const [bloqueioParaExcluir, setBloqueioParaExcluir] = useState<BloqueioAgenda | null>(null);
   const [newConsulta, setNewConsulta] = useState({
     paciente_id: '',
     profissional_id: currentProfissional?.id || '',
@@ -100,6 +114,10 @@ export default function Agenda() {
 
   const handleEditarAgendamento = (agendamento: Agendamento) => {
     setAgendamentoParaEditar(agendamento);
+  };
+
+  const handleExcluirBloqueio = async (id: string) => {
+    await deleteBloqueio.mutateAsync(id);
   };
 
   const navegarData = (direction: 'prev' | 'next') => {
@@ -468,6 +486,23 @@ export default function Agenda() {
                             </div>
                           )}
                         </div>
+                        <div className="flex space-x-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setBloqueioParaEditar(bloqueio)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => setBloqueioParaExcluir(bloqueio)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -563,6 +598,7 @@ export default function Agenda() {
           onConfirmarAgendamento={handleConfirmar}
           onDesmarcarAgendamento={handleDesmarcar}
           onMarcarRealizado={handleMarcarRealizado}
+          onExcluirBloqueio={handleExcluirBloqueio}
         />
       )}
 
@@ -586,6 +622,45 @@ export default function Agenda() {
           onClose={() => setAgendamentoParaEditar(null)}
         />
       )}
+
+      {/* Modal para editar bloqueio */}
+      {bloqueioParaEditar && (
+        <BloqueioAgendaModal
+          bloqueio={bloqueioParaEditar}
+          isOpen={!!bloqueioParaEditar}
+          onClose={() => setBloqueioParaEditar(null)}
+        />
+      )}
+
+      {/* Dialog de confirmação para excluir bloqueio */}
+      <AlertDialog 
+        open={!!bloqueioParaExcluir} 
+        onOpenChange={(open) => !open && setBloqueioParaExcluir(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Bloqueio</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o bloqueio "{bloqueioParaExcluir?.titulo}"? 
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (bloqueioParaExcluir) {
+                  handleExcluirBloqueio(bloqueioParaExcluir.id);
+                  setBloqueioParaExcluir(null);
+                }
+              }}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

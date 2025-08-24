@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,24 +11,42 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { useCreateBloqueio, CreateBloqueioData } from "@/hooks/useBloqueiosAgenda";
+import { useCreateBloqueio, useUpdateBloqueio, CreateBloqueioData, BloqueioAgenda } from "@/hooks/useBloqueiosAgenda";
 import { toDateTimeLocalString, fromDateTimeLocalString } from "@/lib/dateUtils";
 import { CalendarX } from "lucide-react";
 
 interface BloqueioAgendaModalProps {
   defaultDate?: Date;
   children?: React.ReactNode;
+  bloqueio?: BloqueioAgenda;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
-export const BloqueioAgendaModal = ({ defaultDate, children }: BloqueioAgendaModalProps) => {
+export const BloqueioAgendaModal = ({ defaultDate, children, bloqueio, isOpen, onClose }: BloqueioAgendaModalProps) => {
   const [open, setOpen] = useState(false);
   const createBloqueio = useCreateBloqueio();
+  const updateBloqueio = useUpdateBloqueio();
+  const isEditing = !!bloqueio;
+  
   const [formData, setFormData] = useState<CreateBloqueioData>({
-    titulo: "",
-    descricao: "",
-    data_inicio: defaultDate ? toDateTimeLocalString(defaultDate) : "",
-    data_fim: defaultDate ? toDateTimeLocalString(new Date(defaultDate.getTime() + 60 * 60 * 1000)) : "",
+    titulo: bloqueio?.titulo || "",
+    descricao: bloqueio?.descricao || "",
+    data_inicio: bloqueio ? toDateTimeLocalString(new Date(bloqueio.data_inicio)) : (defaultDate ? toDateTimeLocalString(defaultDate) : ""),
+    data_fim: bloqueio ? toDateTimeLocalString(new Date(bloqueio.data_fim)) : (defaultDate ? toDateTimeLocalString(new Date(defaultDate.getTime() + 60 * 60 * 1000)) : ""),
   });
+
+  // Resetar o form quando o bloqueio mudar
+  useEffect(() => {
+    if (bloqueio) {
+      setFormData({
+        titulo: bloqueio.titulo,
+        descricao: bloqueio.descricao || "",
+        data_inicio: toDateTimeLocalString(new Date(bloqueio.data_inicio)),
+        data_fim: toDateTimeLocalString(new Date(bloqueio.data_fim)),
+      });
+    }
+  }, [bloqueio]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,16 +63,32 @@ export const BloqueioAgendaModal = ({ defaultDate, children }: BloqueioAgendaMod
     };
 
     try {
-      await createBloqueio.mutateAsync(bloqueioData);
+      if (isEditing && bloqueio) {
+        await updateBloqueio.mutateAsync({
+          ...bloqueioData,
+          id: bloqueio.id,
+          profissional_id: bloqueio.profissional_id,
+          criado_em: bloqueio.criado_em,
+          atualizado_em: new Date().toISOString(),
+        });
+      } else {
+        await createBloqueio.mutateAsync(bloqueioData);
+      }
+      
       setFormData({
         titulo: "",
         descricao: "",
         data_inicio: "",
         data_fim: "",
       });
-      setOpen(false);
+      
+      if (isEditing && onClose) {
+        onClose();
+      } else {
+        setOpen(false);
+      }
     } catch (error) {
-      console.error("Erro ao criar bloqueio:", error);
+      console.error(`Erro ao ${isEditing ? 'atualizar' : 'criar'} bloqueio:`, error);
     }
   };
 
@@ -66,19 +100,24 @@ export const BloqueioAgendaModal = ({ defaultDate, children }: BloqueioAgendaMod
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {children || (
-          <Button variant="outline" size="sm">
-            <CalendarX className="h-4 w-4 mr-2" />
-            Bloquear Horário
-          </Button>
-        )}
-      </DialogTrigger>
+    <Dialog 
+      open={isEditing ? isOpen : open} 
+      onOpenChange={isEditing ? onClose : setOpen}
+    >
+      {!isEditing && (
+        <DialogTrigger asChild>
+          {children || (
+            <Button variant="outline" size="sm">
+              <CalendarX className="h-4 w-4 mr-2" />
+              Bloquear Horário
+            </Button>
+          )}
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-[425px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Bloquear Horário na Agenda</DialogTitle>
+            <DialogTitle>{isEditing ? 'Editar Bloqueio' : 'Bloquear Horário na Agenda'}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
@@ -128,11 +167,11 @@ export const BloqueioAgendaModal = ({ defaultDate, children }: BloqueioAgendaMod
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button type="button" variant="outline" onClick={isEditing ? onClose : () => setOpen(false)}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={createBloqueio.isPending}>
-              {createBloqueio.isPending ? "Salvando..." : "Bloquear"}
+            <Button type="submit" disabled={createBloqueio.isPending || updateBloqueio.isPending}>
+              {(createBloqueio.isPending || updateBloqueio.isPending) ? "Salvando..." : (isEditing ? "Atualizar" : "Bloquear")}
             </Button>
           </DialogFooter>
         </form>

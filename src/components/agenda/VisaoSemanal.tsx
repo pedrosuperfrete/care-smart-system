@@ -3,8 +3,20 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tables } from "@/integrations/supabase/types";
 import { formatTimeLocal, isSameDayLocal } from "@/lib/dateUtils";
-import { CheckCircle, XCircle, Eye, Edit } from "lucide-react";
+import { CheckCircle, XCircle, Eye, Edit, Trash2 } from "lucide-react";
 import { BloqueioAgenda } from "@/hooks/useBloqueiosAgenda";
+import { useState } from "react";
+import { BloqueioAgendaModal } from "./BloqueioAgendaModal";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type Agendamento = Tables<"agendamentos"> & {
   pacientes: { nome: string } | null;
@@ -19,6 +31,8 @@ interface VisaoSemanalProps {
   onConfirmarAgendamento: (id: string) => void;
   onDesmarcarAgendamento: (id: string) => void;
   onMarcarRealizado: (id: string) => void;
+  onEditarBloqueio?: (bloqueio: BloqueioAgenda) => void;
+  onExcluirBloqueio?: (id: string) => void;
 }
 
 export function VisaoSemanal({ 
@@ -28,8 +42,12 @@ export function VisaoSemanal({
   onEditarAgendamento, 
   onConfirmarAgendamento, 
   onDesmarcarAgendamento, 
-  onMarcarRealizado 
+  onMarcarRealizado,
+  onEditarBloqueio,
+  onExcluirBloqueio
 }: VisaoSemanalProps) {
+  const [bloqueioParaEditar, setBloqueioParaEditar] = useState<BloqueioAgenda | null>(null);
+  const [bloqueioParaExcluir, setBloqueioParaExcluir] = useState<BloqueioAgenda | null>(null);
   const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
   
   const getDiasSemanaDatas = () => {
@@ -109,9 +127,29 @@ export function VisaoSemanal({
                   <div className="text-orange-600">
                     {formatTimeLocal(bloqueio.data_inicio)} - {formatTimeLocal(bloqueio.data_fim)}
                   </div>
-                  <Badge variant="outline" className="text-xs mt-1 text-orange-700 border-orange-300">
-                    Bloqueado
-                  </Badge>
+                  <div className="flex justify-between items-center mt-2">
+                    <Badge variant="outline" className="text-xs text-orange-700 border-orange-300">
+                      Bloqueado
+                    </Badge>
+                    <div className="flex gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 p-0"
+                        onClick={() => setBloqueioParaEditar(bloqueio)}
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                        onClick={() => setBloqueioParaExcluir(bloqueio)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               ))}
               
@@ -174,6 +212,45 @@ export function VisaoSemanal({
           </div>
         </Card>
       ))}
+      
+      {/* Modal para editar bloqueio */}
+      {bloqueioParaEditar && (
+        <BloqueioAgendaModal
+          bloqueio={bloqueioParaEditar}
+          isOpen={!!bloqueioParaEditar}
+          onClose={() => setBloqueioParaEditar(null)}
+        />
+      )}
+
+      {/* Dialog de confirmação para excluir bloqueio */}
+      <AlertDialog 
+        open={!!bloqueioParaExcluir} 
+        onOpenChange={(open) => !open && setBloqueioParaExcluir(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Bloqueio</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o bloqueio "{bloqueioParaExcluir?.titulo}"? 
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (bloqueioParaExcluir && onExcluirBloqueio) {
+                  onExcluirBloqueio(bloqueioParaExcluir.id);
+                  setBloqueioParaExcluir(null);
+                }
+              }}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
