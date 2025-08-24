@@ -34,8 +34,11 @@ serve(async (req) => {
       .single();
 
     if (userError || !userProfile) {
+      console.log("Erro ao buscar perfil do usuário:", userError);
       throw new Error("Perfil do usuário não encontrado");
     }
+
+    console.log("Usuário encontrado:", { id: user.id, tipo: userProfile.tipo_usuario });
 
     let profissional = null;
 
@@ -47,11 +50,29 @@ serve(async (req) => {
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (profError) throw new Error("Erro ao buscar profissional: " + profError.message);
+      if (profError) {
+        console.log("Erro ao buscar profissional:", profError);
+        throw new Error("Erro ao buscar profissional: " + profError.message);
+      }
       profissional = prof;
     } else if (userProfile.tipo_usuario === 'recepcionista') {
+      console.log("Usuário é recepcionista, buscando clínicas...");
+      
       // Para recepcionistas, buscar o profissional da clínica
-      const { data: clinicasUsuario } = await supabaseClient.rpc('get_user_clinicas');
+      const { data: clinicasUsuario, error: clinicasError } = await supabaseClient.rpc('get_user_clinicas');
+      
+      if (clinicasError) {
+        console.log("Erro ao buscar clínicas do usuário:", clinicasError);
+        return new Response(JSON.stringify({
+          assinatura_ativa: false,
+          data_vencimento: null,
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+      
+      console.log("Clínicas encontradas:", clinicasUsuario);
       
       if (clinicasUsuario && clinicasUsuario.length > 0) {
         const { data: prof, error: profError } = await supabaseClient
@@ -63,12 +84,6 @@ serve(async (req) => {
 
         if (profError) {
           console.log("Erro ao buscar profissional da clínica:", profError);
-          throw new Error("Erro ao buscar profissional da clínica: " + profError.message);
-        }
-        
-        // Se não encontrou profissional, isso pode ser normal para recepcionistas sem profissional principal
-        if (!prof) {
-          console.log("Nenhum profissional encontrado para a clínica:", clinicasUsuario[0].clinica_id);
           return new Response(JSON.stringify({
             assinatura_ativa: false,
             data_vencimento: null,
@@ -79,11 +94,28 @@ serve(async (req) => {
         }
         
         profissional = prof;
+        console.log("Profissional da clínica encontrado:", profissional ? { id: profissional.id } : "nenhum");
+      } else {
+        console.log("Nenhuma clínica encontrada para o recepcionista");
+        return new Response(JSON.stringify({
+          assinatura_ativa: false,
+          data_vencimento: null,
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
       }
     }
 
     if (!profissional) {
-      throw new Error("Profissional não encontrado");
+      console.log("Profissional não encontrado após todas as buscas");
+      return new Response(JSON.stringify({
+        assinatura_ativa: false,
+        data_vencimento: null,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
     }
 
     console.log("Profissional encontrado:", { id: profissional.id, assinatura_ativa: profissional.assinatura_ativa });
