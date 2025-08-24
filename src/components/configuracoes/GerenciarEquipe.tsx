@@ -164,15 +164,12 @@ export function GerenciarEquipe() {
         await supabase.auth.setSession(currentSession.session);
       }
 
-      // Criar registro na tabela users
-      const { error: userError } = await supabase
-        .from('users')
-        .insert({
-          id: authData.user.id,
-          email: novoUsuario.email,
-          tipo_usuario: novoUsuario.tipo_papel === 'admin_clinica' ? 'admin' : novoUsuario.tipo_papel,
-          senha_hash: 'managed_by_auth'
-        });
+      // Criar registro na tabela users usando função security definer
+      const { data: userId, error: userError } = await supabase.rpc('create_user_by_admin', {
+        p_user_id: authData.user.id,
+        p_email: novoUsuario.email,
+        p_tipo_usuario: novoUsuario.tipo_papel === 'admin_clinica' ? 'admin' : novoUsuario.tipo_papel
+      });
 
       if (userError) {
         console.error('Erro ao criar registro do usuário:', userError);

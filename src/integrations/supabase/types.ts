@@ -950,6 +950,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      create_user_by_admin: {
+        Args: { p_email: string; p_tipo_usuario: string; p_user_id: string }
+        Returns: string
+      }
       debug_auth_status: {
         Args: Record<PropertyKey, never>
         Returns: {
