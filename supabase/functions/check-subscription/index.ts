@@ -146,7 +146,15 @@ serve(async (req) => {
     let assinaturaAtiva = false;
     let dataVencimento = null;
 
-    if (profissional.stripe_customer_id) {
+    // Se o profissional já tem assinatura ativa no banco, usar essa informação
+    if (profissional.assinatura_ativa && profissional.data_vencimento_assinatura) {
+      assinaturaAtiva = true;
+      dataVencimento = profissional.data_vencimento_assinatura;
+      console.log("Usando assinatura ativa do banco:", { assinaturaAtiva, dataVencimento });
+    } else if (profissional.stripe_customer_id) {
+      // Verificar no Stripe apenas se não tem assinatura ativa no banco
+      console.log("Verificando assinatura no Stripe para customer:", profissional.stripe_customer_id);
+      
       const subscriptions = await stripe.subscriptions.list({
         customer: profissional.stripe_customer_id,
         status: "active",
@@ -167,11 +175,17 @@ serve(async (req) => {
             data_vencimento_assinatura: dataVencimento,
           })
           .eq('id', profissional.id);
+          
+        console.log("Assinatura ativa encontrada no Stripe e atualizada no banco");
+      } else {
+        console.log("Nenhuma assinatura ativa no Stripe");
       }
+    } else {
+      console.log("Profissional sem customer_id no Stripe");
     }
 
     // Se não tem assinatura ativa, atualizar no banco
-    if (!assinaturaAtiva) {
+    if (!assinaturaAtiva && profissional.assinatura_ativa) {
       await supabaseClient
         .from('profissionais')
         .update({
@@ -180,7 +194,11 @@ serve(async (req) => {
           data_vencimento_assinatura: null,
         })
         .eq('id', profissional.id);
+        
+      console.log("Assinatura marcada como inativa no banco");
     }
+
+    console.log("Retornando status final:", { assinaturaAtiva, dataVencimento });
 
     return new Response(JSON.stringify({
       assinatura_ativa: assinaturaAtiva,
