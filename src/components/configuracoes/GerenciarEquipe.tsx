@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { UserPlus, UserMinus, Edit } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { UserPlus, UserMinus, Edit, Trash } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUsuariosClinicas, useCreateUsuarioClinica, useRemoveUsuarioClinica, useUpdateUsuarioClinica } from '@/hooks/useUsuariosClinicas';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,6 +21,12 @@ interface NovoUsuarioForm {
   tipo_papel: 'admin_clinica' | 'profissional' | 'recepcionista';
 }
 
+interface EditarUsuarioForm {
+  id: string;
+  email: string;
+  tipo_papel: 'admin_clinica' | 'profissional' | 'recepcionista';
+}
+
 export function GerenciarEquipe() {
   const { isAdminClinica, isProfissional, clinicaAtual } = useAuth();
   const [novoUsuario, setNovoUsuario] = useState<NovoUsuarioForm>({ 
@@ -28,7 +35,9 @@ export function GerenciarEquipe() {
     confirmarSenha: '', 
     tipo_papel: 'recepcionista' 
   });
+  const [editandoUsuario, setEditandoUsuario] = useState<EditarUsuarioForm | null>(null);
   const [dialogAberto, setDialogAberto] = useState(false);
+  const [dialogEdicaoAberto, setDialogEdicaoAberto] = useState(false);
   const [usuariosDetalhes, setUsuariosDetalhes] = useState<any[]>([]);
 
   const { data: usuarios = [], isLoading } = useUsuariosClinicas(clinicaAtual || undefined);
@@ -220,6 +229,78 @@ export function GerenciarEquipe() {
     await removeUsuarioClinica.mutateAsync(usuarioClinicaId);
   };
 
+  const handleEditarUsuario = async () => {
+    if (!editandoUsuario || !clinicaAtual) return;
+
+    try {
+      // Atualizar tipo de papel na associação clínica
+      await updateUsuarioClinica.mutateAsync({
+        id: editandoUsuario.id,
+        tipo_papel: editandoUsuario.tipo_papel
+      });
+
+      // Buscar o usuario_id pela associação
+      const usuario = usuariosDetalhes.find(u => u.id === editandoUsuario.id);
+      if (usuario) {
+        // Atualizar email na tabela users
+        const { error: emailError } = await supabase
+          .from('users')
+          .update({ 
+            email: editandoUsuario.email,
+            tipo_usuario: editandoUsuario.tipo_papel === 'admin_clinica' ? 'admin' : editandoUsuario.tipo_papel
+          })
+          .eq('id', usuario.usuario_id);
+
+        if (emailError) {
+          toast.error('Erro ao atualizar email: ' + emailError.message);
+          return;
+        }
+      }
+
+      setDialogEdicaoAberto(false);
+      setEditandoUsuario(null);
+      toast.success('Usuário atualizado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao editar usuário:', error);
+      toast.error('Erro ao editar usuário');
+    }
+  };
+
+  const handleExcluirUsuario = async (usuarioClinica: any) => {
+    if (!confirm('Tem certeza que deseja excluir este usuário permanentemente? Esta ação não pode ser desfeita.')) {
+      return;
+    }
+
+    try {
+      // Primeiro remover da clínica
+      await removeUsuarioClinica.mutateAsync(usuarioClinica.id);
+
+      // Depois excluir da tabela users (se necessário)
+      const { error: deleteError } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', usuarioClinica.usuario_id);
+
+      if (deleteError) {
+        console.error('Erro ao excluir usuário:', deleteError);
+      }
+
+      toast.success('Usuário excluído permanentemente!');
+    } catch (error) {
+      console.error('Erro ao excluir usuário:', error);
+      toast.error('Erro ao excluir usuário');
+    }
+  };
+
+  const iniciarEdicao = (usuarioClinica: any) => {
+    setEditandoUsuario({
+      id: usuarioClinica.id,
+      email: usuarioClinica.email,
+      tipo_papel: usuarioClinica.tipo_papel
+    });
+    setDialogEdicaoAberto(true);
+  };
+
   const getTipoPapelDisplay = (tipo: string) => {
     switch (tipo) {
       case 'admin_clinica': return 'Admin da Clínica';
@@ -345,6 +426,62 @@ export function GerenciarEquipe() {
         )}
       </CardHeader>
       
+      {/* Dialog de Edição */}
+      <Dialog open={dialogEdicaoAberto} onOpenChange={setDialogEdicaoAberto}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Usuário</DialogTitle>
+            <DialogDescription>
+              Altere as informações do usuário conforme necessário.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {editandoUsuario && (
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="edit-email">E-mail do Usuário</Label>
+                <Input
+                  id="edit-email"
+                  type="email"
+                  placeholder="usuario@email.com"
+                  value={editandoUsuario.email}
+                  onChange={(e) => setEditandoUsuario({ ...editandoUsuario, email: e.target.value })}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="edit-tipo-papel">Tipo de Acesso</Label>
+                <Select 
+                  value={editandoUsuario.tipo_papel} 
+                  onValueChange={(value: any) => setEditandoUsuario({ ...editandoUsuario, tipo_papel: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="recepcionista">Recepcionista</SelectItem>
+                    <SelectItem value="profissional">Profissional</SelectItem>
+                    <SelectItem value="admin_clinica">Admin da Clínica</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogEdicaoAberto(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleEditarUsuario}
+              disabled={updateUsuarioClinica.isPending}
+            >
+              {updateUsuarioClinica.isPending ? 'Salvando...' : 'Salvar Alterações'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
       <CardContent>
         <div className="space-y-4">
           {usuariosDetalhes.map((usuarioClinica) => (
@@ -382,11 +519,47 @@ export function GerenciarEquipe() {
                   <Button 
                     variant="outline" 
                     size="sm"
+                    onClick={() => iniciarEdicao(usuarioClinica)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
                     onClick={() => handleRemoverUsuario(usuarioClinica.id)}
                     disabled={removeUsuarioClinica.isPending}
                   >
                     <UserMinus className="h-4 w-4" />
                   </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Excluir Usuário</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Tem certeza que deseja excluir permanentemente o usuário <strong>{usuarioClinica.email}</strong>? 
+                          Esta ação não pode ser desfeita e o usuário será removido completamente do sistema.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction 
+                          onClick={() => handleExcluirUsuario(usuarioClinica)}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          Excluir Permanentemente
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               )}
             </div>
