@@ -59,6 +59,19 @@ export default function Onboarding() {
         return;
       }
 
+      // Verificar se o CNPJ já existe em outra clínica
+      const { data: cnpjExistente } = await supabase
+        .from('clinicas')
+        .select('id, cnpj')
+        .eq('cnpj', step2Data.cnpj_clinica)
+        .neq('id', clinicaId || 'none');
+
+      if (cnpjExistente && cnpjExistente.length > 0) {
+        console.error('CNPJ já existe em outra clínica:', cnpjExistente);
+        toast.error('Este CNPJ já está cadastrado em outra clínica. Use um CNPJ diferente.');
+        return;
+      }
+
       // Se existe clinicaId, SEMPRE atualizar (independente se é temporária ou não)
       if (clinicaId) {
         console.log('Atualizando clínica existente com ID:', clinicaId);
