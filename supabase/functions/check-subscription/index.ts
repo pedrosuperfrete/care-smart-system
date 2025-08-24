@@ -26,6 +26,17 @@ serve(async (req) => {
     
     if (!user) throw new Error("Usuário não autenticado");
 
+    // Criar cliente com token do usuário para RLS
+    const userSupabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { 
+        global: { 
+          headers: { Authorization: authHeader } 
+        } 
+      }
+    );
+
     // Buscar dados do usuário primeiro
     const { data: userProfile, error: userError } = await supabaseClient
       .from('users')
@@ -58,8 +69,8 @@ serve(async (req) => {
     } else if (userProfile.tipo_usuario === 'recepcionista') {
       console.log("Usuário é recepcionista, buscando clínicas...");
       
-      // Para recepcionistas, buscar o profissional da clínica
-      const { data: clinicasUsuario, error: clinicasError } = await supabaseClient.rpc('get_user_clinicas');
+      // Para recepcionistas, usar o cliente com token do usuário
+      const { data: clinicasUsuario, error: clinicasError } = await userSupabaseClient.rpc('get_user_clinicas');
       
       if (clinicasError) {
         console.log("Erro ao buscar clínicas do usuário:", clinicasError);
@@ -75,8 +86,8 @@ serve(async (req) => {
       console.log("Clínicas encontradas para recepcionista:", clinicasUsuario);
       
       if (clinicasUsuario && clinicasUsuario.length > 0) {
-        // Buscar todos os profissionais ativos da clínica
-        const { data: profissionais, error: profError } = await supabaseClient
+        // Buscar todos os profissionais ativos da clínica usando cliente com token
+        const { data: profissionais, error: profError } = await userSupabaseClient
           .from('profissionais')
           .select('*')
           .eq('clinica_id', clinicasUsuario[0].clinica_id)
