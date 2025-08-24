@@ -72,18 +72,21 @@ serve(async (req) => {
         });
       }
       
-      console.log("Clínicas encontradas:", clinicasUsuario);
+      console.log("Clínicas encontradas para recepcionista:", clinicasUsuario);
       
       if (clinicasUsuario && clinicasUsuario.length > 0) {
-        const { data: prof, error: profError } = await supabaseClient
+        // Buscar todos os profissionais ativos da clínica
+        const { data: profissionais, error: profError } = await supabaseClient
           .from('profissionais')
           .select('*')
           .eq('clinica_id', clinicasUsuario[0].clinica_id)
-          .eq('ativo', true)
-          .maybeSingle();
+          .eq('ativo', true);
+
+        console.log("Busca de profissionais - Erro:", profError);
+        console.log("Profissionais encontrados:", profissionais);
 
         if (profError) {
-          console.log("Erro ao buscar profissional da clínica:", profError);
+          console.log("Erro ao buscar profissionais da clínica:", profError);
           return new Response(JSON.stringify({
             assinatura_ativa: false,
             data_vencimento: null,
@@ -93,8 +96,24 @@ serve(async (req) => {
           });
         }
         
-        profissional = prof;
-        console.log("Profissional da clínica encontrado:", profissional ? { id: profissional.id } : "nenhum");
+        // Pegar o primeiro profissional ativo (assumindo que há um principal)
+        if (profissionais && profissionais.length > 0) {
+          profissional = profissionais[0];
+          console.log("Profissional selecionado para recepcionista:", { 
+            id: profissional.id, 
+            nome: profissional.nome,
+            assinatura_ativa: profissional.assinatura_ativa 
+          });
+        } else {
+          console.log("Nenhum profissional ativo encontrado na clínica");
+          return new Response(JSON.stringify({
+            assinatura_ativa: false,
+            data_vencimento: null,
+          }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          });
+        }
       } else {
         console.log("Nenhuma clínica encontrada para o recepcionista");
         return new Response(JSON.stringify({
