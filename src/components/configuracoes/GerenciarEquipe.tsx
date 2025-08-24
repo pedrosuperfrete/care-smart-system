@@ -29,7 +29,7 @@ interface EditarUsuarioForm {
 }
 
 export function GerenciarEquipe() {
-  const { isAdminClinica, isProfissional, isRecepcionista, clinicaAtual } = useAuth();
+  const { isAdminClinica, isProfissional, isRecepcionista, clinicaAtual, user } = useAuth();
   const queryClient = useQueryClient();
   const [novoUsuario, setNovoUsuario] = useState<NovoUsuarioForm>({ 
     email: '', 
@@ -59,7 +59,17 @@ export function GerenciarEquipe() {
 
 
   const handleAdicionarUsuario = async () => {
-    if (!clinicaAtual) {
+    // Buscar a clínica real do profissional atual (não a temporária)
+    const { data: profissionalData } = await supabase
+      .from('profissionais')
+      .select('clinica_id')
+      .eq('user_id', user?.id)
+      .eq('ativo', true)
+      .single();
+
+    const clinicaRealId = profissionalData?.clinica_id || clinicaAtual;
+
+    if (!clinicaRealId) {
       toast.error('Nenhuma clínica selecionada');
       return;
     }
@@ -89,12 +99,12 @@ export function GerenciarEquipe() {
         .maybeSingle();
 
       if (existingUser) {
-        // Se já existe, verificar se já está associado à clínica
+        // Se já existe, verificar se já está associado à clínica real
         const { data: existingAssociation } = await supabase
           .from('usuarios_clinicas')
           .select('id')
           .eq('usuario_id', existingUser.id)
-          .eq('clinica_id', clinicaAtual)
+          .eq('clinica_id', clinicaRealId)
           .maybeSingle();
 
         if (existingAssociation) {
@@ -105,7 +115,7 @@ export function GerenciarEquipe() {
         // Se não está associado, usar função security definer para associar à clínica
         const { data: novaAssociacao, error: associacaoError } = await supabase.rpc('create_usuario_clinica_by_admin', {
           p_usuario_id: existingUser.id,
-          p_clinica_id: clinicaAtual,
+          p_clinica_id: clinicaRealId,
           p_tipo_papel: novoUsuario.tipo_papel
         });
 
@@ -175,10 +185,10 @@ export function GerenciarEquipe() {
         return;
       }
 
-      // Associar usuário à clínica usando função security definer
+      // Associar usuário à clínica real usando função security definer
       const { data: novaAssociacao, error: associacaoError } = await supabase.rpc('create_usuario_clinica_by_admin', {
         p_usuario_id: authData.user.id,
-        p_clinica_id: clinicaAtual,
+        p_clinica_id: clinicaRealId,
         p_tipo_papel: novoUsuario.tipo_papel
       });
 
@@ -193,7 +203,7 @@ export function GerenciarEquipe() {
           .from('profissionais')
           .insert({
             user_id: authData.user.id,
-            clinica_id: clinicaAtual,
+            clinica_id: clinicaRealId,
             nome: '', // Será preenchido no onboarding
             especialidade: '',
             crm_cro: '',
