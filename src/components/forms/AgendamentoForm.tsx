@@ -25,7 +25,9 @@ export function AgendamentoForm({ agendamento, pacienteId, onSuccess }: Agendame
   const updateMutation = useUpdateAgendamento();
   const { data: pacientes = [] } = usePacientes();
   const { data: profissionais = [] } = useProfissionais();
-  const { data: tiposServicos = [] } = useTiposServicos();
+  const { data: tiposServicos = [], isLoading: loadingTipos } = useTiposServicos();
+
+  console.log('Tipos de serviços carregados:', tiposServicos, 'Loading:', loadingTipos);
 
   // Se o usuário é profissional, usar automaticamente seu ID. Se é recepcionista, mostrar lista
   const isProfissional = profissional && user;
@@ -195,11 +197,17 @@ export function AgendamentoForm({ agendamento, pacienteId, onSuccess }: Agendame
               <SelectValue placeholder="Selecione o tipo" />
             </SelectTrigger>
             <SelectContent>
-              {tiposServicos.map((tipo) => (
-                <SelectItem key={tipo.id} value={tipo.nome}>
-                  {tipo.nome}
-                </SelectItem>
-              ))}
+              {loadingTipos ? (
+                <SelectItem value="" disabled>Carregando tipos de serviço...</SelectItem>
+              ) : tiposServicos.length === 0 ? (
+                <SelectItem value="" disabled>Nenhum tipo de serviço cadastrado</SelectItem>
+              ) : (
+                tiposServicos.map((tipo) => (
+                  <SelectItem key={tipo.id} value={tipo.nome}>
+                    {tipo.nome}
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
         </div>
