@@ -8,6 +8,7 @@ import { useCreateAgendamento, useUpdateAgendamento } from '@/hooks/useAgendamen
 import { usePacientes } from '@/hooks/usePacientes';
 import { useProfissionais } from '@/hooks/useProfissionais';
 import { useAuth } from '@/hooks/useAuth';
+import { useTiposServicos } from '@/hooks/useTiposServicos';
 import { Tables } from '@/integrations/supabase/types';
 
 type Agendamento = Tables<'agendamentos'>;
@@ -24,6 +25,7 @@ export function AgendamentoForm({ agendamento, pacienteId, onSuccess }: Agendame
   const updateMutation = useUpdateAgendamento();
   const { data: pacientes = [] } = usePacientes();
   const { data: profissionais = [] } = useProfissionais();
+  const { data: tiposServicos = [] } = useTiposServicos();
 
   // Se o usuário é profissional, usar automaticamente seu ID. Se é recepcionista, mostrar lista
   const isProfissional = profissional && user;
@@ -185,10 +187,12 @@ export function AgendamentoForm({ agendamento, pacienteId, onSuccess }: Agendame
               <SelectValue placeholder="Selecione o tipo" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Consulta">Consulta</SelectItem>
-              <SelectItem value="Retorno">Retorno</SelectItem>
-              <SelectItem value="Exame">Exame</SelectItem>
-              <SelectItem value="Procedimento">Procedimento</SelectItem>
+              {tiposServicos.map((tipo) => (
+                <SelectItem key={tipo.id} value={tipo.nome}>
+                  {tipo.nome}
+                  {tipo.preco && ` - R$ ${tipo.preco.toFixed(2).replace('.', ',')}`}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

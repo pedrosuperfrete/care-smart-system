@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tables } from '@/integrations/supabase/types';
 import { useProfissionais } from '@/hooks/useProfissionais';
 import { useUpdateAgendamento } from '@/hooks/useAgendamentos';
+import { useTiposServicos } from '@/hooks/useTiposServicos';
 import { toast } from 'sonner';
 import { toDateTimeLocalString, fromDateTimeLocalString } from '@/lib/dateUtils';
 
@@ -25,6 +26,7 @@ export function EditarAgendamentoDialog({
   onClose
 }: EditarAgendamentoDialogProps) {
   const { data: profissionais = [] } = useProfissionais();
+  const { data: tiposServicos = [] } = useTiposServicos();
   const updateMutation = useUpdateAgendamento();
   const [formData, setFormData] = useState({
     data_inicio: '',
@@ -114,10 +116,12 @@ export function EditarAgendamentoDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Consulta de Rotina">Consulta de Rotina</SelectItem>
-                  <SelectItem value="Retorno">Retorno</SelectItem>
-                  <SelectItem value="Exame">Exame</SelectItem>
-                  <SelectItem value="Emergência">Emergência</SelectItem>
+                  {tiposServicos.map((tipo) => (
+                    <SelectItem key={tipo.id} value={tipo.nome}>
+                      {tipo.nome}
+                      {tipo.preco && ` - R$ ${tipo.preco.toFixed(2).replace('.', ',')}`}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

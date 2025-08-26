@@ -769,6 +769,39 @@ export type Database = {
           },
         ]
       }
+      tipos_servicos: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          clinica_id: string | null
+          criado_em: string
+          id: string
+          nome: string
+          preco: number | null
+          profissional_id: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          clinica_id?: string | null
+          criado_em?: string
+          id?: string
+          nome: string
+          preco?: number | null
+          profissional_id?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          clinica_id?: string | null
+          criado_em?: string
+          id?: string
+          nome?: string
+          preco?: number | null
+          profissional_id?: string | null
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           ativo: boolean

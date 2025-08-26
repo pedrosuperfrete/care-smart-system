@@ -15,6 +15,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { usePacientes } from '@/hooks/usePacientes';
+import { useTiposServicos } from '@/hooks/useTiposServicos';
 
 const formSchema = z.object({
   paciente_id: z.string().min(1, 'Paciente é obrigatório'),
@@ -46,6 +47,7 @@ interface NovoPagamentoModalProps {
 export function NovoPagamentoModal({ open, onOpenChange, onSave }: NovoPagamentoModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { data: pacientes = [], isLoading: pacientesLoading } = usePacientes();
+  const { data: tiposServicos = [] } = useTiposServicos();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -121,11 +123,12 @@ export function NovoPagamentoModal({ open, onOpenChange, onSave }: NovoPagamento
                         <SelectValue placeholder="Selecione o serviço" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="consulta">Consulta</SelectItem>
-                        <SelectItem value="retorno">Retorno</SelectItem>
-                        <SelectItem value="exame">Exame</SelectItem>
-                        <SelectItem value="procedimento">Procedimento</SelectItem>
-                        <SelectItem value="outro">Outro</SelectItem>
+                        {tiposServicos.map((tipo) => (
+                          <SelectItem key={tipo.id} value={tipo.nome.toLowerCase()}>
+                            {tipo.nome}
+                            {tipo.preco && ` - R$ ${tipo.preco.toFixed(2).replace('.', ',')}`}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </FormControl>
