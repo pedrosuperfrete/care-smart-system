@@ -10,7 +10,7 @@ export function useMigrarServicos() {
 
   useEffect(() => {
     const migrarServicosProfissional = async () => {
-      if (!profissional?.id) return;
+      if (!profissional?.id || tiposServicos.length === 0) return;
 
       // Verificar se já existem tipos de serviços para este profissional
       const tiposExistentes = tiposServicos.filter(
@@ -32,6 +32,8 @@ export function useMigrarServicos() {
         const servicosAntigos = Array.isArray(profissionalData.servicos_precos) 
           ? profissionalData.servicos_precos 
           : [];
+
+        if (servicosAntigos.length === 0) return; // Nada para migrar
 
         // Migrar cada serviço para a nova tabela
         for (const servicoRaw of servicosAntigos) {
@@ -58,6 +60,9 @@ export function useMigrarServicos() {
       }
     };
 
-    migrarServicosProfissional();
-  }, [profissional?.id, tiposServicos.length, createTipoServico]);
+    // Só executar a migração se tivermos dados carregados
+    if (profissional?.id && tiposServicos.length >= 0) {
+      migrarServicosProfissional();
+    }
+  }, [profissional?.id]); // Remover tiposServicos.length das dependências
 }
