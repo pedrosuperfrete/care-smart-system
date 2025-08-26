@@ -22,7 +22,15 @@ export function ConfiguracaoClinica() {
   });
 
   useEffect(() => {
+    console.log('ConfiguracaoClinica - clinica data:', clinica);
     if (clinica) {
+      console.log('Carregando dados da clínica:', {
+        nome: clinica.nome,
+        cnpj: clinica.cnpj,
+        endereco: clinica.endereco,
+        pix_chave: clinica.pix_chave,
+        conta_bancaria: clinica.conta_bancaria
+      });
       setFormData({
         nome: clinica.nome || '',
         cnpj: clinica.cnpj || '',
