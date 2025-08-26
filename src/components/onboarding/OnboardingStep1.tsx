@@ -7,15 +7,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-const servicosDisponiveis = [
+const tiposConsultaDisponiveis = [
   'Consulta presencial',
-  'Teleconsulta',
-  'Psicologia',
-  'Nutricionista',
+  'Consulta online',
+  'Consulta para clínica',
+  'Consulta autônoma',
   'Atendimento domiciliar',
-  'Retorno',
-  'Exames clínicos',
-  'Sessões de psicoterapia'
+  'Retorno/Acompanhamento',
+  'Exames / Procedimentos'
 ];
 
 interface OnboardingStep1Props {
@@ -100,9 +99,9 @@ export function OnboardingStep1({ data, onDataChange, onNext }: OnboardingStep1P
           </div>
 
           <div className="space-y-4">
-            <Label>Serviços Oferecidos *</Label>
+            <Label>Tipo de Consultas *</Label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {servicosDisponiveis.map((servico) => (
+              {tiposConsultaDisponiveis.map((servico) => (
                 <div key={servico} className="flex items-center space-x-2">
                   <Checkbox
                     id={servico}

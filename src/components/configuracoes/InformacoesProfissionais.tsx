@@ -8,15 +8,14 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { HorarioAtendimento } from './HorarioAtendimento';
 import { useClinica } from '@/hooks/useClinica';
 
-const servicosDisponiveis = [
+const tiposConsultaDisponiveis = [
   'Consulta presencial',
-  'Teleconsulta',
-  'Psicologia',
-  'Nutricionista',
+  'Consulta online',
+  'Consulta para clínica',
+  'Consulta autônoma',
   'Atendimento domiciliar',
-  'Retorno',
-  'Exames clínicos',
-  'Sessões de psicoterapia'
+  'Retorno/Acompanhamento',
+  'Exames / Procedimentos'
 ];
 
 interface InformacoesProfissionaisProps {
@@ -93,9 +92,9 @@ export function InformacoesProfissionais({ profileData, setProfileData, handleSe
         />
 
         <div className="space-y-4">
-          <Label>Serviços Oferecidos</Label>
+          <Label>Tipo de Consultas</Label>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {servicosDisponiveis.map((servico) => (
+            {tiposConsultaDisponiveis.map((servico) => (
               <div key={servico} className="flex items-center space-x-2">
                 <Checkbox
                   id={servico}
