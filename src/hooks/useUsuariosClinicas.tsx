@@ -17,7 +17,7 @@ export function useUsuariosClinicas(clinicaId?: string) {
         .from('usuarios_clinicas')
         .select(`
           *,
-          users (id, email, tipo_usuario)
+          users (id, email, tipo_usuario, nome)
         `)
         .eq('clinica_id', clinicaId)
         .eq('ativo', true);

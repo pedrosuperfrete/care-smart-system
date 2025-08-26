@@ -961,7 +961,14 @@ export type Database = {
         Returns: boolean
       }
       create_user_by_admin: {
-        Args: { p_email: string; p_tipo_usuario: string; p_user_id: string }
+        Args:
+          | {
+              p_email: string
+              p_nome?: string
+              p_tipo_usuario: string
+              p_user_id: string
+            }
+          | { p_email: string; p_tipo_usuario: string; p_user_id: string }
         Returns: string
       }
       create_usuario_clinica_by_admin: {

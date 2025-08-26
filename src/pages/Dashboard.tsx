@@ -79,7 +79,7 @@ export default function Dashboard() {
     <div className="p-8 space-y-8">
       <div>
         <h1 className="text-3xl font-bold">
-          Bem-vindo, {userProfile?.email?.split('@')[0]}!
+          Bem-vindo, {userProfile?.nome || userProfile?.email?.split('@')[0]}!
         </h1>
         <p className="text-gray-600 mt-1">
           Aqui está um resumo da sua clínica hoje.

@@ -53,6 +53,7 @@ export function GerenciarEquipe() {
   useEffect(() => {
     const detalhes = usuarios.map((usuarioClinica: any) => ({
       ...usuarioClinica,
+      nome: usuarioClinica.users?.nome || 'Nome não informado',
       email: usuarioClinica.users?.email || 'Email não encontrado',
       tipo_usuario: usuarioClinica.users?.tipo_usuario
     }));
@@ -179,7 +180,8 @@ export function GerenciarEquipe() {
       const { data: userId, error: userError } = await supabase.rpc('create_user_by_admin', {
         p_user_id: authData.user.id,
         p_email: novoUsuario.email,
-        p_tipo_usuario: novoUsuario.tipo_papel === 'admin_clinica' ? 'admin' : novoUsuario.tipo_papel
+        p_tipo_usuario: novoUsuario.tipo_papel === 'admin_clinica' ? 'admin' : novoUsuario.tipo_papel,
+        p_nome: novoUsuario.nome
       });
 
       if (userError) {
@@ -434,6 +436,7 @@ export function GerenciarEquipe() {
                   onClick={handleAdicionarUsuario}
                   disabled={
                     createUsuarioClinica.isPending || 
+                    !novoUsuario.nome || 
                     !novoUsuario.email || 
                     !novoUsuario.senha || 
                     !novoUsuario.confirmarSenha
@@ -510,7 +513,8 @@ export function GerenciarEquipe() {
               <div className="flex-1">
                 <div className="flex items-center space-x-3">
                   <div>
-                    <h4 className="font-medium">{usuarioClinica.email}</h4>
+                    <h4 className="font-medium">{usuarioClinica.nome}</h4>
+                    <p className="text-sm text-gray-600">{usuarioClinica.email}</p>
                     <div className="flex items-center space-x-2 mt-1">
                       <Badge variant={getTipoPapelVariant(usuarioClinica.tipo_papel)}>
                         {getTipoPapelDisplay(usuarioClinica.tipo_papel)}
