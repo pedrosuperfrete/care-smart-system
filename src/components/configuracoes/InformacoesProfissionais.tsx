@@ -1,10 +1,12 @@
 
+import { useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { HorarioAtendimento } from './HorarioAtendimento';
+import { useClinica } from '@/hooks/useClinica';
 
 const servicosDisponiveis = [
   'Consulta presencial',
@@ -24,6 +26,19 @@ interface InformacoesProfissionaisProps {
 }
 
 export function InformacoesProfissionais({ profileData, setProfileData, handleServicoChange }: InformacoesProfissionaisProps) {
+  const { data: clinica } = useClinica();
+
+  // Carregar dados da clínica quando disponíveis
+  useEffect(() => {
+    if (clinica && (!profileData.cnpj_clinica || !profileData.endereco_clinica)) {
+      setProfileData({ 
+        ...profileData, 
+        cnpj_clinica: clinica.cnpj || '',
+        endereco_clinica: clinica.endereco || ''
+      });
+    }
+  }, [clinica, profileData, setProfileData]);
+
   return (
     <Card>
       <CardHeader>
@@ -50,6 +65,26 @@ export function InformacoesProfissionais({ profileData, setProfileData, handleSe
             onChange={(e) => setProfileData({ ...profileData, nome_clinica: e.target.value })}
             placeholder="Nome que será exibido aos pacientes"
           />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>CNPJ da Clínica</Label>
+            <Input
+              value={profileData.cnpj_clinica || ''}
+              onChange={(e) => setProfileData({ ...profileData, cnpj_clinica: e.target.value })}
+              placeholder="00.000.000/0001-00"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Endereço da Clínica</Label>
+            <Input
+              value={profileData.endereco_clinica || ''}
+              onChange={(e) => setProfileData({ ...profileData, endereco_clinica: e.target.value })}
+              placeholder="Endereço completo"
+            />
+          </div>
         </div>
 
         <HorarioAtendimento
