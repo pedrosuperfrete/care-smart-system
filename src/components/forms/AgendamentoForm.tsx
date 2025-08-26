@@ -100,6 +100,14 @@ export function AgendamentoForm({ agendamento, pacienteId, onSuccess }: Agendame
 
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Auto-preencher valor quando tipo de serviço é selecionado
+    if (field === 'tipo_servico') {
+      const tipoServico = tiposServicos.find(tipo => tipo.nome === value);
+      if (tipoServico?.preco) {
+        setFormData(prev => ({ ...prev, valor: tipoServico.preco!.toString() }));
+      }
+    }
   };
 
   return (
@@ -190,7 +198,6 @@ export function AgendamentoForm({ agendamento, pacienteId, onSuccess }: Agendame
               {tiposServicos.map((tipo) => (
                 <SelectItem key={tipo.id} value={tipo.nome}>
                   {tipo.nome}
-                  {tipo.preco && ` - R$ ${tipo.preco.toFixed(2).replace('.', ',')}`}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -221,7 +228,7 @@ export function AgendamentoForm({ agendamento, pacienteId, onSuccess }: Agendame
             <SelectContent>
               <SelectItem value="pendente">Pendente</SelectItem>
               <SelectItem value="confirmado">Confirmado</SelectItem>
-              <SelectItem value="concluido">Concluído</SelectItem>
+              <SelectItem value="realizado">Realizado</SelectItem>
               <SelectItem value="cancelado">Cancelado</SelectItem>
             </SelectContent>
           </Select>

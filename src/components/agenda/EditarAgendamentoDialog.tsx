@@ -73,6 +73,16 @@ export function EditarAgendamentoDialog({
     }
   };
 
+  const handleTipoServicoChange = (tipoServicoNome: string) => {
+    setFormData(prev => ({ ...prev, tipo_servico: tipoServicoNome }));
+    
+    // Auto-preencher valor quando tipo de serviço é selecionado
+    const tipoServico = tiposServicos.find(tipo => tipo.nome === tipoServicoNome);
+    if (tipoServico?.preco) {
+      setFormData(prev => ({ ...prev, valor: tipoServico.preco!.toString() }));
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl">
@@ -109,9 +119,7 @@ export function EditarAgendamentoDialog({
 
             <div className="space-y-2">
               <Label>Tipo de Serviço *</Label>
-              <Select value={formData.tipo_servico} onValueChange={(value) => 
-                setFormData(prev => ({ ...prev, tipo_servico: value }))
-              }>
+              <Select value={formData.tipo_servico} onValueChange={handleTipoServicoChange}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -119,7 +127,6 @@ export function EditarAgendamentoDialog({
                   {tiposServicos.map((tipo) => (
                     <SelectItem key={tipo.id} value={tipo.nome}>
                       {tipo.nome}
-                      {tipo.preco && ` - R$ ${tipo.preco.toFixed(2).replace('.', ',')}`}
                     </SelectItem>
                   ))}
                 </SelectContent>
