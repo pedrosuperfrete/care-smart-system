@@ -21,7 +21,6 @@ interface TemplateModalProps {
 export function TemplateModal({ isOpen, onClose, template }: TemplateModalProps) {
   const [nome, setNome] = useState(template?.nome || '');
   const [conteudo, setConteudo] = useState(template?.conteudo || '');
-  const [especialidade, setEspecialidade] = useState(template?.especialidade || '');
 
   const createTemplate = useCreateTemplate();
   const updateTemplate = useUpdateTemplate();
@@ -37,13 +36,12 @@ export function TemplateModal({ isOpen, onClose, template }: TemplateModalProps)
       if (isEditing) {
         await updateTemplate.mutateAsync({
           id: template.id,
-          data: { nome: nome.trim(), conteudo: conteudo.trim(), especialidade: especialidade.trim() || undefined }
+          data: { nome: nome.trim(), conteudo: conteudo.trim() }
         });
       } else {
         await createTemplate.mutateAsync({
           nome: nome.trim(),
-          conteudo: conteudo.trim(),
-          especialidade: especialidade.trim() || undefined
+          conteudo: conteudo.trim()
         });
       }
 
@@ -57,7 +55,6 @@ export function TemplateModal({ isOpen, onClose, template }: TemplateModalProps)
   const resetForm = () => {
     setNome('');
     setConteudo('');
-    setEspecialidade('');
   };
 
   const handleClose = () => {
@@ -78,32 +75,13 @@ export function TemplateModal({ isOpen, onClose, template }: TemplateModalProps)
         </DialogHeader>
         
         <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Nome do Template *</Label>
-              <Input
-                placeholder="Ex: SOAP, Odontológico, Consulta de Rotina..."
-                value={nome}
-                onChange={(e) => setNome(e.target.value)}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Especialidade</Label>
-              <Select value={especialidade} onValueChange={setEspecialidade}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma especialidade" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="geral">Geral</SelectItem>
-                  <SelectItem value="medicina">Medicina</SelectItem>
-                  <SelectItem value="odontologia">Odontologia</SelectItem>
-                  <SelectItem value="psicologia">Psicologia</SelectItem>
-                  <SelectItem value="fisioterapia">Fisioterapia</SelectItem>
-                  <SelectItem value="nutricao">Nutrição</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-2">
+            <Label>Nome do Template *</Label>
+            <Input
+              placeholder="Ex: SOAP, Odontológico, Consulta de Rotina..."
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+            />
           </div>
           
           <div className="space-y-2">
