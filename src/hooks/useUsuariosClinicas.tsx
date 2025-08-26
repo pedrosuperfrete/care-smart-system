@@ -19,8 +19,7 @@ export function useUsuariosClinicas(clinicaId?: string) {
           *,
           users (id, email, tipo_usuario, nome)
         `)
-        .eq('clinica_id', clinicaId)
-        .eq('ativo', true);
+        .eq('clinica_id', clinicaId);
 
       if (error) {
         console.error('Error fetching usuarios clinicas:', error);
@@ -78,18 +77,19 @@ export function useUpdateUsuarioClinica() {
         .update(updates)
         .eq('id', id)
         .select()
-        .maybeSingle();
+        .single();
 
       if (error) throw error;
-      if (!data) throw new Error('Registro não encontrado ou sem permissão para atualizar');
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['usuarios_clinicas'] });
-      toast.success('Usuário atualizado com sucesso!');
+      const statusText = variables.ativo ? 'ativado' : 'desativado';
+      toast.success(`Usuário ${statusText} com sucesso!`);
     },
     onError: (error) => {
-      toast.error('Erro ao atualizar usuário: ' + error.message);
+      console.error('Erro completo:', error);
+      toast.error('Erro ao atualizar status do usuário');
     },
   });
 }

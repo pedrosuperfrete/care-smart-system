@@ -531,11 +531,15 @@ export function GerenciarEquipe() {
                       <Badge variant={getTipoPapelVariant(usuarioClinica.tipo_papel)}>
                         {getTipoPapelDisplay(usuarioClinica.tipo_papel)}
                       </Badge>
-                      {usuarioClinica.ativo && (
-                        <Badge variant="outline" className="text-green-600 border-green-600">
-                          Ativo
-                        </Badge>
-                      )}
+                      <Badge 
+                        variant="outline" 
+                        className={usuarioClinica.ativo 
+                          ? "text-green-600 border-green-600" 
+                          : "text-red-600 border-red-600"
+                        }
+                      >
+                        {usuarioClinica.ativo ? 'Ativo' : 'Desativado'}
+                      </Badge>
                     </div>
                   </div>
                 </div>
