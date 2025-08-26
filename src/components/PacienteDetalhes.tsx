@@ -1,4 +1,5 @@
 
+import { useState } from 'react';
 import { usePaciente } from '@/hooks/usePacientes';
 import { useProntuariosPorPaciente } from '@/hooks/useProntuarios';
 import { useAgendamentos } from '@/hooks/useAgendamentos';
@@ -6,6 +7,9 @@ import { PacienteInfo } from '@/components/pacientes/PacienteInfo';
 import { ProximosAgendamentos } from '@/components/pacientes/ProximosAgendamentos';
 import { ProntuariosList } from '@/components/pacientes/ProntuariosList';
 import { HistoricoAtendimentos } from '@/components/pacientes/HistoricoAtendimentos';
+import { Button } from '@/components/ui/button';
+import { FileText } from 'lucide-react';
+import { NovoProntuarioModal } from '@/components/prontuarios/NovoProntuarioModal';
 
 interface PacienteDetalhesProps {
   pacienteId: string;
@@ -13,6 +17,7 @@ interface PacienteDetalhesProps {
 }
 
 export function PacienteDetalhes({ pacienteId, onClose }: PacienteDetalhesProps) {
+  const [showNovoProntuario, setShowNovoProntuario] = useState(false);
   const { data: paciente, isLoading } = usePaciente(pacienteId);
   const { data: prontuarios = [] } = useProntuariosPorPaciente(pacienteId);
   const { data: agendamentos = [] } = useAgendamentos();
@@ -44,9 +49,28 @@ export function PacienteDetalhes({ pacienteId, onClose }: PacienteDetalhesProps)
         onClose={onClose}
       />
 
-      <ProntuariosList prontuarios={prontuarios} />
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Prontuários</h3>
+          <Button
+            onClick={() => setShowNovoProntuario(true)}
+            size="sm"
+            className="gap-2"
+          >
+            <FileText className="h-4 w-4" />
+            Novo Prontuário
+          </Button>
+        </div>
+        <ProntuariosList prontuarios={prontuarios} />
+      </div>
 
       <HistoricoAtendimentos agendamentos={historicoAgendamentos} />
+
+      <NovoProntuarioModal
+        isOpen={showNovoProntuario}
+        onClose={() => setShowNovoProntuario(false)}
+        pacienteId={pacienteId}
+      />
     </div>
   );
 }
