@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Plus, Clock, User, Filter, ChevronLeft, ChevronRight, Edit, Trash2 } from 'lucide-react';
 import { useAgendamentos, useCreateAgendamento, useConfirmarAgendamento, useDesmarcarAgendamento, useMarcarRealizado } from '@/hooks/useAgendamentos';
+import { useTiposServicos } from '@/hooks/useTiposServicos';
 import { usePacientes } from '@/hooks/usePacientes';
 import { useProfissionais } from '@/hooks/useProfissionais';
 import { useBloqueiosAgenda, useDeleteBloqueio } from '@/hooks/useBloqueiosAgenda';
@@ -44,6 +45,7 @@ export default function Agenda() {
   const confirmarAgendamento = useConfirmarAgendamento();
   const desmarcarAgendamento = useDesmarcarAgendamento();
   const marcarRealizado = useMarcarRealizado();
+  const { data: tiposServicos = [], isLoading: loadingTipos } = useTiposServicos();
   const { profissional: currentProfissional, isAdmin, isRecepcionista } = useAuth();
 
   const [viewMode, setViewMode] = useState<'dia' | 'semana' | 'mes'>('dia');
@@ -79,13 +81,22 @@ export default function Agenda() {
         return;
       }
 
+      // Auto-preencher valor se tipo de serviço tem preço definido e valor não foi informado
+      let valor = newConsulta.valor ? parseFloat(newConsulta.valor) : null;
+      if (!valor && newConsulta.tipo_servico) {
+        const tipoServico = tiposServicos.find(tipo => tipo.nome === newConsulta.tipo_servico);
+        if (tipoServico?.preco) {
+          valor = tipoServico.preco;
+        }
+      }
+
       await createAgendamento.mutateAsync({
         paciente_id: newConsulta.paciente_id,
         profissional_id: newConsulta.profissional_id,
         data_inicio: fromDateTimeLocalString(newConsulta.data_inicio),
-        data_fim: fromDateTimeLocalString(newConsulta.data_fim),
+        data_fim: fromDateTimeLocalString(newConsulta.data_fim || newConsulta.data_inicio),
         tipo_servico: newConsulta.tipo_servico,
-        valor: newConsulta.valor ? parseFloat(newConsulta.valor) : null,
+        valor: valor,
         observacoes: newConsulta.observacoes || null,
         status: 'pendente',
         confirmado_pelo_paciente: false,
@@ -105,7 +116,10 @@ export default function Agenda() {
         valor: '',
         observacoes: ''
       });
+      
+      toast.success('Agendamento criado com sucesso!');
     } catch (error) {
+      console.error('Erro ao criar agendamento:', error);
       toast.error('Erro ao criar agendamento');
     }
   };
@@ -120,6 +134,16 @@ export default function Agenda() {
 
   const handleMarcarRealizado = async (id: string) => {
     await marcarRealizado.mutateAsync(id);
+  };
+
+  const handleTipoServicoChange = (value: string) => {
+    setNewConsulta(prev => ({ ...prev, tipo_servico: value }));
+    
+    // Auto-preencher valor quando tipo de serviço é selecionado
+    const tipoServico = tiposServicos.find(tipo => tipo.nome === value);
+    if (tipoServico?.preco) {
+      setNewConsulta(prev => ({ ...prev, valor: tipoServico.preco!.toString() }));
+    }
   };
 
   const handleEditarAgendamento = (agendamento: Agendamento) => {
@@ -354,17 +378,22 @@ export default function Agenda() {
 
                   <div className="space-y-2">
                     <Label>Tipo de Serviço *</Label>
-                    <Select value={newConsulta.tipo_servico} onValueChange={(value) => 
-                      setNewConsulta(prev => ({ ...prev, tipo_servico: value }))
-                    }>
+                    <Select value={newConsulta.tipo_servico} onValueChange={handleTipoServicoChange}>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o tipo" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Consulta de Rotina">Consulta de Rotina</SelectItem>
-                        <SelectItem value="Retorno">Retorno</SelectItem>
-                        <SelectItem value="Exame">Exame</SelectItem>
-                        <SelectItem value="Emergência">Emergência</SelectItem>
+                        {loadingTipos ? (
+                          <SelectItem value="" disabled>Carregando tipos de serviço...</SelectItem>
+                        ) : tiposServicos.length === 0 ? (
+                          <SelectItem value="" disabled>Nenhum tipo de serviço cadastrado</SelectItem>
+                        ) : (
+                          tiposServicos.map((tipo) => (
+                            <SelectItem key={tipo.id} value={tipo.nome}>
+                              {tipo.nome}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
