@@ -38,7 +38,7 @@ export function InformacoesProfissionais({ profileData, setProfileData, handleSe
           <Textarea
             value={profileData.mini_bio}
             onChange={(e) => setProfileData({ ...profileData, mini_bio: e.target.value })}
-            placeholder="Conte um pouco sobre você e sua experiência profissional..."
+            placeholder="Escreva sua apresentação como se fosse para um novo paciente: especialidade, experiência e diferenciais. Seu assistente de whatsapp usará esse texto como base para apresentar seu trabalho."
             rows={4}
           />
         </div>
