@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { FileText, Plus, Search, Calendar, User, ArrowLeft, ChevronDown, ChevronRight } from 'lucide-react';
 import { useProntuarios, useProntuariosPorPaciente, useProntuario } from '@/hooks/useProntuarios';
 import { usePacientes } from '@/hooks/usePacientes';
+import { useProfissionais } from '@/hooks/useProfissionais';
 import { ProntuarioModal } from '@/components/prontuarios/ProntuarioModal';
 import { TemplateModal } from '@/components/prontuarios/TemplateModal';
 import { ProntuarioVisualizacao } from '@/components/prontuarios/ProntuarioVisualizacao';
@@ -18,13 +19,14 @@ export default function Prontuarios() {
   const prontuarioId = searchParams.get('id');
   
   const [searchTerm, setSearchTerm] = useState('');
-  const [tipoFilter, setTipoFilter] = useState('todos');
+  const [profissionalFilter, setProfissionalFilter] = useState('todos');
   const [pacienteSelecionado, setPacienteSelecionado] = useState<string | null>(null);
   const [modalAberto, setModalAberto] = useState(false);
   const [templateModalAberto, setTemplateModalAberto] = useState(false);
 
   const { data: prontuarios = [], isLoading: loadingProntuarios } = useProntuarios();
   const { data: pacientes = [], isLoading: loadingPacientes } = usePacientes();
+  const { data: profissionais = [], isLoading: loadingProfissionais } = useProfissionais();
   const { data: prontuarioEspecifico } = useProntuario(prontuarioId || '');
 
   // Effect para detectar prontuário específico na URL
@@ -48,10 +50,10 @@ export default function Prontuarios() {
   const prontuariosFiltrados = prontuarios.filter((prontuario: any) => {
     const paciente = pacientes.find(p => p.id === prontuario.paciente_id);
     const nomeMatch = paciente?.nome.toLowerCase().includes(searchTerm.toLowerCase()) || false;
-    const tipoMatch = tipoFilter === 'todos' || 
-      (prontuario.template_id && prontuario.template_id.includes(tipoFilter));
+    const profissionalMatch = profissionalFilter === 'todos' || 
+      prontuario.profissional_id === profissionalFilter;
     
-    return nomeMatch && tipoMatch;
+    return nomeMatch && profissionalMatch;
   });
 
   // Agrupar prontuários filtrados por paciente
@@ -129,14 +131,17 @@ export default function Prontuarios() {
                 />
               </div>
             </div>
-            <Select value={tipoFilter} onValueChange={setTipoFilter}>
+            <Select value={profissionalFilter} onValueChange={setProfissionalFilter}>
               <SelectTrigger className="w-48">
-                <SelectValue placeholder="Filtrar por tipo" />
+                <SelectValue placeholder="Filtrar por profissional" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="todos">Todos os tipos</SelectItem>
-                <SelectItem value="soap">SOAP</SelectItem>
-                <SelectItem value="odonto">Odontológico</SelectItem>
+                <SelectItem value="todos">Todos os profissionais</SelectItem>
+                {profissionais.map((profissional: any) => (
+                  <SelectItem key={profissional.id} value={profissional.id}>
+                    {profissional.nome}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
