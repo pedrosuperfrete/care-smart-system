@@ -172,6 +172,20 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
                 type="email"
                 {...register('email')}
                 placeholder="email@exemplo.com"
+                onInvalid={(e) => {
+                  const target = e.target as HTMLInputElement;
+                  if (target.validity.typeMismatch) {
+                    target.setCustomValidity('Por favor, inclua um "@" no endereço de email.');
+                  } else if (target.validity.valueMissing) {
+                    target.setCustomValidity('Por favor, preencha este campo.');
+                  } else {
+                    target.setCustomValidity('');
+                  }
+                }}
+                onInput={(e) => {
+                  const target = e.target as HTMLInputElement;
+                  target.setCustomValidity('');
+                }}
               />
               {errors.email && (
                 <p className="text-sm text-red-600">{errors.email.message}</p>
