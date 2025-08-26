@@ -118,6 +118,9 @@ export const BloqueioAgendaModal = ({ defaultDate, children, bloqueio, isOpen, o
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>{isEditing ? 'Editar Bloqueio' : 'Bloquear Horário na Agenda'}</DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              O horário bloqueado aparecerá como ocupado para os outros membros da sua equipe
+            </p>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
@@ -166,7 +169,7 @@ export const BloqueioAgendaModal = ({ defaultDate, children, bloqueio, isOpen, o
               />
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex flex-row justify-end gap-2">
             <Button type="button" variant="outline" onClick={isEditing ? onClose : () => setOpen(false)}>
               Cancelar
             </Button>
