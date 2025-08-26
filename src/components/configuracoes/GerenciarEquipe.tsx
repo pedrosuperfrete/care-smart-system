@@ -172,6 +172,10 @@ export function GerenciarEquipe() {
 
       // Fazer logout do usuário recém-criado e restaurar a sessão anterior
       await supabase.auth.signOut();
+      
+      // Aguardar um pouco antes de restaurar a sessão para evitar conflitos
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       if (currentSession.session) {
         await supabase.auth.setSession(currentSession.session);
       }
@@ -279,8 +283,16 @@ export function GerenciarEquipe() {
   };
 
   const handleExcluirUsuario = async (usuarioClinica: any) => {
-    if (!confirm('Tem certeza que deseja excluir este usuário permanentemente? Esta ação não pode ser desfeita.')) {
-      return;
+    // Verificar se é o único profissional restante na clínica
+    if (usuarioClinica.tipo_papel === 'profissional') {
+      const profissionaisAtivos = usuariosDetalhes.filter(u => 
+        u.tipo_papel === 'profissional' && u.ativo && u.id !== usuarioClinica.id
+      );
+      
+      if (profissionaisAtivos.length === 0) {
+        toast.error('Não é possível excluir o último profissional ativo da clínica');
+        return;
+      }
     }
 
     try {
@@ -533,11 +545,16 @@ export function GerenciarEquipe() {
                 <div className="flex items-center space-x-2">
                   <Switch 
                     checked={usuarioClinica.ativo} 
-                    onCheckedChange={(checked) => {
-                      updateUsuarioClinica.mutate({
-                        id: usuarioClinica.id,
-                        ativo: checked
-                      });
+                    onCheckedChange={async (checked) => {
+                      try {
+                        await updateUsuarioClinica.mutateAsync({
+                          id: usuarioClinica.id,
+                          ativo: checked
+                        });
+                      } catch (error) {
+                        console.error('Erro ao atualizar status do usuário:', error);
+                        toast.error('Erro ao atualizar status do usuário');
+                      }
                     }}
                     disabled={updateUsuarioClinica.isPending}
                   />
@@ -554,6 +571,10 @@ export function GerenciarEquipe() {
                         variant="outline" 
                         size="sm"
                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        disabled={
+                          usuarioClinica.tipo_papel === 'profissional' && 
+                          usuariosDetalhes.filter(u => u.tipo_papel === 'profissional' && u.ativo).length === 1
+                        }
                       >
                         <Trash className="h-4 w-4" />
                       </Button>
@@ -564,6 +585,12 @@ export function GerenciarEquipe() {
                         <AlertDialogDescription>
                           Tem certeza que deseja excluir permanentemente o usuário <strong>{usuarioClinica.email}</strong>? 
                           Esta ação não pode ser desfeita e o usuário será removido completamente do sistema.
+                          {usuarioClinica.tipo_papel === 'profissional' && 
+                           usuariosDetalhes.filter(u => u.tipo_papel === 'profissional' && u.ativo).length === 1 && (
+                            <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-yellow-800">
+                              <strong>Atenção:</strong> Este é o último profissional ativo da clínica e não pode ser excluído.
+                            </div>
+                          )}
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -571,6 +598,10 @@ export function GerenciarEquipe() {
                         <AlertDialogAction 
                           onClick={() => handleExcluirUsuario(usuarioClinica)}
                           className="bg-red-600 hover:bg-red-700"
+                          disabled={
+                            usuarioClinica.tipo_papel === 'profissional' && 
+                            usuariosDetalhes.filter(u => u.tipo_papel === 'profissional' && u.ativo).length === 1
+                          }
                         >
                           Excluir Permanentemente
                         </AlertDialogAction>
