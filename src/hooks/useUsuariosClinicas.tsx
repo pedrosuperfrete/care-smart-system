@@ -78,9 +78,10 @@ export function useUpdateUsuarioClinica() {
         .update(updates)
         .eq('id', id)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
+      if (!data) throw new Error('Registro não encontrado ou sem permissão para atualizar');
       return data;
     },
     onSuccess: () => {
