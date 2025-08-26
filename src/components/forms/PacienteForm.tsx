@@ -69,6 +69,19 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
   const tipoPaciente = watch('tipo_paciente');
   const dataNascimento = watch('data_nascimento');
 
+  // Função para formatar CPF (apenas números)
+  const formatCPF = (value: string) => {
+    // Remove tudo que não é número
+    const numbers = value.replace(/\D/g, '');
+    // Limita a 11 dígitos
+    const limited = numbers.slice(0, 11);
+    // Aplica formatação XXX.XXX.XXX-XX
+    return limited.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
+                 .replace(/(\d{3})(\d{3})(\d{3})(\d{1})/, '$1.$2.$3-$4')
+                 .replace(/(\d{3})(\d{3})(\d{2})/, '$1.$2.$3')
+                 .replace(/(\d{3})(\d{2})/, '$1.$2');
+  };
+
   const onSubmit = async (data: PacienteFormData) => {
     if (!clinicaAtual) {
       return;
@@ -140,6 +153,17 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
                 {...register('cpf')}
                 placeholder="000.000.000-00"
                 maxLength={14}
+                onChange={(e) => {
+                  const formatted = formatCPF(e.target.value);
+                  setValue('cpf', formatted.replace(/\D/g, '')); // Armazena apenas números
+                  e.target.value = formatted; // Mostra formatado
+                }}
+                onKeyPress={(e) => {
+                  // Permite apenas números, backspace, delete e teclas de navegação
+                  if (!/[\d]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
+                    e.preventDefault();
+                  }
+                }}
               />
               {errors.cpf && (
                 <p className="text-sm text-red-600">{errors.cpf.message}</p>
