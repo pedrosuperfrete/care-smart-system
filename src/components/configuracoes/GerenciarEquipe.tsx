@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface NovoUsuarioForm {
+  nome: string;
   email: string;
   senha: string;
   confirmarSenha: string;
@@ -32,6 +33,7 @@ export function GerenciarEquipe() {
   const { isAdminClinica, isProfissional, isRecepcionista, clinicaAtual, user } = useAuth();
   const queryClient = useQueryClient();
   const [novoUsuario, setNovoUsuario] = useState<NovoUsuarioForm>({ 
+    nome: '',
     email: '', 
     senha: '', 
     confirmarSenha: '', 
@@ -75,7 +77,7 @@ export function GerenciarEquipe() {
     }
 
     // Validações
-    if (!novoUsuario.email || !novoUsuario.senha || !novoUsuario.confirmarSenha) {
+    if (!novoUsuario.nome || !novoUsuario.email || !novoUsuario.senha || !novoUsuario.confirmarSenha) {
       toast.error('Todos os campos são obrigatórios');
       return;
     }
@@ -125,6 +127,7 @@ export function GerenciarEquipe() {
         }
 
         setNovoUsuario({ 
+          nome: '',
           email: '', 
           senha: '', 
           confirmarSenha: '', 
@@ -216,6 +219,7 @@ export function GerenciarEquipe() {
       }
 
       setNovoUsuario({ 
+        nome: '',
         email: '', 
         senha: '', 
         confirmarSenha: '', 
@@ -363,6 +367,17 @@ export function GerenciarEquipe() {
               </DialogHeader>
               
               <div className="space-y-4">
+                <div>
+                  <Label htmlFor="nome">Nome Completo</Label>
+                  <Input
+                    id="nome"
+                    type="text"
+                    placeholder="Nome completo do usuário"
+                    value={novoUsuario.nome}
+                    onChange={(e) => setNovoUsuario({ ...novoUsuario, nome: e.target.value })}
+                  />
+                </div>
+                
                 <div>
                   <Label htmlFor="email">E-mail do Usuário</Label>
                   <Input

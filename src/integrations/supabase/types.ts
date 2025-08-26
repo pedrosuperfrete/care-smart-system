@@ -775,6 +775,7 @@ export type Database = {
           criado_em: string
           email: string
           id: string
+          nome: string | null
           plano: string | null
           senha_hash: string
           stripe_customer_id: string | null
@@ -788,6 +789,7 @@ export type Database = {
           criado_em?: string
           email: string
           id?: string
+          nome?: string | null
           plano?: string | null
           senha_hash: string
           stripe_customer_id?: string | null
@@ -801,6 +803,7 @@ export type Database = {
           criado_em?: string
           email?: string
           id?: string
+          nome?: string | null
           plano?: string | null
           senha_hash?: string
           stripe_customer_id?: string | null
