@@ -114,7 +114,6 @@ export function NovoProntuarioModal({ isOpen, onClose, pacienteId }: NovoProntua
                 <SelectValue placeholder="Selecione um template ou deixe em branco" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Nenhum template</SelectItem>
                 {templates.map((template) => (
                   <SelectItem key={template.id} value={template.id}>
                     {template.nome} {template.especialidade && `(${template.especialidade})`}
@@ -133,7 +132,6 @@ export function NovoProntuarioModal({ isOpen, onClose, pacienteId }: NovoProntua
                   <SelectValue placeholder="Selecione um agendamento" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhum agendamento</SelectItem>
                   {agendamentosRealizados.map((agendamento: any) => (
                     <SelectItem key={agendamento.id} value={agendamento.id}>
                       {new Date(agendamento.data_inicio).toLocaleDateString('pt-BR')} - {agendamento.tipo_servico}

@@ -12,7 +12,32 @@ export function useProfissionais() {
   return useQuery({
     queryKey: ['profissionais'],
     queryFn: async (): Promise<Profissional[]> => {
-      // Buscar clínicas do usuário
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        return [];
+      }
+
+      // Buscar informações do usuário para determinar o tipo
+      const { data: userData } = await supabase
+        .from('users')
+        .select('tipo_usuario')
+        .eq('id', user.id)
+        .single();
+
+      // Se for admin, buscar todos os profissionais
+      if (userData?.tipo_usuario === 'admin') {
+        const { data, error } = await supabase
+          .from('profissionais')
+          .select('*')
+          .eq('ativo', true)
+          .order('nome');
+
+        if (error) throw error;
+        return data || [];
+      }
+
+      // Para outros tipos de usuário, buscar profissionais das clínicas associadas
       const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
       
       if (!clinicasUsuario || clinicasUsuario.length === 0) {
