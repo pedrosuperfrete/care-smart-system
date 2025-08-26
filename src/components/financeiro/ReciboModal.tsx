@@ -17,6 +17,10 @@ interface ReciboModalProps {
         nome: string;
         telefone?: string | null;
       } | null;
+      profissionais?: {
+        nome: string;
+        crm_cro: string;
+      } | null;
     } | null;
   } | null;
 }
@@ -30,6 +34,11 @@ export function ReciboModal({ open, onOpenChange, pagamento }: ReciboModalProps)
   const dataPagamento = pagamento.data_pagamento 
     ? new Date(pagamento.data_pagamento).toLocaleDateString('pt-BR')
     : 'Data não disponível';
+
+  // Dados do profissional
+  const profissional = pagamento.agendamentos?.profissionais;
+  const profissionalNome = profissional?.nome || 'Nome não disponível';
+  const profissionalCrmCro = profissional?.crm_cro || 'Não informado';
 
   const handleImprimir = () => {
     window.print();
@@ -75,6 +84,14 @@ export function ReciboModal({ open, onOpenChange, pagamento }: ReciboModalProps)
             </div>
             <div>
               <strong>Data do Pagamento:</strong> {dataPagamento}
+            </div>
+            <div className="border-t pt-3 mt-3">
+              <div className="text-sm font-medium text-gray-700 mb-2">Profissional Responsável:</div>
+              <div className="space-y-1 text-sm">
+                <div><strong>Nome:</strong> {profissionalNome}</div>
+                <div><strong>CRM/CRO:</strong> {profissionalCrmCro}</div>
+                
+              </div>
             </div>
           </div>
           <div className="flex justify-end space-x-2">

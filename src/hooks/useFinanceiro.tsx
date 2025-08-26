@@ -139,7 +139,8 @@ export function usePagamentos(startDate?: Date, endDate?: Date) {
               id,
               nome,
               especialidade,
-              clinica_id
+              clinica_id,
+              crm_cro
             )
           )
         `)
