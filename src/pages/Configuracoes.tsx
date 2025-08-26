@@ -119,12 +119,12 @@ export default function Configuracoes() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className={`grid w-full ${isRecepcionista ? 'grid-cols-4' : 'grid-cols-6'}`}>
+        <TabsList className={`grid w-full ${isRecepcionista ? 'grid-cols-4' : (isAdmin || profissional) ? 'grid-cols-6' : 'grid-cols-5'}`}>
           <TabsTrigger value="perfil">
             <User className="mr-2 h-4 w-4" />
             Perfil
           </TabsTrigger>
-          {isAdmin && (
+          {(isAdmin || profissional) && (
             <TabsTrigger value="clinica">
               <Building className="mr-2 h-4 w-4" />
               Clínica
@@ -189,8 +189,8 @@ export default function Configuracoes() {
           </div>
         </TabsContent>
 
-        {/* Aba Clínica (apenas para admin) */}
-        {isAdmin && (
+        {/* Aba Clínica (para admin e profissionais) */}
+        {(isAdmin || profissional) && (
           <TabsContent value="clinica">
             <ConfiguracaoClinica />
           </TabsContent>
