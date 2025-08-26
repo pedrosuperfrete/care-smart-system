@@ -59,6 +59,18 @@ export function NovoPagamentoModal({ open, onOpenChange, onSave }: NovoPagamento
     },
   });
 
+  const servicoSelecionado = form.watch('servico_prestado');
+
+  // Auto-preencher valor total quando serviço é selecionado
+  const handleServicoChange = (servicoNome: string) => {
+    form.setValue('servico_prestado', servicoNome);
+    
+    const tipoServico = tiposServicos.find(tipo => tipo.nome.toLowerCase() === servicoNome);
+    if (tipoServico?.preco) {
+      form.setValue('valor_total', tipoServico.preco);
+    }
+  };
+
   const status = form.watch('status');
 
   const handleSubmit = async (data: FormData) => {
@@ -118,7 +130,7 @@ export function NovoPagamentoModal({ open, onOpenChange, onSave }: NovoPagamento
                 <FormItem>
                   <FormLabel>Serviço Prestado</FormLabel>
                   <FormControl>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={handleServicoChange} defaultValue={field.value}>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o serviço" />
                       </SelectTrigger>
@@ -126,7 +138,6 @@ export function NovoPagamentoModal({ open, onOpenChange, onSave }: NovoPagamento
                         {tiposServicos.map((tipo) => (
                           <SelectItem key={tipo.id} value={tipo.nome.toLowerCase()}>
                             {tipo.nome}
-                            {tipo.preco && ` - R$ ${tipo.preco.toFixed(2).replace('.', ',')}`}
                           </SelectItem>
                         ))}
                       </SelectContent>
