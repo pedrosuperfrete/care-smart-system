@@ -65,17 +65,12 @@ export default function Auth() {
       } else {
         const { error } = await signIn(email, password);
         if (error) {
-          // Se for erro de credenciais inválidas, oferecer cadastro
+          // Se for erro de credenciais inválidas, redirecionar para cadastro
           if (error.includes('Invalid login credentials') || error.includes('Invalid email or password')) {
-            toast.error(
-              'Email ou senha incorretos. Não tem uma conta ainda?',
-              {
-                action: {
-                  label: 'Cadastrar',
-                  onClick: () => setMode('signup')
-                }
-              }
-            );
+            toast.error('Email ou senha incorretos. Redirecionando para cadastro...');
+            setTimeout(() => {
+              setMode('signup');
+            }, 1500);
           } else {
             toast.error(error);
           }
