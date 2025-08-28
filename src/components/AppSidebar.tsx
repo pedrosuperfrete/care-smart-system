@@ -1,4 +1,4 @@
-import { Calendar, Users, FileText, DollarSign, Home, Settings, User, Clock, CreditCard, LogOut, ChevronDown, AlertTriangle } from "lucide-react";
+import { Calendar, Users, FileText, DollarSign, Home, Settings, User, Clock, CreditCard, LogOut, ChevronDown, AlertTriangle, MessageSquare } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -39,6 +39,11 @@ export function AppSidebar() {
       title: "Agenda",
       url: "/app/agenda",
       icon: Calendar,
+    },
+    {
+      title: "WhatsApp",
+      url: "/app/whatsapp",
+      icon: MessageSquare,
     },
     {
       title: "Prontuários",

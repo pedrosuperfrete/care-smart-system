@@ -14,6 +14,7 @@ import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
 import Pacientes from "./pages/Pacientes";
 import Agenda from "./pages/Agenda";
+import WhatsApp from "./pages/WhatsApp";
 import Prontuarios from "./pages/Prontuarios";
 import Financeiro from "./pages/Financeiro";
 import Relatorios from "./pages/Relatorios";
@@ -70,6 +71,14 @@ function AppRoutes() {
         needsOnboarding ? <Navigate to="/app/onboarding" replace /> :
         <ProtectedRoute>
           <Layout><Agenda /></Layout>
+        </ProtectedRoute>
+      } />
+
+      <Route path="/app/whatsapp" element={
+        !user ? <Navigate to="/app/auth" replace /> :
+        needsOnboarding ? <Navigate to="/app/onboarding" replace /> :
+        <ProtectedRoute>
+          <Layout><WhatsApp /></Layout>
         </ProtectedRoute>
       } />
       
