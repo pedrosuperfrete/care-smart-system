@@ -76,7 +76,7 @@ const Index = () => {
     {
       name: "Dr. Carlos Silva",
       specialty: "Cardiologista",
-      content: "Desde que comecei a usar o HealthClinic, meu faturamento aumentou 35% e tenho muito mais tempo para os pacientes.",
+      content: "Desde que comecei a usar o Donee, meu faturamento aumentou 35% e tenho muito mais tempo para os pacientes.",
       avatar: "CS"
     },
     {
@@ -94,8 +94,8 @@ const Index = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-3">
-              <img src="/lovable-uploads/df33c00a-881c-4c3a-8f60-77fcd8835e1b.png" alt="HealthClinic" className="h-8" />
-              <span className="text-xl font-bold text-foreground">HealthClinic</span>
+              <img src="/lovable-uploads/df33c00a-881c-4c3a-8f60-77fcd8835e1b.png" alt="Donee" className="h-8" />
+              <span className="text-xl font-bold text-foreground">Donee</span>
             </div>
             <nav className="hidden md:flex items-center space-x-8">
               <a href="#recursos" className="text-muted-foreground hover:text-foreground transition-colors">Recursos</a>
@@ -144,7 +144,7 @@ const Index = () => {
             <div className="bg-card/50 backdrop-blur-sm rounded-3xl p-8 shadow-2xl border">
               <div className="bg-background rounded-2xl p-6 shadow-lg">
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-bold text-foreground">Dashboard HealthClinic</h3>
+                  <h3 className="text-xl font-bold text-foreground">Dashboard Donee</h3>
                   <div className="flex space-x-2">
                     <div className="w-3 h-3 bg-red-400 rounded-full"></div>
                     <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
@@ -260,7 +260,7 @@ const Index = () => {
                       <MessageSquare className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <span className="font-semibold text-gray-800">HealthClinic Bot</span>
+                      <span className="font-semibold text-gray-800">Donee Bot</span>
                       <p className="text-xs text-gray-500">online agora</p>
                     </div>
                   </div>
@@ -294,7 +294,7 @@ const Index = () => {
               Resultados que nossos clientes alcançam
             </h2>
             <p className="text-xl text-muted-foreground">
-              Números reais de profissionais que transformaram suas práticas com o HealthClinic
+              Números reais de profissionais que transformaram suas práticas com o Donee
             </p>
           </div>
 
@@ -391,8 +391,8 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center space-x-3 mb-4">
-                <img src="/lovable-uploads/df33c00a-881c-4c3a-8f60-77fcd8835e1b.png" alt="HealthClinic" className="h-8" />
-                <span className="text-xl font-bold text-foreground">HealthClinic</span>
+                <img src="/lovable-uploads/df33c00a-881c-4c3a-8f60-77fcd8835e1b.png" alt="Donee" className="h-8" />
+                <span className="text-xl font-bold text-foreground">Donee</span>
               </div>
               <p className="text-muted-foreground mb-6 max-w-md">
                 O sistema de gestão mais completo para clínicas e consultórios médicos. 
@@ -405,7 +405,7 @@ const Index = () => {
                 </div>
                 <div className="flex items-center space-x-2 text-muted-foreground">
                   <Mail className="w-4 h-4" />
-                  <span>contato@healthclinic.com</span>
+                  <span>contato@donee.com.br</span>
                 </div>
               </div>
             </div>
@@ -433,7 +433,7 @@ const Index = () => {
           
           <div className="border-t border-border mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
             <p className="text-muted-foreground text-sm">
-              © 2024 HealthClinic. Todos os direitos reservados.
+              © 2024 Donee. Todos os direitos reservados.
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
               <a href="#" className="text-muted-foreground hover:text-foreground transition-colors text-sm">

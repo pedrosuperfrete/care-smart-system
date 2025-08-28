@@ -82,7 +82,7 @@ export default function Auth() {
       case 'signup':
         return {
           title: 'Criar sua conta',
-          description: 'Junte-se ao HealthClinic e transforme sua prática médica'
+          description: 'Junte-se ao Donee e transforme sua prática médica'
         };
       case 'forgot':
         return {
@@ -152,11 +152,11 @@ export default function Auth() {
           <Link to="/app" className="inline-flex items-center space-x-3 group">
             <img 
               src="/lovable-uploads/df33c00a-881c-4c3a-8f60-77fcd8835e1b.png" 
-              alt="HealthClinic" 
+              alt="Donee" 
               className="h-10 w-auto" 
             />
             <span className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">
-              HealthClinic
+              Donee
             </span>
           </Link>
         </div>
