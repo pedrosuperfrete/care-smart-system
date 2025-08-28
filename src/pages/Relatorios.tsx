@@ -298,20 +298,19 @@ export default function Relatorios() {
               <div className="h-[300px] flex items-center justify-center">
                 <Skeleton className="h-full w-full" />
               </div>
-            ) : statusPagamentos.length > 0 ? (
+            ) : statusPagamentos.length > 0 && statusPagamentos.some(item => item.valor > 0) ? (
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
-                    data={statusPagamentos}
+                    data={statusPagamentos.filter(item => item.valor > 0)}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
                     outerRadius={80}
                     fill="hsl(var(--primary))"
                     dataKey="valor"
                   >
-                    {statusPagamentos.map((entry, index) => (
+                    {statusPagamentos.filter(item => item.valor > 0).map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.cor} />
                     ))}
                   </Pie>
