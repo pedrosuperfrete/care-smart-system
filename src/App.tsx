@@ -9,7 +9,6 @@ import { Layout } from "./components/Layout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { ErrorBoundary } from "./components/error/ErrorBoundary";
 import Index from "./pages/Index";
-import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
@@ -40,15 +39,6 @@ function AppRoutes() {
       {/* Landing Page - Home pública */}
       <Route path="/app" element={<Index />} />
       
-      {/* Home da plataforma - página inicial logada */}
-      <Route path="/app/home" element={
-        !user ? <Navigate to="/app/auth" replace /> :
-        needsOnboarding ? <Navigate to="/app/onboarding" replace /> :
-        <ProtectedRoute>
-          <Layout><Home /></Layout>
-        </ProtectedRoute>
-      } />
-      
       {/* Rotas da Plataforma - /app/* */}
       <Route path="/app/auth" element={
         user ? <Navigate to="/app/dashboard" replace /> : <Auth />
@@ -60,7 +50,11 @@ function AppRoutes() {
       } />
       
       <Route path="/app/dashboard" element={
-        <Navigate to="/app/home" replace />
+        !user ? <Navigate to="/app/auth" replace /> :
+        needsOnboarding ? <Navigate to="/app/onboarding" replace /> :
+        <ProtectedRoute>
+          <Layout><Dashboard /></Layout>
+        </ProtectedRoute>
       } />
       
       <Route path="/app/pacientes" element={

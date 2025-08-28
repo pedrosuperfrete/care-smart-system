@@ -26,8 +26,8 @@ export function AppSidebar() {
 
   const baseMenuItems = [
     {
-      title: "Início",
-      url: "/app/home",
+      title: "Dashboard",
+      url: "/app/dashboard",
       icon: Home,
     },
     {
