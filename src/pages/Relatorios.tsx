@@ -22,7 +22,9 @@ export default function Relatorios() {
     estatisticas, 
     consultasPorDia, 
     receitaPorMes, 
-    tiposConsulta 
+    tiposConsulta,
+    statusConsultas,
+    statusPagamentos
   } = useRelatorios(periodo);
 
   const { exportarCSV, exportarPDF } = useExportarRelatorios();
@@ -232,6 +234,88 @@ export default function Relatorios() {
                     ))}
                   </Pie>
                   <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                <p>Nenhum dado disponível para o período selecionado</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Status das Consultas</CardTitle>
+            <CardDescription>
+              Distribuição dos status das consultas no período
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="h-[300px] flex items-center justify-center">
+                <Skeleton className="h-full w-full" />
+              </div>
+            ) : statusConsultas.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={statusConsultas}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ nome, valor }) => `${nome}: ${valor}`}
+                    outerRadius={80}
+                    fill="hsl(var(--primary))"
+                    dataKey="valor"
+                  >
+                    {statusConsultas.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.cor} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                <p>Nenhum dado disponível para o período selecionado</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Status dos Pagamentos</CardTitle>
+            <CardDescription>
+              Distribuição dos valores por status de pagamento
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="h-[300px] flex items-center justify-center">
+                <Skeleton className="h-full w-full" />
+              </div>
+            ) : statusPagamentos.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={statusPagamentos}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ nome, valor }) => `${nome}: R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                    outerRadius={80}
+                    fill="hsl(var(--primary))"
+                    dataKey="valor"
+                  >
+                    {statusPagamentos.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.cor} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value: any) => [`R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 'Valor']} />
                 </PieChart>
               </ResponsiveContainer>
             ) : (

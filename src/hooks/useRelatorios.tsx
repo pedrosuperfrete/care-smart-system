@@ -26,6 +26,18 @@ export interface TipoConsulta {
   cor: string;
 }
 
+export interface StatusConsulta {
+  nome: string;
+  valor: number;
+  cor: string;
+}
+
+export interface StatusPagamento {
+  nome: string;
+  valor: number;
+  cor: string;
+}
+
 export const useRelatorios = (periodo: string = 'mes') => {
   const { user, userProfile } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -34,6 +46,8 @@ export const useRelatorios = (periodo: string = 'mes') => {
   const [consultasPorDia, setConsultasPorDia] = useState<DadosGrafico[]>([]);
   const [receitaPorMes, setReceitaPorMes] = useState<DadosGrafico[]>([]);
   const [tiposConsulta, setTiposConsulta] = useState<TipoConsulta[]>([]);
+  const [statusConsultas, setStatusConsultas] = useState<StatusConsulta[]>([]);
+  const [statusPagamentos, setStatusPagamentos] = useState<StatusPagamento[]>([]);
 
   const getDateRange = (periodo: string) => {
     const hoje = new Date();
@@ -525,6 +539,186 @@ export const useRelatorios = (periodo: string = 'mes') => {
     }
   };
 
+  const buscarStatusConsultas = async () => {
+    if (!user || !userProfile) return;
+
+    try {
+      let profissionalIds: string[] = [];
+
+      if (userProfile.tipo_usuario === 'profissional') {
+        const { data: profissional } = await supabase
+          .from('profissionais')
+          .select('id, clinica_id')
+          .eq('user_id', user.id)
+          .eq('ativo', true)
+          .maybeSingle();
+
+        if (!profissional) return;
+        profissionalIds = [profissional.id];
+      } 
+      else if (userProfile.tipo_usuario === 'recepcionista') {
+        const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
+        
+        if (!clinicasUsuario || clinicasUsuario.length === 0) return;
+
+        const clinicaId = clinicasUsuario[0].clinica_id;
+
+        const { data: profissionais } = await supabase
+          .from('profissionais')
+          .select('id')
+          .eq('clinica_id', clinicaId)
+          .eq('ativo', true);
+
+        if (!profissionais || profissionais.length === 0) return;
+        profissionalIds = profissionais.map(p => p.id);
+      }
+      else if (userProfile.tipo_usuario === 'admin') {
+        const { data: profissionais } = await supabase
+          .from('profissionais')
+          .select('id')
+          .eq('ativo', true);
+
+        if (!profissionais || profissionais.length === 0) return;
+        profissionalIds = profissionais.map(p => p.id);
+      }
+
+      if (profissionalIds.length === 0) return;
+
+      const { inicio, fim } = getDateRange(periodo);
+
+      const { data: agendamentos } = await supabase
+        .from('agendamentos')
+        .select('status, desmarcada')
+        .in('profissional_id', profissionalIds)
+        .gte('data_inicio', inicio.toISOString())
+        .lte('data_inicio', fim.toISOString());
+
+      const pendentes = agendamentos?.filter(a => a.status === 'pendente' && !a.desmarcada).length || 0;
+      const realizadas = agendamentos?.filter(a => a.status === 'realizado').length || 0;
+      const desmarcadas = agendamentos?.filter(a => a.desmarcada === true).length || 0;
+
+      const total = pendentes + realizadas + desmarcadas;
+
+      setStatusConsultas([
+        {
+          nome: 'Pendentes',
+          valor: pendentes,
+          cor: 'hsl(45, 93%, 60%)'
+        },
+        {
+          nome: 'Realizadas',
+          valor: realizadas,
+          cor: 'hsl(142, 76%, 36%)'
+        },
+        {
+          nome: 'Desmarcadas',
+          valor: desmarcadas,
+          cor: 'hsl(0, 84%, 60%)'
+        }
+      ]);
+    } catch (err) {
+      console.error('Erro ao buscar status de consultas:', err);
+    }
+  };
+
+  const buscarStatusPagamentos = async () => {
+    if (!user || !userProfile) return;
+
+    try {
+      let profissionalIds: string[] = [];
+
+      if (userProfile.tipo_usuario === 'profissional') {
+        const { data: profissional } = await supabase
+          .from('profissionais')
+          .select('id, clinica_id')
+          .eq('user_id', user.id)
+          .eq('ativo', true)
+          .maybeSingle();
+
+        if (!profissional) return;
+        profissionalIds = [profissional.id];
+      } 
+      else if (userProfile.tipo_usuario === 'recepcionista') {
+        const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
+        
+        if (!clinicasUsuario || clinicasUsuario.length === 0) return;
+
+        const clinicaId = clinicasUsuario[0].clinica_id;
+
+        const { data: profissionais } = await supabase
+          .from('profissionais')
+          .select('id')
+          .eq('clinica_id', clinicaId)
+          .eq('ativo', true);
+
+        if (!profissionais || profissionais.length === 0) return;
+        profissionalIds = profissionais.map(p => p.id);
+      }
+      else if (userProfile.tipo_usuario === 'admin') {
+        const { data: profissionais } = await supabase
+          .from('profissionais')
+          .select('id')
+          .eq('ativo', true);
+
+        if (!profissionais || profissionais.length === 0) return;
+        profissionalIds = profissionais.map(p => p.id);
+      }
+
+      if (profissionalIds.length === 0) return;
+
+      const { inicio, fim } = getDateRange(periodo);
+
+      // Buscar agendamentos do período primeiro
+      const { data: agendamentos } = await supabase
+        .from('agendamentos')
+        .select('id')
+        .in('profissional_id', profissionalIds)
+        .gte('data_inicio', inicio.toISOString())
+        .lte('data_inicio', fim.toISOString());
+
+      if (!agendamentos || agendamentos.length === 0) {
+        setStatusPagamentos([
+          { nome: 'Pendentes', valor: 0, cor: 'hsl(45, 93%, 60%)' },
+          { nome: 'A Receber', valor: 0, cor: 'hsl(221, 83%, 53%)' },
+          { nome: 'Recebidos', valor: 0, cor: 'hsl(142, 76%, 36%)' }
+        ]);
+        return;
+      }
+
+      const agendamentoIds = agendamentos.map(a => a.id);
+
+      // Buscar pagamentos desses agendamentos
+      const { data: pagamentos } = await supabase
+        .from('pagamentos')
+        .select('status, valor_total')
+        .in('agendamento_id', agendamentoIds);
+
+      const pendentes = pagamentos?.filter(p => p.status === 'pendente').reduce((acc, p) => acc + Number(p.valor_total), 0) || 0;
+      const vencidos = pagamentos?.filter(p => p.status === 'vencido').reduce((acc, p) => acc + Number(p.valor_total), 0) || 0;
+      const pagos = pagamentos?.filter(p => p.status === 'pago').reduce((acc, p) => acc + Number(p.valor_total), 0) || 0;
+
+      setStatusPagamentos([
+        {
+          nome: 'Pendentes',
+          valor: pendentes,
+          cor: 'hsl(45, 93%, 60%)'
+        },
+        {
+          nome: 'A Receber',
+          valor: vencidos,
+          cor: 'hsl(221, 83%, 53%)'
+        },
+        {
+          nome: 'Recebidos',
+          valor: pagos,
+          cor: 'hsl(142, 76%, 36%)'
+        }
+      ]);
+    } catch (err) {
+      console.error('Erro ao buscar status de pagamentos:', err);
+    }
+  };
+
   useEffect(() => {
     const carregarDados = async () => {
       setLoading(true);
@@ -534,7 +728,9 @@ export const useRelatorios = (periodo: string = 'mes') => {
         buscarEstatisticas(),
         buscarConsultasPorDia(),
         buscarReceitaPorMes(),
-        buscarTiposConsulta()
+        buscarTiposConsulta(),
+        buscarStatusConsultas(),
+        buscarStatusPagamentos()
       ]);
 
       setLoading(false);
@@ -551,6 +747,8 @@ export const useRelatorios = (periodo: string = 'mes') => {
     estatisticas,
     consultasPorDia,
     receitaPorMes,
-    tiposConsulta
+    tiposConsulta,
+    statusConsultas,
+    statusPagamentos
   };
 };
