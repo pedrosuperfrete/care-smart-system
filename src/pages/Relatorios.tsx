@@ -306,6 +306,7 @@ export default function Relatorios() {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
+                    label={({ nome, valor }) => `${nome}: R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
                     outerRadius={80}
                     fill="hsl(var(--primary))"
                     dataKey="valor"
