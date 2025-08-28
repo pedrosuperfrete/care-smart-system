@@ -603,17 +603,17 @@ export const useRelatorios = (periodo: string = 'mes') => {
         {
           nome: 'Pendentes',
           valor: pendentes,
-          cor: 'hsl(45, 93%, 60%)'
+          cor: 'hsl(var(--warning))'
         },
         {
           nome: 'Realizadas',
           valor: realizadas,
-          cor: 'hsl(142, 76%, 36%)'
+          cor: 'hsl(var(--success))'
         },
         {
           nome: 'Desmarcadas',
           valor: desmarcadas,
-          cor: 'hsl(0, 84%, 60%)'
+          cor: 'hsl(var(--destructive))'
         }
       ]);
     } catch (err) {
@@ -701,17 +701,17 @@ export const useRelatorios = (periodo: string = 'mes') => {
         {
           nome: 'Pendentes',
           valor: pendentes,
-          cor: 'hsl(45, 93%, 60%)'
+          cor: 'hsl(var(--warning))'
         },
         {
           nome: 'A Receber',
           valor: vencidos,
-          cor: 'hsl(221, 83%, 53%)'
+          cor: 'hsl(var(--info))'
         },
         {
           nome: 'Recebidos',
           valor: pagos,
-          cor: 'hsl(142, 76%, 36%)'
+          cor: 'hsl(var(--success))'
         }
       ]);
     } catch (err) {
