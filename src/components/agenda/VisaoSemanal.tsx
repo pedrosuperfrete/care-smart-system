@@ -92,7 +92,7 @@ export function VisaoSemanal({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'confirmado': return 'bg-primary';
+      case 'confirmado': return 'bg-primary text-primary-foreground';
       case 'pendente': return 'bg-warning';
       case 'realizado': return 'bg-success';
       default: return 'bg-destructive';
