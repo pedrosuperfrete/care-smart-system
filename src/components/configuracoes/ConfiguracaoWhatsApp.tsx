@@ -181,7 +181,8 @@ export function ConfiguracaoWhatsApp() {
   }
 
   const isConectado = configuracao?.ativo;
-  const perfilIncompleto = !profissional?.onboarding_completo;
+  // Mostrar aba de perfil se faltar dados da clínica (CNPJ especialmente)
+  const perfilIncompleto = !cnpjClinica || cnpjClinica === '';
 
   const handleSalvarPerfil = async () => {
     try {
