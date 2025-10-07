@@ -153,7 +153,7 @@ export function AgendamentoForm({ agendamento, pacienteId, onSuccess }: Agendame
               </SelectTrigger>
               <SelectContent>
                 {profissionais.length === 0 ? (
-                  <SelectItem value="" disabled>Nenhum profissional encontrado</SelectItem>
+                  <div className="p-2 text-sm text-muted-foreground">Nenhum profissional encontrado</div>
                 ) : (
                   profissionais.map((prof) => (
                     <SelectItem key={prof.id} value={prof.id}>
@@ -198,9 +198,9 @@ export function AgendamentoForm({ agendamento, pacienteId, onSuccess }: Agendame
             </SelectTrigger>
             <SelectContent>
               {loadingTipos ? (
-                <SelectItem value="" disabled>Carregando tipos de serviço...</SelectItem>
+                <div className="p-2 text-sm text-muted-foreground">Carregando tipos de serviço...</div>
               ) : tiposServicos.length === 0 ? (
-                <SelectItem value="" disabled>Nenhum tipo de serviço cadastrado</SelectItem>
+                <div className="p-2 text-sm text-muted-foreground">Nenhum tipo de serviço cadastrado</div>
               ) : (
                 tiposServicos.map((tipo) => (
                   <SelectItem key={tipo.id} value={tipo.nome}>
