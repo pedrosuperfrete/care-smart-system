@@ -158,17 +158,14 @@ export default function Auth() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/5 px-4">
       <div className="w-full max-w-md">
-        {/* Logo e Link para Home */}
+        {/* Logo */}
         <div className="text-center mb-8">
-          <Link to="/app" className="inline-flex items-center space-x-3 group">
+          <Link to="/app" className="inline-block">
             <img 
               src="/lovable-uploads/df33c00a-881c-4c3a-8f60-77fcd8835e1b.png" 
               alt="Donee" 
-              className="h-10 w-auto" 
+              className="h-10 w-auto mx-auto" 
             />
-            <span className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">
-              Donee
-            </span>
           </Link>
         </div>
 
