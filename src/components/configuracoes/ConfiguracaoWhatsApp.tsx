@@ -48,9 +48,15 @@ export function ConfiguracaoWhatsApp() {
   const [cnpjClinica, setCnpjClinica] = useState('');
   const [enderecoClinica, setEnderecoClinica] = useState('');
   const [horariosAtendimento, setHorariosAtendimento] = useState(profissional?.horarios_atendimento || {});
-  const [servicosPrecos, setServicosPrecos] = useState<ServicoPreco[]>((profissional?.servicos_precos as ServicoPreco[]) || []);
-  const [formasPagamento, setFormasPagamento] = useState<string[]>((profissional?.formas_pagamento as string[]) || []);
-  const [planosSaude, setPlanosSaude] = useState<string[]>((profissional?.planos_saude as string[]) || []);
+  const [servicosPrecos, setServicosPrecos] = useState<ServicoPreco[]>(
+    (profissional?.servicos_precos ? JSON.parse(JSON.stringify(profissional.servicos_precos)) : []) as ServicoPreco[]
+  );
+  const [formasPagamento, setFormasPagamento] = useState<string[]>(
+    (profissional?.formas_pagamento ? JSON.parse(JSON.stringify(profissional.formas_pagamento)) : []) as string[]
+  );
+  const [planosSaude, setPlanosSaude] = useState<string[]>(
+    (profissional?.planos_saude ? JSON.parse(JSON.stringify(profissional.planos_saude)) : []) as string[]
+  );
 
   // Buscar configuração existente
   const { data: configuracao, isLoading } = useQuery({
@@ -237,9 +243,9 @@ export function ConfiguracaoWhatsApp() {
         nome_clinica: nomeClinica,
         clinica_id: clinicaId,
         horarios_atendimento: horariosAtendimento,
-        servicos_precos: servicosPrecos,
-        formas_pagamento: formasPagamento,
-        planos_saude: planosSaude,
+        servicos_precos: JSON.parse(JSON.stringify(servicosPrecos)),
+        formas_pagamento: JSON.parse(JSON.stringify(formasPagamento)),
+        planos_saude: JSON.parse(JSON.stringify(planosSaude)),
         onboarding_completo: true,
       });
 
@@ -307,74 +313,34 @@ export function ConfiguracaoWhatsApp() {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="numero">Número do WhatsApp</Label>
-                <Input
-                  id="numero"
-                  type="tel"
-                  placeholder="5511999999999 (apenas números)"
-                  value={numeroTelefone}
-                  onChange={(e) => setNumeroTelefone(e.target.value)}
-                  className="font-mono"
-                />
-                <p className="text-sm text-muted-foreground">
-                  Digite o número completo com código do país e DDD, apenas números (ex: 5511999999999)
-                </p>
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="numero">Número do WhatsApp</Label>
+                  <Input
+                    id="numero"
+                    type="tel"
+                    placeholder="5511999999999 (apenas números)"
+                    value={numeroTelefone}
+                    onChange={(e) => setNumeroTelefone(e.target.value)}
+                    className="font-mono"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Digite o número completo com código do país e DDD, apenas números (ex: 5511999999999)
+                  </p>
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="api-key">API Key N8N (Opcional)</Label>
-                <Input
-                  id="api-key"
-                  type="password"
-                  placeholder="Deixe em branco se usar configuração global"
-                  value={apiKeyN8N}
-                  onChange={(e) => setApiKeyN8N(e.target.value)}
-                />
-                <p className="text-sm text-muted-foreground">
-                  Chave de API específica para este profissional. Deixe em branco para usar a configuração global do N8N.
-                </p>
-              </div>
-
-              <div className="flex space-x-2">
-                <Button 
-                  type="submit" 
-                  disabled={salvarConfiguracao.isPending}
-                >
-                  <Settings className="mr-2 h-4 w-4" />
-                  {salvarConfiguracao.isPending ? 'Salvando...' : 'Salvar Configuração'}
-                </Button>
-                
-                {isConectado && (
-                  <Button 
-                    type="button"
-                    variant="outline"
-                    onClick={() => desativarConfiguracao.mutate()}
-                    disabled={desativarConfiguracao.isPending}
-                  >
-                    {desativarConfiguracao.isPending ? 'Desativando...' : 'Desativar'}
-                  </Button>
-                )}
-              </div>
-            </form>
-
-            {isConectado && (
-              <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                <h4 className="font-medium text-green-900 mb-2">Integração Ativa</h4>
-                <p className="text-sm text-green-700 mb-2">
-                  WhatsApp conectado: <span className="font-mono font-medium">+{configuracao.numero_telefone}</span>
-                </p>
-                <p className="text-sm text-green-700">
-                  Os pacientes podem enviar mensagens para este número para agendar, reagendar ou cancelar consultas automaticamente.
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
+                <div className="space-y-2">
+                  <Label htmlFor="api-key">API Key N8N (Opcional)</Label>
+                  <Input
+                    id="api-key"
+                    type="password"
+                    placeholder="Deixe em branco se usar configuração global"
+                    value={apiKeyN8N}
+                    onChange={(e) => setApiKeyN8N(e.target.value)}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Chave de API específica para este profissional. Deixe em branco para usar a configuração global do N8N.
+                  </p>
+                </div>
 
                 <div className="flex space-x-2">
                   <Button 
@@ -573,3 +539,71 @@ export function ConfiguracaoWhatsApp() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="numero">Número do WhatsApp</Label>
+                <Input
+                  id="numero"
+                  type="tel"
+                  placeholder="5511999999999 (apenas números)"
+                  value={numeroTelefone}
+                  onChange={(e) => setNumeroTelefone(e.target.value)}
+                  className="font-mono"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Digite o número completo com código do país e DDD, apenas números (ex: 5511999999999)
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="api-key">API Key N8N (Opcional)</Label>
+                <Input
+                  id="api-key"
+                  type="password"
+                  placeholder="Deixe em branco se usar configuração global"
+                  value={apiKeyN8N}
+                  onChange={(e) => setApiKeyN8N(e.target.value)}
+                />
+                <p className="text-sm text-muted-foreground">
+                  Chave de API específica para este profissional. Deixe em branco para usar a configuração global do N8N.
+                </p>
+              </div>
+
+              <div className="flex space-x-2">
+                <Button 
+                  type="submit" 
+                  disabled={salvarConfiguracao.isPending}
+                >
+                  <Settings className="mr-2 h-4 w-4" />
+                  {salvarConfiguracao.isPending ? 'Salvando...' : 'Salvar Configuração'}
+                </Button>
+                
+                {isConectado && (
+                  <Button 
+                    type="button"
+                    variant="outline"
+                    onClick={() => desativarConfiguracao.mutate()}
+                    disabled={desativarConfiguracao.isPending}
+                  >
+                    {desativarConfiguracao.isPending ? 'Desativando...' : 'Desativar'}
+                  </Button>
+                )}
+              </div>
+            </form>
+
+            {isConectado && (
+              <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <h4 className="font-medium text-green-900 mb-2">Integração Ativa</h4>
+                <p className="text-sm text-green-700 mb-2">
+                  WhatsApp conectado: <span className="font-mono font-medium">+{configuracao.numero_telefone}</span>
+                </p>
+                <p className="text-sm text-green-700">
+                  Os pacientes podem enviar mensagens para este número para agendar, reagendar ou cancelar consultas automaticamente.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
