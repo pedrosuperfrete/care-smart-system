@@ -35,10 +35,11 @@ interface OnboardingStep2Props {
   onDataChange: (data: any) => void;
   onSubmit: () => void;
   onBack: () => void;
+  onSkip?: () => void;
   loading: boolean;
 }
 
-export function OnboardingStep2({ data, onDataChange, onSubmit, onBack, loading }: OnboardingStep2Props) {
+export function OnboardingStep2({ data, onDataChange, onSubmit, onBack, onSkip, loading }: OnboardingStep2Props) {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -266,13 +267,26 @@ export function OnboardingStep2({ data, onDataChange, onSubmit, onBack, loading 
             ))}
           </div>
 
-          <div className="flex gap-4">
-            <Button type="button" onClick={onBack} variant="outline" className="flex-1">
-              Voltar
-            </Button>
-            <Button type="submit" disabled={loading} className="flex-1">
-              {loading ? 'Salvando...' : 'Finalizar Cadastro'}
-            </Button>
+          <div className="flex flex-col gap-3">
+            <div className="flex gap-4">
+              <Button type="button" onClick={onBack} variant="outline" className="flex-1">
+                Voltar
+              </Button>
+              <Button type="submit" disabled={loading} className="flex-1">
+                {loading ? 'Salvando...' : 'Finalizar Cadastro'}
+              </Button>
+            </div>
+            {onSkip && (
+              <Button 
+                type="button" 
+                onClick={onSkip} 
+                variant="ghost" 
+                className="w-full text-muted-foreground hover:text-foreground"
+                disabled={loading}
+              >
+                Preencher depois
+              </Button>
+            )}
           </div>
         </form>
       </CardContent>

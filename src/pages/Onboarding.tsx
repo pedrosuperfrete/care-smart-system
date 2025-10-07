@@ -37,6 +37,28 @@ export default function Onboarding() {
     setCurrentStep(1);
   };
 
+  const handleSkipStep2 = async () => {
+    setLoading(true);
+    
+    try {
+      // Marcar onboarding como incompleto para mostrar o passo 2 no WhatsApp depois
+      await updateProfissional({
+        nome: step1Data.nome,
+        mini_bio: step1Data.mini_bio,
+        servicos_oferecidos: step1Data.servicos_oferecidos,
+        onboarding_completo: false, // Marcar como incompleto
+      });
+      
+      toast.success('Você pode completar seu perfil depois na aba WhatsApp das configurações!');
+      navigate('/app/dashboard');
+    } catch (error) {
+      toast.error('Erro ao pular etapa. Tente novamente.');
+      console.error('Erro ao pular onboarding:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleFinalSubmit = async () => {
     setLoading(true);
     
@@ -187,6 +209,7 @@ export default function Onboarding() {
           onDataChange={setStep2Data}
           onSubmit={handleFinalSubmit}
           onBack={handleStep2Back}
+          onSkip={handleSkipStep2}
           loading={loading}
         />
       )}
