@@ -37,11 +37,16 @@ export default function Onboarding() {
     setLoading(true);
     
     try {
-      // Pular para o dashboard sem completar nada
+      // Marcar onboarding como incompleto para permitir acesso mas mostrar aviso
+      await updateProfissional({
+        onboarding_completo: false,
+      });
+      
       toast.info('Você pode completar seu perfil depois nas configurações!');
       navigate('/app/dashboard');
     } catch (error) {
       console.error('Erro ao pular onboarding:', error);
+      toast.error('Erro ao pular. Tente novamente.');
     } finally {
       setLoading(false);
     }
