@@ -25,9 +25,10 @@ interface OnboardingStep1Props {
   };
   onDataChange: (data: any) => void;
   onNext: () => void;
+  onSkip?: () => void;
 }
 
-export function OnboardingStep1({ data, onDataChange, onNext }: OnboardingStep1Props) {
+export function OnboardingStep1({ data, onDataChange, onNext, onSkip }: OnboardingStep1Props) {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -122,9 +123,21 @@ export function OnboardingStep1({ data, onDataChange, onNext }: OnboardingStep1P
             )}
           </div>
 
-          <Button type="submit" className="w-full">
-            Próxima Etapa
-          </Button>
+          <div className="flex flex-col gap-3">
+            <Button type="submit" className="w-full">
+              Próxima Etapa
+            </Button>
+            {onSkip && (
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="w-full"
+                onClick={onSkip}
+              >
+                Preencher depois
+              </Button>
+            )}
+          </div>
         </form>
       </CardContent>
     </Card>

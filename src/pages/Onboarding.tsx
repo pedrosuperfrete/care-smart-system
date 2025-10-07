@@ -33,6 +33,20 @@ export default function Onboarding() {
     setCurrentStep(2);
   };
 
+  const handleSkipStep1 = async () => {
+    setLoading(true);
+    
+    try {
+      // Pular para o dashboard sem completar nada
+      toast.info('Você pode completar seu perfil depois nas configurações!');
+      navigate('/app/dashboard');
+    } catch (error) {
+      console.error('Erro ao pular onboarding:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleStep2Back = () => {
     setCurrentStep(1);
   };
@@ -202,6 +216,7 @@ export default function Onboarding() {
           data={step1Data}
           onDataChange={setStep1Data}
           onNext={handleStep1Next}
+          onSkip={handleSkipStep1}
         />
       ) : (
         <OnboardingStep2
