@@ -37,9 +37,9 @@ export default function Onboarding() {
     setLoading(true);
     
     try {
-      // Marcar onboarding como incompleto para permitir acesso mas mostrar aviso
+      // Marcar onboarding como completo para permitir acesso ao dashboard
       await updateProfissional({
-        onboarding_completo: false,
+        onboarding_completo: true,
       });
       
       toast.info('Você pode completar seu perfil depois nas configurações!');
@@ -60,12 +60,12 @@ export default function Onboarding() {
     setLoading(true);
     
     try {
-      // Marcar onboarding como incompleto para mostrar o passo 2 no WhatsApp depois
+      // Salvar dados do step 1 e marcar como completo para permitir acesso
       await updateProfissional({
         nome: step1Data.nome,
         mini_bio: step1Data.mini_bio,
         servicos_oferecidos: step1Data.servicos_oferecidos,
-        onboarding_completo: false, // Marcar como incompleto
+        onboarding_completo: true,
       });
       
       toast.success('Você pode completar seu perfil depois na aba WhatsApp das configurações!');
