@@ -398,9 +398,9 @@ export default function Agenda() {
                       </SelectTrigger>
                       <SelectContent>
                         {loadingTipos ? (
-                          <SelectItem value="" disabled>Carregando tipos de serviço...</SelectItem>
+                          <div className="p-2 text-sm text-muted-foreground">Carregando tipos de serviço...</div>
                         ) : tiposServicos.length === 0 ? (
-                          <SelectItem value="" disabled>Nenhum tipo de serviço cadastrado</SelectItem>
+                          <div className="p-2 text-sm text-muted-foreground">Nenhum tipo de serviço cadastrado</div>
                         ) : (
                           tiposServicos.map((tipo) => (
                             <SelectItem key={tipo.id} value={tipo.nome}>
