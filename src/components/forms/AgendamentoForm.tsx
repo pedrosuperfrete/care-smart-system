@@ -398,10 +398,9 @@ export function AgendamentoForm({ agendamento, pacienteId, onSuccess }: Agendame
                 <Label htmlFor="novo-telefone">Telefone</Label>
                 <Input
                   id="novo-telefone"
-                  name="telefone"
+                  {...novoPacienteForm.register('telefone')}
                   placeholder="(11) 99999-9999"
                   maxLength={15}
-                  defaultValue=""
                   onChange={(e) => {
                     const numbers = e.target.value.replace(/\D/g, '');
                     const limited = numbers.slice(0, 11);
