@@ -398,18 +398,21 @@ export function AgendamentoForm({ agendamento, pacienteId, onSuccess }: Agendame
                 <Label htmlFor="novo-telefone">Telefone</Label>
                 <Input
                   id="novo-telefone"
-                  {...novoPacienteForm.register('telefone')}
                   placeholder="(11) 99999-9999"
                   maxLength={15}
-                  onChange={(e) => {
-                    const numbers = e.target.value.replace(/\D/g, '');
-                    const limited = numbers.slice(0, 11);
-                    const formatted = limited
+                  value={(() => {
+                    const phone = novoPacienteForm.watch('telefone') || '';
+                    if (!phone) return '';
+                    const formatted = phone
                       .replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3')
                       .replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3')
                       .replace(/(\d{2})(\d{0,5})/, '($1) $2');
+                    return formatted;
+                  })()}
+                  onChange={(e) => {
+                    const numbers = e.target.value.replace(/\D/g, '');
+                    const limited = numbers.slice(0, 11);
                     novoPacienteForm.setValue('telefone', limited);
-                    e.target.value = formatted;
                   }}
                 />
               </div>
