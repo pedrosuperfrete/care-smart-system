@@ -17,6 +17,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { EnhancedDatePicker } from '@/components/ui/enhanced-date-picker';
 import { toLocalDateString } from '@/lib/dateUtils';
+import { useQueryClient } from '@tanstack/react-query';
 
 type Agendamento = Tables<'agendamentos'>;
 
@@ -38,6 +39,7 @@ interface AgendamentoFormProps {
 
 export function AgendamentoForm({ agendamento, pacienteId, onSuccess }: AgendamentoFormProps) {
   const { profissional, user, clinicaAtual } = useAuth();
+  const queryClient = useQueryClient();
   const createMutation = useCreateAgendamento();
   const updateMutation = useUpdateAgendamento();
   const { data: pacientes = [] } = usePacientes();
@@ -164,6 +166,9 @@ export function AgendamentoForm({ agendamento, pacienteId, onSuccess }: Agendame
       };
 
       const novoPaciente = await createPaciente.mutateAsync(pacienteData);
+      
+      // Aguarda a query de pacientes ser atualizada
+      await queryClient.refetchQueries({ queryKey: ['pacientes'] });
       
       // Seleciona o paciente recém-criado
       setFormData(prev => ({ ...prev, paciente_id: novoPaciente.id }));
