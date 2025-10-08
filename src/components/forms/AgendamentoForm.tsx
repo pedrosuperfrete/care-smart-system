@@ -16,6 +16,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { EnhancedDatePicker } from '@/components/ui/enhanced-date-picker';
+import { EnhancedDateTimePicker } from '@/components/ui/enhanced-datetime-picker';
 import { toLocalDateString } from '@/lib/dateUtils';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -251,23 +252,20 @@ export function AgendamentoForm({ agendamento, pacienteId, onSuccess }: Agendame
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="data_inicio">Data e Hora de Início *</Label>
-          <Input
-            id="data_inicio"
-            type="datetime-local"
+          <Label htmlFor="data_inicio">Data e Hora Início *</Label>
+          <EnhancedDateTimePicker
             value={formData.data_inicio}
-            onChange={(e) => handleChange('data_inicio', e.target.value)}
-            required
+            onChange={(value) => handleChange('data_inicio', value)}
+            placeholder="dd/mm/aaaa --:--"
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="data_fim">Data e Hora de Fim</Label>
-          <Input
-            id="data_fim"
-            type="datetime-local"
+          <Label htmlFor="data_fim">Data e Hora Fim *</Label>
+          <EnhancedDateTimePicker
             value={formData.data_fim}
-            onChange={(e) => handleChange('data_fim', e.target.value)}
+            onChange={(value) => handleChange('data_fim', value)}
+            placeholder="dd/mm/aaaa --:--"
           />
         </div>
 
