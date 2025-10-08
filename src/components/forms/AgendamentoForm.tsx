@@ -4,14 +4,31 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useCreateAgendamento, useUpdateAgendamento } from '@/hooks/useAgendamentos';
-import { usePacientes } from '@/hooks/usePacientes';
+import { usePacientes, useCreatePaciente } from '@/hooks/usePacientes';
 import { useProfissionais } from '@/hooks/useProfissionais';
 import { useAuth } from '@/hooks/useAuth';
 import { useTiposServicos } from '@/hooks/useTiposServicos';
 import { Tables } from '@/integrations/supabase/types';
+import { Plus } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { EnhancedDatePicker } from '@/components/ui/enhanced-date-picker';
+import { toLocalDateString } from '@/lib/dateUtils';
 
 type Agendamento = Tables<'agendamentos'>;
+
+const novoPacienteSchema = z.object({
+  nome: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
+  cpf: z.string().min(11, 'CPF deve ter 11 dígitos'),
+  telefone: z.string().optional(),
+  email: z.string().email('Email inválido').optional().or(z.literal('')),
+  data_nascimento: z.date().optional(),
+});
+
+type NovoPacienteFormData = z.infer<typeof novoPacienteSchema>;
 
 interface AgendamentoFormProps {
   agendamento?: Agendamento;
@@ -20,12 +37,26 @@ interface AgendamentoFormProps {
 }
 
 export function AgendamentoForm({ agendamento, pacienteId, onSuccess }: AgendamentoFormProps) {
-  const { profissional, user } = useAuth();
+  const { profissional, user, clinicaAtual } = useAuth();
   const createMutation = useCreateAgendamento();
   const updateMutation = useUpdateAgendamento();
   const { data: pacientes = [] } = usePacientes();
   const { data: profissionais = [] } = useProfissionais();
   const { data: tiposServicos = [], isLoading: loadingTipos } = useTiposServicos();
+  const createPaciente = useCreatePaciente();
+
+  const [showNovoPacienteDialog, setShowNovoPacienteDialog] = useState(false);
+  const [isCreatingPaciente, setIsCreatingPaciente] = useState(false);
+
+  const novoPacienteForm = useForm<NovoPacienteFormData>({
+    resolver: zodResolver(novoPacienteSchema),
+    defaultValues: {
+      nome: '',
+      cpf: '',
+      telefone: '',
+      email: '',
+    },
+  });
 
   console.log('Tipos de serviços carregados:', tiposServicos, 'Loading:', loadingTipos);
 
@@ -112,11 +143,59 @@ export function AgendamentoForm({ agendamento, pacienteId, onSuccess }: Agendame
     }
   };
 
+  const handleCreatePaciente = async (data: NovoPacienteFormData) => {
+    if (!clinicaAtual) return;
+
+    setIsCreatingPaciente(true);
+    try {
+      const pacienteData = {
+        nome: data.nome,
+        cpf: data.cpf,
+        clinica_id: clinicaAtual,
+        email: data.email || null,
+        telefone: data.telefone || null,
+        data_nascimento: data.data_nascimento ? toLocalDateString(data.data_nascimento) : null,
+        endereco: null,
+        observacoes: null,
+        tipo_paciente: 'novo' as const,
+        ativo: true,
+        inadimplente: false,
+        verificarLimite: true,
+      };
+
+      const novoPaciente = await createPaciente.mutateAsync(pacienteData);
+      
+      // Seleciona o paciente recém-criado
+      setFormData(prev => ({ ...prev, paciente_id: novoPaciente.id }));
+      
+      // Fecha o dialog e limpa o formulário
+      setShowNovoPacienteDialog(false);
+      novoPacienteForm.reset();
+    } catch (error) {
+      console.error('Erro ao criar paciente:', error);
+    } finally {
+      setIsCreatingPaciente(false);
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="paciente">Paciente *</Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="paciente">Paciente *</Label>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowNovoPacienteDialog(true)}
+              disabled={!!pacienteId}
+              className="h-auto p-1 text-xs"
+            >
+              <Plus className="h-3 w-3 mr-1" />
+              Novo Paciente
+            </Button>
+          </div>
           <Select 
             value={formData.paciente_id} 
             onValueChange={(value) => handleChange('paciente_id', value)}
@@ -263,6 +342,109 @@ export function AgendamentoForm({ agendamento, pacienteId, onSuccess }: Agendame
            agendamento ? 'Atualizar' : 'Criar Agendamento'}
         </Button>
       </div>
+
+      {/* Dialog para criar novo paciente */}
+      <Dialog open={showNovoPacienteDialog} onOpenChange={setShowNovoPacienteDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Criar Novo Paciente</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={novoPacienteForm.handleSubmit(handleCreatePaciente)} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="novo-nome">Nome *</Label>
+                <Input
+                  id="novo-nome"
+                  {...novoPacienteForm.register('nome')}
+                  placeholder="Nome completo"
+                />
+                {novoPacienteForm.formState.errors.nome && (
+                  <p className="text-sm text-destructive">
+                    {novoPacienteForm.formState.errors.nome.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="novo-cpf">CPF *</Label>
+                <Input
+                  id="novo-cpf"
+                  {...novoPacienteForm.register('cpf')}
+                  placeholder="000.000.000-00"
+                  maxLength={14}
+                  onChange={(e) => {
+                    const numbers = e.target.value.replace(/\D/g, '');
+                    const limited = numbers.slice(0, 11);
+                    const formatted = limited
+                      .replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
+                      .replace(/(\d{3})(\d{3})(\d{3})(\d{1})/, '$1.$2.$3-$4')
+                      .replace(/(\d{3})(\d{3})(\d{2})/, '$1.$2.$3')
+                      .replace(/(\d{3})(\d{2})/, '$1.$2');
+                    novoPacienteForm.setValue('cpf', numbers);
+                    e.target.value = formatted;
+                  }}
+                />
+                {novoPacienteForm.formState.errors.cpf && (
+                  <p className="text-sm text-destructive">
+                    {novoPacienteForm.formState.errors.cpf.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="novo-telefone">Telefone</Label>
+                <Input
+                  id="novo-telefone"
+                  {...novoPacienteForm.register('telefone')}
+                  placeholder="(11) 99999-9999"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="novo-email">Email</Label>
+                <Input
+                  id="novo-email"
+                  type="email"
+                  {...novoPacienteForm.register('email')}
+                  placeholder="email@exemplo.com"
+                />
+                {novoPacienteForm.formState.errors.email && (
+                  <p className="text-sm text-destructive">
+                    {novoPacienteForm.formState.errors.email.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Data de Nascimento</Label>
+                <EnhancedDatePicker
+                  date={novoPacienteForm.watch('data_nascimento')}
+                  onDateChange={(date) => novoPacienteForm.setValue('data_nascimento', date)}
+                  placeholder="Selecione a data"
+                  disabled={(date) => date > new Date()}
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowNovoPacienteDialog(false);
+                  novoPacienteForm.reset();
+                }}
+                disabled={isCreatingPaciente}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isCreatingPaciente}>
+                {isCreatingPaciente ? 'Criando...' : 'Criar Paciente'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </form>
   );
 }
