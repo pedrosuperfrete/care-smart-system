@@ -400,6 +400,17 @@ export function AgendamentoForm({ agendamento, pacienteId, onSuccess }: Agendame
                   id="novo-telefone"
                   {...novoPacienteForm.register('telefone')}
                   placeholder="(11) 99999-9999"
+                  maxLength={15}
+                  onChange={(e) => {
+                    const numbers = e.target.value.replace(/\D/g, '');
+                    const limited = numbers.slice(0, 11);
+                    const formatted = limited
+                      .replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3')
+                      .replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3')
+                      .replace(/(\d{2})(\d{0,5})/, '($1) $2');
+                    novoPacienteForm.setValue('telefone', limited);
+                    e.target.value = formatted;
+                  }}
                 />
               </div>
 
