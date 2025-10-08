@@ -182,29 +182,28 @@ export function AgendamentoForm({ agendamento, pacienteId, onSuccess }: Agendame
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="paciente">Paciente *</Label>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowNovoPacienteDialog(true)}
-              disabled={!!pacienteId}
-              className="h-auto p-1 text-xs"
-            >
-              <Plus className="h-3 w-3 mr-1" />
-              Novo Paciente
-            </Button>
-          </div>
+          <Label htmlFor="paciente">Paciente *</Label>
           <Select 
             value={formData.paciente_id} 
-            onValueChange={(value) => handleChange('paciente_id', value)}
+            onValueChange={(value) => {
+              if (value === 'novo-paciente') {
+                setShowNovoPacienteDialog(true);
+              } else {
+                handleChange('paciente_id', value);
+              }
+            }}
             disabled={!!pacienteId}
           >
             <SelectTrigger>
               <SelectValue placeholder="Selecione o paciente" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="novo-paciente" className="font-medium text-primary">
+                <div className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Criar novo paciente
+                </div>
+              </SelectItem>
               {pacientes.map((paciente) => (
                 <SelectItem key={paciente.id} value={paciente.id}>
                   {paciente.nome}
