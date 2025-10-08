@@ -176,8 +176,9 @@ export function AgendamentoForm({ agendamento, pacienteId, onSuccess }: Agendame
       // Fecha o dialog e limpa o formulário
       setShowNovoPacienteDialog(false);
       novoPacienteForm.reset();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao criar paciente:', error);
+      // Não fecha o dialog para permitir que o usuário tente novamente ou cancele
     } finally {
       setIsCreatingPaciente(false);
     }

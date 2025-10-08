@@ -131,8 +131,8 @@ export function useCreatePaciente() {
     },
     onError: (error: any) => {
       if (error.message === "LIMITE_ATINGIDO") {
-        // Não mostrar toast aqui, será tratado no componente
-        throw error;
+        toast.error('Você atingiu o limite de pacientes do seu plano. Faça upgrade para cadastrar mais pacientes.');
+        return;
       }
       toast.error('Erro ao cadastrar paciente: ' + error.message);
     },
