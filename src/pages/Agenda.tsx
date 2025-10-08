@@ -22,6 +22,7 @@ import { VisaoMensal } from '@/components/agenda/VisaoMensal';
 import { EditarAgendamentoDialog } from '@/components/agenda/EditarAgendamentoDialog';
 import { GoogleCalendarConnect } from '@/components/agenda/GoogleCalendarConnect';
 import { BloqueioAgendaModal } from '@/components/agenda/BloqueioAgendaModal';
+import { AgendamentoForm } from '@/components/forms/AgendamentoForm';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -330,118 +331,7 @@ export default function Agenda() {
                 </DialogDescription>
               </DialogHeader>
               
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Paciente *</Label>
-                    <Select value={newConsulta.paciente_id} onValueChange={(value) => 
-                      setNewConsulta(prev => ({ ...prev, paciente_id: value }))
-                    }>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o paciente" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {pacientes.map(paciente => (
-                          <SelectItem key={paciente.id} value={paciente.id}>
-                            {paciente.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Profissional *</Label>
-                    <Select value={newConsulta.profissional_id} onValueChange={(value) => 
-                      setNewConsulta(prev => ({ ...prev, profissional_id: value }))
-                    }>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o profissional" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {profissionais.map(prof => (
-                          <SelectItem key={prof.id} value={prof.id}>
-                            {prof.nome} - {prof.especialidade}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Data e Hora Início *</Label>
-                    <Input
-                      type="datetime-local"
-                      value={newConsulta.data_inicio}
-                      onChange={(e) => setNewConsulta(prev => ({ 
-                        ...prev, 
-                        data_inicio: e.target.value,
-                        data_fim: e.target.value ? toDateTimeLocalString(new Date(new Date(e.target.value).getTime() + 60*60*1000)) : ''
-                      }))}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Data e Hora Fim *</Label>
-                    <Input
-                      type="datetime-local"
-                      value={newConsulta.data_fim}
-                      onChange={(e) => setNewConsulta(prev => ({ ...prev, data_fim: e.target.value }))}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Tipo de Serviço *</Label>
-                    <Select value={newConsulta.tipo_servico} onValueChange={handleTipoServicoChange}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o tipo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {loadingTipos ? (
-                          <div className="p-2 text-sm text-muted-foreground">Carregando tipos de serviço...</div>
-                        ) : tiposServicos.length === 0 ? (
-                          <div className="p-2 text-sm text-muted-foreground">Nenhum tipo de serviço cadastrado</div>
-                        ) : (
-                          tiposServicos.map((tipo) => (
-                            <SelectItem key={tipo.id} value={tipo.nome}>
-                              {tipo.nome}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Valor (R$)</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={newConsulta.valor}
-                      onChange={(e) => setNewConsulta(prev => ({ ...prev, valor: e.target.value }))}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Observações</Label>
-                  <Input
-                    placeholder="Observações sobre a consulta..."
-                    value={newConsulta.observacoes}
-                    onChange={(e) => setNewConsulta(prev => ({ ...prev, observacoes: e.target.value }))}
-                  />
-                </div>
-
-                <div className="flex justify-end space-x-2">
-                  <Button variant="outline" onClick={() => setIsNewConsultaOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button onClick={handleCreateConsulta} disabled={createAgendamento.isPending}>
-                    {createAgendamento.isPending ? 'Salvando...' : 'Agendar Consulta'}
-                  </Button>
-                </div>
-              </div>
+              <AgendamentoForm onSuccess={() => setIsNewConsultaOpen(false)} />
             </DialogContent>
           </Dialog>
         </div>
