@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,22 +42,21 @@ export function GerenciarEquipe() {
   const [editandoUsuario, setEditandoUsuario] = useState<EditarUsuarioForm | null>(null);
   const [dialogAberto, setDialogAberto] = useState(false);
   const [dialogEdicaoAberto, setDialogEdicaoAberto] = useState(false);
-  const [usuariosDetalhes, setUsuariosDetalhes] = useState<any[]>([]);
+  
 
   const { data: usuarios = [], isLoading } = useUsuariosClinicas(clinicaAtual || undefined);
   const createUsuarioClinica = useCreateUsuarioClinica();
   const removeUsuarioClinica = useRemoveUsuarioClinica();
   const updateUsuarioClinica = useUpdateUsuarioClinica();
 
-  // Atualizar usuariosDetalhes diretamente dos dados já incluídos
-  useEffect(() => {
-    const detalhes = usuarios.map((usuarioClinica: any) => ({
+  // Usar useMemo para evitar loop infinito de atualizações
+  const usuariosDetalhes = useMemo(() => {
+    return usuarios.map((usuarioClinica: any) => ({
       ...usuarioClinica,
       nome: usuarioClinica.users?.nome || 'Nome não informado',
       email: usuarioClinica.users?.email || 'Email não encontrado',
       tipo_usuario: usuarioClinica.users?.tipo_usuario
     }));
-    setUsuariosDetalhes(detalhes);
   }, [usuarios]);
 
 
