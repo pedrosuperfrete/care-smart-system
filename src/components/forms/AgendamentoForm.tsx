@@ -50,6 +50,7 @@ export function AgendamentoForm({ agendamento, pacienteId, onSuccess }: Agendame
 
   const [showNovoPacienteDialog, setShowNovoPacienteDialog] = useState(false);
   const [isCreatingPaciente, setIsCreatingPaciente] = useState(false);
+  const [telefoneFormatado, setTelefoneFormatado] = useState('');
 
   const novoPacienteForm = useForm<NovoPacienteFormData>({
     resolver: zodResolver(novoPacienteSchema),
@@ -177,6 +178,7 @@ export function AgendamentoForm({ agendamento, pacienteId, onSuccess }: Agendame
       // Fecha o dialog e limpa o formulário
       setShowNovoPacienteDialog(false);
       novoPacienteForm.reset();
+      setTelefoneFormatado('');
     } catch (error: any) {
       console.error('Erro ao criar paciente:', error);
       // Não fecha o dialog para permitir que o usuário tente novamente ou cancele
@@ -400,18 +402,24 @@ export function AgendamentoForm({ agendamento, pacienteId, onSuccess }: Agendame
                   id="novo-telefone"
                   placeholder="(11) 99999-9999"
                   maxLength={15}
-                  value={(() => {
-                    const phone = novoPacienteForm.watch('telefone') || '';
-                    if (!phone) return '';
-                    const formatted = phone
-                      .replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3')
-                      .replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3')
-                      .replace(/(\d{2})(\d{0,5})/, '($1) $2');
-                    return formatted;
-                  })()}
+                  value={telefoneFormatado}
                   onChange={(e) => {
                     const numbers = e.target.value.replace(/\D/g, '');
                     const limited = numbers.slice(0, 11);
+                    
+                    // Formata o telefone para exibição
+                    let formatted = limited;
+                    if (limited.length > 10) {
+                      formatted = limited.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+                    } else if (limited.length > 6) {
+                      formatted = limited.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+                    } else if (limited.length > 2) {
+                      formatted = limited.replace(/(\d{2})(\d{0,5})/, '($1) $2');
+                    } else if (limited.length > 0) {
+                      formatted = limited.replace(/(\d*)/, '($1');
+                    }
+                    
+                    setTelefoneFormatado(formatted);
                     novoPacienteForm.setValue('telefone', limited);
                   }}
                 />
@@ -450,6 +458,7 @@ export function AgendamentoForm({ agendamento, pacienteId, onSuccess }: Agendame
                 onClick={() => {
                   setShowNovoPacienteDialog(false);
                   novoPacienteForm.reset();
+                  setTelefoneFormatado('');
                 }}
                 disabled={isCreatingPaciente}
               >
