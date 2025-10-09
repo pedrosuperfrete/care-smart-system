@@ -175,7 +175,7 @@ export default function Financeiro() {
               R$ {statsLoading ? '...' : statsData.totalRecebido.toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground">
-              Pagamentos confirmados
+              Pagamentos realizados
             </p>
           </CardContent>
         </Card>
@@ -183,7 +183,7 @@ export default function Financeiro() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              A Receber
+              A Receber - Garantido
             </CardTitle>
             <Clock className="h-4 w-4 text-warning" />
           </CardHeader>
@@ -192,7 +192,7 @@ export default function Financeiro() {
               R$ {statsLoading ? '...' : statsData.totalPendente.toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground">
-              Pagamentos pendentes
+              Pagamentos devidos
             </p>
           </CardContent>
         </Card>
@@ -217,7 +217,7 @@ export default function Financeiro() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Receita Mensal
+              A Receber - Previsto
             </CardTitle>
             <TrendingUp className="h-4 w-4 text-primary" />
           </CardHeader>
@@ -226,7 +226,7 @@ export default function Financeiro() {
               R$ {statsLoading ? '...' : statsData.receitaMensal.toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground">
-              Recebido este mês
+              Consultas a realizar
             </p>
           </CardContent>
         </Card>
