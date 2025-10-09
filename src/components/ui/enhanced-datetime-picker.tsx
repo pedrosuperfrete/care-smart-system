@@ -241,7 +241,7 @@ export function EnhancedDateTimePicker({
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="max-h-60">
-                          {Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0')).map((m) => (
+                          {['00', '15', '30', '45'].map((m) => (
                             <SelectItem key={m} value={m}>
                               {m}min
                             </SelectItem>
