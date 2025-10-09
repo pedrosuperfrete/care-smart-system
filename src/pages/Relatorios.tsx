@@ -25,7 +25,8 @@ export default function Relatorios() {
     error, 
     estatisticas, 
     consultasPorDia, 
-    receitaPorMes, 
+    receitaPorMes,
+    novosPacientesPorMes,
     tiposConsulta,
     statusConsultas,
     statusPagamentos
@@ -225,6 +226,34 @@ export default function Relatorios() {
                   <Tooltip formatter={(value: any) => [`R$ ${value}`, 'Receita']} />
                   <Line type="monotone" dataKey="receita" stroke="hsl(var(--success))" />
                 </LineChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Novos Pacientes por Mês</CardTitle>
+            <CardDescription>
+              Pacientes cadastrados nos últimos 6 meses
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="h-[300px] flex items-center justify-center">
+                <Skeleton className="h-full w-full" />
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={novosPacientesPorMes}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="mes" />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip formatter={(value: any) => [`${value}`, 'Pacientes']} />
+                  <Bar dataKey="pacientes" fill="hsl(var(--info))" />
+                </BarChart>
               </ResponsiveContainer>
             )}
           </CardContent>

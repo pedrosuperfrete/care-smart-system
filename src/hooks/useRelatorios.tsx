@@ -45,6 +45,7 @@ export const useRelatorios = (periodo: string = 'mes', dataInicio?: Date, dataFi
   const [estatisticas, setEstatisticas] = useState<EstatisticaRelatorio[]>([]);
   const [consultasPorDia, setConsultasPorDia] = useState<DadosGrafico[]>([]);
   const [receitaPorMes, setReceitaPorMes] = useState<DadosGrafico[]>([]);
+  const [novosPacientesPorMes, setNovosPacientesPorMes] = useState<DadosGrafico[]>([]);
   const [tiposConsulta, setTiposConsulta] = useState<TipoConsulta[]>([]);
   const [statusConsultas, setStatusConsultas] = useState<StatusConsulta[]>([]);
   const [statusPagamentos, setStatusPagamentos] = useState<StatusPagamento[]>([]);
@@ -727,6 +728,71 @@ export const useRelatorios = (periodo: string = 'mes', dataInicio?: Date, dataFi
     }
   };
 
+  const buscarNovosPacientesPorMes = async () => {
+    if (!user || !userProfile) return;
+
+    try {
+      let clinicaId: string | null = null;
+
+      if (userProfile.tipo_usuario === 'profissional') {
+        const { data: profissional } = await supabase
+          .from('profissionais')
+          .select('clinica_id')
+          .eq('user_id', user.id)
+          .eq('ativo', true)
+          .maybeSingle();
+
+        if (!profissional) return;
+        clinicaId = profissional.clinica_id;
+      } 
+      else if (userProfile.tipo_usuario === 'recepcionista') {
+        const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
+        
+        if (!clinicasUsuario || clinicasUsuario.length === 0) return;
+        clinicaId = clinicasUsuario[0].clinica_id;
+      }
+      else if (userProfile.tipo_usuario === 'admin') {
+        // Admin vê todos os pacientes
+        clinicaId = null;
+      }
+
+      // Buscar novos pacientes dos últimos 6 meses
+      const ultimosMeses = Array.from({ length: 6 }, (_, i) => {
+        const data = subMonths(new Date(), 5 - i);
+        return {
+          mes: format(data, 'MMM', { locale: ptBR }),
+          inicio: startOfMonth(data),
+          fim: endOfMonth(data)
+        };
+      });
+
+      const dadosPorMes = await Promise.all(
+        ultimosMeses.map(async ({ mes, inicio, fim }) => {
+          let query = supabase
+            .from('pacientes')
+            .select('id', { count: 'exact' })
+            .gte('created_at', inicio.toISOString())
+            .lte('created_at', fim.toISOString());
+
+          if (clinicaId) {
+            query = query.eq('clinica_id', clinicaId);
+          }
+
+          const { count } = await query;
+
+          return {
+            mes,
+            pacientes: count || 0
+          };
+        })
+      );
+
+      setNovosPacientesPorMes(dadosPorMes);
+    } catch (err) {
+      console.error('Erro ao buscar novos pacientes por mês:', err);
+    }
+  };
+
   useEffect(() => {
     const carregarDados = async () => {
       setLoading(true);
@@ -736,6 +802,7 @@ export const useRelatorios = (periodo: string = 'mes', dataInicio?: Date, dataFi
         buscarEstatisticas(),
         buscarConsultasPorDia(),
         buscarReceitaPorMes(),
+        buscarNovosPacientesPorMes(),
         buscarTiposConsulta(),
         buscarStatusConsultas(),
         buscarStatusPagamentos()
@@ -755,6 +822,7 @@ export const useRelatorios = (periodo: string = 'mes', dataInicio?: Date, dataFi
     estatisticas,
     consultasPorDia,
     receitaPorMes,
+    novosPacientesPorMes,
     tiposConsulta,
     statusConsultas,
     statusPagamentos
