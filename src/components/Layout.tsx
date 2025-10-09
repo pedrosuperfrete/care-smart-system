@@ -47,7 +47,7 @@ export function Layout({ children }: LayoutProps) {
             </header>
           )}
           
-          <main className="flex-1 p-4 lg:p-6 overflow-auto bg-background">
+          <main className="flex-1 p-4 lg:p-6 overflow-auto bg-background relative">
             <AlertaAssinatura />
             {children}
           </main>

@@ -184,17 +184,17 @@ export function VisaoSemanalGrid({
   return (
     <div className="relative">
       {/* Cabeçalho com dias da semana - Fixo no topo */}
-      <div className="sticky top-0 left-0 right-0 bg-background z-[100] pb-3 pt-2 border-b shadow-md mb-2 -mx-2 px-2">
+      <div className="sticky top-0 left-0 right-0 bg-background z-[100] pb-3 pt-2 mb-2 border-b-2">
         <div className="overflow-x-auto">
           <div className="min-w-[800px]">
-            <div className="grid grid-cols-8 gap-1">
-              <div className="w-16 text-xs font-medium text-muted-foreground"></div>
+            <div className="grid grid-cols-8 gap-1 bg-background">
+              <div className="w-16 text-xs font-medium text-muted-foreground bg-background"></div>
               {diasSemana.map((dia, index) => (
-                <div key={index} className="text-center p-2 border rounded bg-card shadow-sm">
-                  <div className="text-xs font-medium text-muted-foreground">
+                <div key={index} className="text-center p-3 border-2 rounded-lg bg-card shadow-md">
+                  <div className="text-xs font-semibold text-muted-foreground uppercase">
                     {diasSemanaLabels[index]}
                   </div>
-                  <div className="text-sm font-semibold">
+                  <div className="text-lg font-bold mt-1">
                     {dia.getDate()}
                   </div>
                 </div>
