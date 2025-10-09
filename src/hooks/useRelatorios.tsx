@@ -771,8 +771,8 @@ export const useRelatorios = (periodo: string = 'mes', dataInicio?: Date, dataFi
           let query = supabase
             .from('pacientes')
             .select('id', { count: 'exact' })
-            .gte('created_at', inicio.toISOString())
-            .lte('created_at', fim.toISOString());
+            .gte('criado_em', inicio.toISOString())
+            .lte('criado_em', fim.toISOString());
 
           if (clinicaId) {
             query = query.eq('clinica_id', clinicaId);
