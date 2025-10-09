@@ -96,6 +96,19 @@ export function VisaoDiaria({
       return slotTime.getTime() === inicio.getTime();
     });
 
+    // Verificar se o slot está ocupado mas NÃO é o início (slots intermediários)
+    const isDentroDeAgendamento = agendamentos.some(ag => {
+      const inicio = new Date(ag.data_inicio);
+      const fim = new Date(ag.data_fim);
+      return slotTime > inicio && slotTime < fim && !ag.desmarcada;
+    });
+
+    const isDentroDeBloqueio = bloqueios.some(bl => {
+      const inicio = new Date(bl.data_inicio);
+      const fim = new Date(bl.data_fim);
+      return slotTime > inicio && slotTime < fim;
+    });
+
     // Verificar se o slot está dentro de um agendamento ou bloqueio (para desabilitar clique)
     const dentroDeBloqueio = bloqueios.some(bl => {
       const inicio = new Date(bl.data_inicio);
@@ -109,7 +122,12 @@ export function VisaoDiaria({
       return slotTime >= inicio && slotTime < fim && !ag.desmarcada;
     });
 
-    return { agendamento, bloqueio, isOccupied: dentroDeBloqueio || dentroDeAgendamento };
+    return { 
+      agendamento, 
+      bloqueio, 
+      isOccupied: dentroDeBloqueio || dentroDeAgendamento,
+      isSlotIntermediario: isDentroDeAgendamento || isDentroDeBloqueio
+    };
   };
 
   const calcularSlots = (dataInicio: string, dataFim: string) => {
@@ -131,7 +149,12 @@ export function VisaoDiaria({
     <div className="space-y-2">
       <div className="grid grid-cols-1 gap-1">
         {timeSlots.map((time) => {
-          const { agendamento, bloqueio, isOccupied } = isSlotOccupied(time);
+          const { agendamento, bloqueio, isOccupied, isSlotIntermediario } = isSlotOccupied(time);
+          
+          // Não renderizar slots intermediários (que estão dentro de um agendamento/bloqueio)
+          if (isSlotIntermediario) {
+            return null;
+          }
           
           return (
             <div key={time} className="flex items-center min-h-[60px] border-b border-gray-100">

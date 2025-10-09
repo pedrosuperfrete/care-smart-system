@@ -109,6 +109,19 @@ export function VisaoSemanalGrid({
       return slotTime.getTime() === inicio.getTime();
     });
 
+    // Verificar se o slot está ocupado mas NÃO é o início (slots intermediários)
+    const isDentroDeAgendamento = agendamentos.some(ag => {
+      const inicio = new Date(ag.data_inicio);
+      const fim = new Date(ag.data_fim);
+      return slotTime > inicio && slotTime < fim && !ag.desmarcada;
+    });
+
+    const isDentroDeBloqueio = bloqueios.some(bl => {
+      const inicio = new Date(bl.data_inicio);
+      const fim = new Date(bl.data_fim);
+      return slotTime > inicio && slotTime < fim;
+    });
+
     // Verificar se o slot está dentro de um agendamento ou bloqueio (para desabilitar clique)
     const dentroDeBloqueio = bloqueios.some(bl => {
       const inicio = new Date(bl.data_inicio);
@@ -122,7 +135,12 @@ export function VisaoSemanalGrid({
       return slotTime >= inicio && slotTime < fim && !ag.desmarcada;
     });
 
-    return { agendamento, bloqueio, isOccupied: dentroDeBloqueio || dentroDeAgendamento };
+    return { 
+      agendamento, 
+      bloqueio, 
+      isOccupied: dentroDeBloqueio || dentroDeAgendamento,
+      isSlotIntermediario: isDentroDeAgendamento || isDentroDeBloqueio
+    };
   };
 
   const calcularSlots = (dataInicio: string, dataFim: string) => {
@@ -168,11 +186,14 @@ export function VisaoSemanalGrid({
               
               {/* Colunas dos dias */}
               {diasSemana.map((dia, dayIndex) => {
-                const { agendamento, bloqueio, isOccupied } = isSlotOccupied(time, dia);
+                const { agendamento, bloqueio, isOccupied, isSlotIntermediario } = isSlotOccupied(time, dia);
                 
                 return (
                   <div key={dayIndex} className="border border-gray-100 min-h-[40px]">
-                    {bloqueio ? (
+                    {isSlotIntermediario ? (
+                      // Slot intermediário - não renderizar nada
+                      null
+                    ) : bloqueio ? (
                       // Mostrar bloqueio
                       <div 
                         className="bg-orange-100 border border-orange-200 p-1 rounded text-xs"
