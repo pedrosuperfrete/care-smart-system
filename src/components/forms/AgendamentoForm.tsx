@@ -404,23 +404,23 @@ export function AgendamentoForm({ agendamento, pacienteId, onSuccess }: Agendame
                   maxLength={15}
                   value={telefoneFormatado}
                   onChange={(e) => {
-                    const numbers = e.target.value.replace(/\D/g, '');
-                    const limited = numbers.slice(0, 11);
+                    const input = e.target.value;
+                    const numbers = input.replace(/\D/g, '').slice(0, 11);
                     
-                    // Formata o telefone para exibição
-                    let formatted = limited;
-                    if (limited.length > 10) {
-                      formatted = limited.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
-                    } else if (limited.length > 6) {
-                      formatted = limited.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
-                    } else if (limited.length > 2) {
-                      formatted = limited.replace(/(\d{2})(\d{0,5})/, '($1) $2');
-                    } else if (limited.length > 0) {
-                      formatted = limited.replace(/(\d*)/, '($1');
+                    // Aplica a máscara enquanto digita
+                    let formatted = '';
+                    if (numbers.length > 0) {
+                      formatted = '(' + numbers.substring(0, 2);
+                      if (numbers.length >= 3) {
+                        formatted += ') ' + numbers.substring(2, 7);
+                      }
+                      if (numbers.length >= 8) {
+                        formatted += '-' + numbers.substring(7, 11);
+                      }
                     }
                     
                     setTelefoneFormatado(formatted);
-                    novoPacienteForm.setValue('telefone', limited);
+                    novoPacienteForm.setValue('telefone', numbers);
                   }}
                 />
               </div>
