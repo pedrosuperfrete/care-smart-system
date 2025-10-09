@@ -143,12 +143,21 @@ export function VisaoSemanalGrid({
     };
   };
 
-  const calcularSlots = (dataInicio: string, dataFim: string) => {
+  const calcularPosicaoTop = (dataInicio: string) => {
+    const inicio = new Date(dataInicio);
+    const hours = inicio.getHours();
+    const minutes = inicio.getMinutes();
+    const baseHour = 7; // Início da grade às 7h
+    const totalMinutes = (hours - baseHour) * 60 + minutes;
+    return totalMinutes * (40 / 60); // Converter para pixels (40px por hora = 0.67px por minuto)
+  };
+
+  const calcularAltura = (dataInicio: string, dataFim: string) => {
     const inicio = new Date(dataInicio);
     const fim = new Date(dataFim);
     const diffMs = fim.getTime() - inicio.getTime();
     const diffMinutes = diffMs / (1000 * 60);
-    return Math.ceil(diffMinutes / 30); // Cada slot tem 30 minutos
+    return diffMinutes * (40 / 60); // Converter para pixels
   };
 
   const isSameDay = (date1: Date, date2: Date) => {
@@ -176,124 +185,150 @@ export function VisaoSemanalGrid({
         </div>
 
         {/* Grade de horários */}
-        <div className="space-y-1">
-          {timeSlots.map((time) => (
-            <div key={time} className="grid grid-cols-8 gap-1 min-h-[40px]">
-              {/* Coluna do horário */}
-              <div className="w-16 text-xs text-gray-500 font-medium py-2">
+        <div className="grid grid-cols-8 gap-1">
+          {/* Coluna de horários */}
+          <div className="w-16">
+            {timeSlots.map((time) => (
+              <div key={time} className="h-[40px] text-xs text-gray-500 font-medium flex items-start pt-1">
                 {time}
               </div>
+            ))}
+          </div>
+          
+          {/* Colunas dos dias com posicionamento absoluto */}
+          {diasSemana.map((dia, dayIndex) => (
+            <div key={dayIndex} className="relative">
+              {/* Grid de fundo */}
+              {timeSlots.map((time) => (
+                <div
+                  key={time}
+                  className="h-[40px] border border-gray-100 hover:bg-gray-50 cursor-pointer"
+                  onClick={() => {
+                    const [hours, minutes] = time.split(':').map(Number);
+                    const dataHora = new Date(dia);
+                    dataHora.setHours(hours, minutes, 0, 0);
+                    onNovaConsulta(dataHora);
+                  }}
+                >
+                  <Button
+                    variant="ghost"
+                    className="w-full h-full text-xs text-gray-300 opacity-0 hover:opacity-100"
+                  >
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                </div>
+              ))}
               
-              {/* Colunas dos dias */}
-              {diasSemana.map((dia, dayIndex) => {
-                const { agendamento, bloqueio, isOccupied, isSlotIntermediario } = isSlotOccupied(time, dia);
-                
-                return (
-                  <div key={dayIndex} className="border border-gray-100 min-h-[40px]">
-                    {isSlotIntermediario ? null : bloqueio ? (
-                      // Mostrar bloqueio
-                      <div 
-                        className="bg-orange-100 border border-orange-200 p-1 rounded text-xs"
-                        style={{ 
-                          minHeight: `${calcularSlots(bloqueio.data_inicio, bloqueio.data_fim) * 40}px`
+              {/* Bloqueios do dia */}
+              {bloqueios.filter(bl => isSameDay(new Date(bl.data_inicio), dia)).map((bloqueio) => (
+                <div
+                  key={`bloqueio-${bloqueio.id}`}
+                  className="absolute left-1 right-1 bg-orange-100 border border-orange-200 p-1 rounded text-xs z-10 cursor-pointer hover:shadow-md transition-shadow"
+                  style={{
+                    top: `${calcularPosicaoTop(bloqueio.data_inicio)}px`,
+                    height: `${Math.max(calcularAltura(bloqueio.data_inicio, bloqueio.data_fim), 30)}px`
+                  }}
+                >
+                  <div className="font-medium text-orange-800 truncate text-[10px]">
+                    {bloqueio.titulo}
+                  </div>
+                  <div className="flex justify-between items-center mt-1">
+                    <Badge variant="outline" className="text-[9px] text-orange-700 border-orange-300 h-4">
+                      Bloqueado
+                    </Badge>
+                    <div className="flex gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-4 w-4 p-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setBloqueioParaEditar(bloqueio);
                         }}
                       >
-                        <div className="font-medium text-orange-800 truncate">
-                          {bloqueio.titulo}
-                        </div>
-                        <div className="flex justify-between items-center mt-1">
-                          <Badge variant="outline" className="text-xs text-orange-700 border-orange-300">
-                            Bloqueado
-                          </Badge>
-                          <div className="flex gap-1">
+                        <Edit className="h-2 w-2" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-4 w-4 p-0 text-destructive"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setBloqueioParaExcluir(bloqueio);
+                        }}
+                      >
+                        <Trash2 className="h-2 w-2" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              
+              {/* Agendamentos do dia */}
+              {agendamentos.filter(ag => !ag.desmarcada && isSameDay(new Date(ag.data_inicio), dia)).map((agendamento) => (
+                <div
+                  key={`agendamento-${agendamento.id}`}
+                  className={`absolute left-1 right-1 bg-blue-50 border border-blue-200 p-1 rounded text-xs z-10 cursor-pointer hover:shadow-md transition-shadow ${
+                    agendamento.desmarcada ? 'opacity-50' : ''
+                  }`}
+                  style={{
+                    top: `${calcularPosicaoTop(agendamento.data_inicio)}px`,
+                    height: `${Math.max(calcularAltura(agendamento.data_inicio, agendamento.data_fim), 30)}px`
+                  }}
+                >
+                  <div className={`font-medium truncate text-[10px] ${agendamento.desmarcada ? 'line-through' : ''}`}>
+                    {agendamento.pacientes?.nome}
+                  </div>
+                  <div className="flex justify-between items-center mt-1">
+                    <Badge className={`text-[9px] h-4 ${getStatusColor(agendamento.status || 'pendente')}`}>
+                      {agendamento.desmarcada ? 'Desmarcada' : getStatusText(agendamento.status || 'pendente')}
+                    </Badge>
+                    <div className="flex gap-1">
+                      {!agendamento.desmarcada && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-4 w-4 p-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEditarAgendamento(agendamento);
+                            }}
+                          >
+                            <Edit className="h-2 w-2" />
+                          </Button>
+                          {agendamento.status === 'pendente' && (
                             <Button
                               size="sm"
                               variant="ghost"
                               className="h-4 w-4 p-0"
-                              onClick={() => setBloqueioParaEditar(bloqueio)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onConfirmarAgendamento(agendamento.id);
+                              }}
                             >
-                              <Edit className="h-2 w-2" />
+                              <CheckCircle className="h-2 w-2" />
                             </Button>
+                          )}
+                          {agendamento.status === 'confirmado' && (
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="h-4 w-4 p-0 text-destructive"
-                              onClick={() => setBloqueioParaExcluir(bloqueio)}
+                              className="h-4 w-4 p-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onMarcarRealizadoAgendamento(agendamento.id);
+                              }}
                             >
-                              <Trash2 className="h-2 w-2" />
+                              ✓
                             </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ) : agendamento ? (
-                      // Mostrar agendamento
-                      <div 
-                        className={`bg-blue-50 border border-blue-200 p-1 rounded text-xs ${agendamento.desmarcada ? 'opacity-50' : ''}`}
-                        style={{ 
-                          minHeight: `${calcularSlots(agendamento.data_inicio, agendamento.data_fim) * 40}px`
-                        }}
-                      >
-                        <div className={`font-medium truncate ${agendamento.desmarcada ? 'line-through' : ''}`}>
-                          {agendamento.pacientes?.nome}
-                        </div>
-                        <div className="flex justify-between items-center mt-1">
-                          <Badge className={`text-xs ${getStatusColor(agendamento.status || 'pendente')}`}>
-                            {agendamento.desmarcada ? 'Desmarcada' : getStatusText(agendamento.status || 'pendente')}
-                          </Badge>
-                          <div className="flex gap-1">
-                            {!agendamento.desmarcada && (
-                              <>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-4 w-4 p-0"
-                                  onClick={() => onEditarAgendamento(agendamento)}
-                                >
-                                  <Edit className="h-2 w-2" />
-                                </Button>
-                                {agendamento.status === 'pendente' && (
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-4 w-4 p-0"
-                                    onClick={() => onConfirmarAgendamento(agendamento.id)}
-                                  >
-                                    <CheckCircle className="h-2 w-2" />
-                                  </Button>
-                                )}
-                                {agendamento.status === 'confirmado' && (
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-4 w-4 p-0"
-                                    onClick={() => onMarcarRealizadoAgendamento(agendamento.id)}
-                                  >
-                                    ✓
-                                  </Button>
-                                )}
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ) : !isOccupied ? (
-                      // Slot disponível
-                      <Button
-                        variant="ghost"
-                        className="w-full h-full text-xs text-gray-300 hover:bg-gray-50 hover:text-gray-600"
-                        onClick={() => {
-                          const [hours, minutes] = time.split(':').map(Number);
-                          const dataHora = new Date(dia);
-                          dataHora.setHours(hours, minutes, 0, 0);
-                          onNovaConsulta(dataHora);
-                        }}
-                      >
-                        <Plus className="h-3 w-3" />
-                      </Button>
-                    ) : null}
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
           ))}
         </div>
