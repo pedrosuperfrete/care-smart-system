@@ -415,9 +415,11 @@ export const useRelatorios = (periodo: string = 'mes', dataInicio?: Date, dataFi
 
       if (profissionalIds.length === 0) return;
 
-      // Buscar receita dos últimos 6 meses
-      const ultimosMeses = Array.from({ length: 6 }, (_, i) => {
-        const data = subMonths(new Date(), 5 - i);
+      // Buscar receita desde janeiro do ano atual
+      const anoAtual = new Date().getFullYear();
+      const mesAtual = new Date().getMonth(); // 0-11
+      const ultimosMeses = Array.from({ length: mesAtual + 1 }, (_, i) => {
+        const data = new Date(anoAtual, i, 1);
         return {
           mes: format(data, 'MMM', { locale: ptBR }),
           inicio: startOfMonth(data),
@@ -786,9 +788,11 @@ export const useRelatorios = (periodo: string = 'mes', dataInicio?: Date, dataFi
         clinicaId = null;
       }
 
-      // Buscar novos pacientes dos últimos 6 meses
-      const ultimosMeses = Array.from({ length: 6 }, (_, i) => {
-        const data = subMonths(new Date(), 5 - i);
+      // Buscar novos pacientes desde janeiro do ano atual
+      const anoAtual = new Date().getFullYear();
+      const mesAtual = new Date().getMonth(); // 0-11
+      const ultimosMeses = Array.from({ length: mesAtual + 1 }, (_, i) => {
+        const data = new Date(anoAtual, i, 1);
         return {
           mes: format(data, 'MMM', { locale: ptBR }),
           inicio: startOfMonth(data),
