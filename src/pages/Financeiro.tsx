@@ -175,7 +175,7 @@ export default function Financeiro() {
               R$ {statsLoading ? '...' : statsData.totalRecebido.toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground">
-              Pagamentos confirmados
+              Pagamentos realizados
             </p>
           </CardContent>
         </Card>
@@ -192,7 +192,24 @@ export default function Financeiro() {
               R$ {statsLoading ? '...' : statsData.totalPendente.toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground">
-              Pagamentos pendentes
+              Consultas Realizadas
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              A Ganhar
+            </CardTitle>
+            <TrendingUp className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-primary">
+              R$ {statsLoading ? '...' : statsData.receitaMensal.toFixed(2)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Consultas a realizar
             </p>
           </CardContent>
         </Card>
@@ -210,23 +227,6 @@ export default function Financeiro() {
             </div>
             <p className="text-xs text-muted-foreground">
               Pagamentos vencidos
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Receita Mensal
-            </CardTitle>
-            <TrendingUp className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-primary">
-              R$ {statsLoading ? '...' : statsData.receitaMensal.toFixed(2)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Recebido este mês
             </p>
           </CardContent>
         </Card>
