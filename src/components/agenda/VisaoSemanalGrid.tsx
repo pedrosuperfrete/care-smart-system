@@ -46,6 +46,7 @@ export function VisaoSemanalGrid({
 }: VisaoSemanalGridProps) {
   const [bloqueioParaEditar, setBloqueioParaEditar] = useState<BloqueioAgenda | null>(null);
   const [bloqueioParaExcluir, setBloqueioParaExcluir] = useState<BloqueioAgenda | null>(null);
+  const [agendamentoParaDesmarcar, setAgendamentoParaDesmarcar] = useState<Agendamento | null>(null);
 
   // Gerar dias da semana
   const getDiasSemanaDatas = () => {
@@ -322,31 +323,31 @@ export function VisaoSemanalGrid({
                             <CheckCircle className="h-2 w-2" />
                           </Button>
                         )}
+                        {(agendamento.status === 'pendente' || agendamento.status === 'confirmado') && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-4 w-4 p-0 hover:bg-red-200 text-destructive flex-shrink-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setAgendamentoParaDesmarcar(agendamento);
+                            }}
+                          >
+                            <XCircle className="h-2 w-2" />
+                          </Button>
+                        )}
                         {agendamento.status === 'confirmado' && (
-                          <>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-4 w-4 p-0 hover:bg-blue-200 flex-shrink-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onMarcarRealizadoAgendamento(agendamento.id);
-                              }}
-                            >
-                              ✓
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-4 w-4 p-0 hover:bg-red-200 text-destructive flex-shrink-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onDesmarcarAgendamento(agendamento.id);
-                              }}
-                            >
-                              <XCircle className="h-2 w-2" />
-                            </Button>
-                          </>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-4 w-4 p-0 hover:bg-blue-200 flex-shrink-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onMarcarRealizadoAgendamento(agendamento.id);
+                            }}
+                          >
+                            ✓
+                          </Button>
                         )}
                       </>
                     )}
@@ -367,7 +368,7 @@ export function VisaoSemanalGrid({
         />
       )}
 
-      {/* Dialog para confirmar exclusão */}
+      {/* Dialog para confirmar exclusão de bloqueio */}
       <AlertDialog open={!!bloqueioParaExcluir} onOpenChange={() => setBloqueioParaExcluir(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -387,6 +388,31 @@ export function VisaoSemanalGrid({
               }}
             >
               Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog para confirmar desmarcação de agendamento */}
+      <AlertDialog open={!!agendamentoParaDesmarcar} onOpenChange={() => setAgendamentoParaDesmarcar(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Desmarcar Consulta</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja desmarcar a consulta de {agendamentoParaDesmarcar?.pacientes?.nome}?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                if (agendamentoParaDesmarcar) {
+                  onDesmarcarAgendamento(agendamentoParaDesmarcar.id);
+                  setAgendamentoParaDesmarcar(null);
+                }
+              }}
+            >
+              Desmarcar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

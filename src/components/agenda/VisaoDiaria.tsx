@@ -46,6 +46,7 @@ export function VisaoDiaria({
 }: VisaoDiariaProps) {
   const [bloqueioParaEditar, setBloqueioParaEditar] = useState<BloqueioAgenda | null>(null);
   const [bloqueioParaExcluir, setBloqueioParaExcluir] = useState<BloqueioAgenda | null>(null);
+  const [agendamentoParaDesmarcar, setAgendamentoParaDesmarcar] = useState<Agendamento | null>(null);
 
   // Gerar slots de 30 minutos das 7h às 19h
   const generateTimeSlots = () => {
@@ -313,31 +314,31 @@ export function VisaoDiaria({
                             <CheckCircle className="h-3 w-3" />
                           </Button>
                         )}
+                        {(agendamento.status === 'pendente' || agendamento.status === 'confirmado') && (
+                          <Button 
+                            size="sm"
+                            variant="outline"
+                            className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setAgendamentoParaDesmarcar(agendamento);
+                            }}
+                          >
+                            <XCircle className="h-3 w-3" />
+                          </Button>
+                        )}
                         {agendamento.status === 'confirmado' && (
-                          <>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              className="h-6 px-2 text-xs"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onMarcarRealizadoAgendamento(agendamento.id);
-                              }}
-                            >
-                              ✓
-                            </Button>
-                            <Button 
-                              size="sm"
-                              variant="outline"
-                              className="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onDesmarcarAgendamento(agendamento.id);
-                              }}
-                            >
-                              <XCircle className="h-3 w-3" />
-                            </Button>
-                          </>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            className="h-6 px-2 text-xs"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onMarcarRealizadoAgendamento(agendamento.id);
+                            }}
+                          >
+                            ✓
+                          </Button>
                         )}
                       </>
                     )}
@@ -358,7 +359,7 @@ export function VisaoDiaria({
         />
       )}
 
-      {/* Dialog para confirmar exclusão */}
+      {/* Dialog para confirmar exclusão de bloqueio */}
       <AlertDialog open={!!bloqueioParaExcluir} onOpenChange={() => setBloqueioParaExcluir(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -378,6 +379,31 @@ export function VisaoDiaria({
               }}
             >
               Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog para confirmar desmarcação de agendamento */}
+      <AlertDialog open={!!agendamentoParaDesmarcar} onOpenChange={() => setAgendamentoParaDesmarcar(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Desmarcar Consulta</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja desmarcar a consulta de {agendamentoParaDesmarcar?.pacientes?.nome}?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                if (agendamentoParaDesmarcar) {
+                  onDesmarcarAgendamento(agendamentoParaDesmarcar.id);
+                  setAgendamentoParaDesmarcar(null);
+                }
+              }}
+            >
+              Desmarcar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
