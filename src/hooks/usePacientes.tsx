@@ -237,7 +237,7 @@ export function usePacientesStats() {
 
       if (totalError) throw totalError;
 
-      // Contar pacientes adimplentes e inadimplentes usando a coluna direta
+      // Contar pacientes inadimplentes (que já tiveram consulta mas não pagaram)
       const { count: inadimplentes, error: inadimplentesError } = await supabase
         .from('pacientes')
         .select('*', { count: 'exact', head: true })
@@ -247,7 +247,30 @@ export function usePacientesStats() {
 
       if (inadimplentesError) throw inadimplentesError;
 
-      const adimplentes = (total || 0) - (inadimplentes || 0);
+      // Buscar pacientes que tiveram pelo menos um agendamento e não são inadimplentes
+      const { data: pacientesComAgendamento, error: agendamentosError } = await supabase
+        .from('pacientes')
+        .select('id')
+        .in('clinica_id', clinicaIds)
+        .eq('ativo', true)
+        .eq('inadimplente', false);
+
+      if (agendamentosError) throw agendamentosError;
+
+      // Verificar quais desses pacientes têm agendamentos
+      let adimplentes = 0;
+      if (pacientesComAgendamento && pacientesComAgendamento.length > 0) {
+        const pacienteIds = pacientesComAgendamento.map(p => p.id);
+        
+        const { data: agendamentos } = await supabase
+          .from('agendamentos')
+          .select('paciente_id')
+          .in('paciente_id', pacienteIds);
+        
+        // Contar pacientes únicos que têm agendamentos
+        const pacientesComConsulta = new Set(agendamentos?.map(a => a.paciente_id) || []);
+        adimplentes = pacientesComConsulta.size;
+      }
 
       return {
         total: total || 0,

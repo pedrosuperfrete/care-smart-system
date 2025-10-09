@@ -11,6 +11,7 @@ import { PacienteForm } from '@/components/forms/PacienteForm';
 import { PacienteDetalhes } from '@/components/PacienteDetalhes';
 import { AgendamentoForm } from '@/components/forms/AgendamentoForm';
 import { usePacientes, usePacientesStats } from '@/hooks/usePacientes';
+import { usePacientesComAgendamentos } from '@/hooks/usePacientesComAgendamentos';
 import { Users, Plus, Search, MoreVertical, Eye, Edit, Calendar, History, Phone, Mail, MapPin } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import { fromLocalDateString } from '@/lib/dateUtils';
@@ -20,6 +21,7 @@ type Paciente = Tables<'pacientes'>;
 export default function Pacientes() {
   const { data: pacientes = [], isLoading } = usePacientes();
   const { data: stats } = usePacientesStats();
+  const { data: pacientesComAgendamentos } = usePacientesComAgendamentos();
   const [searchTerm, setSearchTerm] = useState('');
   const [filtroStatus, setFiltroStatus] = useState<'todos' | 'adimplentes' | 'inadimplentes'>('todos');
   const [selectedPaciente, setSelectedPaciente] = useState<Paciente | null>(null);
@@ -41,11 +43,15 @@ export default function Pacientes() {
       }
     }
     
+    // Verificar se o paciente tem agendamentos
+    const temAgendamentos = pacientesComAgendamentos?.has(paciente.id) || false;
+    
     // Filtro por status de inadimplência
     if (filtroStatus === 'inadimplentes' && !paciente.inadimplente) {
       return false;
     }
-    if (filtroStatus === 'adimplentes' && (paciente.inadimplente !== false)) {
+    // Adimplentes: pacientes que NÃO são inadimplentes E que já tiveram consulta
+    if (filtroStatus === 'adimplentes' && (!temAgendamentos || paciente.inadimplente === true)) {
       return false;
     }
     
