@@ -182,31 +182,22 @@ export function VisaoSemanalGrid({
   };
 
   return (
-    <div className="relative">
-      {/* Cabeçalho com dias da semana - Fixo no topo */}
-      <div className="sticky top-0 left-0 right-0 bg-background z-[100] pb-3 pt-2 mb-2 border-b-2">
-        <div className="overflow-x-auto">
-          <div className="min-w-[800px]">
-            <div className="grid grid-cols-8 gap-1 bg-background">
-              <div className="w-16 text-xs font-medium text-muted-foreground bg-background"></div>
-              {diasSemana.map((dia, index) => (
-                <div key={index} className="text-center p-3 border-2 rounded-lg bg-card shadow-md">
-                  <div className="text-xs font-semibold text-muted-foreground uppercase">
-                    {diasSemanaLabels[index]}
-                  </div>
-                  <div className="text-lg font-bold mt-1">
-                    {dia.getDate()}
-                  </div>
-                </div>
-              ))}
+    <div className="overflow-x-auto">
+      <div className="min-w-[800px]">
+        {/* Cabeçalho com dias da semana */}
+        <div className="grid grid-cols-8 gap-1 mb-2">
+          <div className="w-16 text-xs font-medium text-gray-500"></div>
+          {diasSemana.map((dia, index) => (
+            <div key={index} className="text-center p-2 border rounded">
+              <div className="text-xs font-medium text-gray-600">
+                {diasSemanaLabels[index]}
+              </div>
+              <div className="text-sm font-semibold">
+                {dia.getDate()}
+              </div>
             </div>
-          </div>
+          ))}
         </div>
-      </div>
-
-      {/* Grade de horários com scroll horizontal */}
-      <div className="overflow-x-auto">
-        <div className="min-w-[800px]">
 
         {/* Grade de horários */}
         <div className="grid grid-cols-8 gap-1">
@@ -353,7 +344,6 @@ export function VisaoSemanalGrid({
           ))}
         </div>
       </div>
-    </div>
 
       {/* Modal para editar bloqueio */}
       {bloqueioParaEditar && (
