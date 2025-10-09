@@ -392,8 +392,25 @@ export default function Relatorios() {
                     data={statusPagamentos.filter(item => item.valor > 0)}
                     cx="50%"
                     cy="50%"
-                    labelLine={false}
-                    label={({ nome, valor }) => `${nome}: R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                    labelLine={true}
+                    label={({ nome, valor, cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+                      const RADIAN = Math.PI / 180;
+                      const radius = outerRadius + 30;
+                      const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                      const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                      return (
+                        <text 
+                          x={x} 
+                          y={y} 
+                          fill="hsl(var(--foreground))" 
+                          textAnchor={x > cx ? 'start' : 'end'} 
+                          dominantBaseline="central"
+                          className="text-sm"
+                        >
+                          {`${nome}: R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                        </text>
+                      );
+                    }}
                     outerRadius={80}
                     fill="hsl(var(--primary))"
                     dataKey="valor"
