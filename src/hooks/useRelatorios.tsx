@@ -568,10 +568,22 @@ export const useRelatorios = (periodo: string = 'mes', dataInicio?: Date, dataFi
 
       const total = Object.values(tipos).reduce((acc: number, val: any) => acc + val, 0) as number;
 
-      const tiposFormatados = Object.entries(tipos).map(([tipo, quantidade]: [string, any]) => ({
+      // Paleta de cores para diferenciar cada tipo de serviço
+      const coresPaleta = [
+        'hsl(221, 83%, 53%)',  // Azul
+        'hsl(142, 76%, 36%)',  // Verde
+        'hsl(38, 92%, 50%)',   // Laranja
+        'hsl(280, 83%, 53%)',  // Roxo
+        'hsl(0, 84%, 60%)',    // Vermelho
+        'hsl(180, 83%, 53%)',  // Ciano
+        'hsl(45, 93%, 47%)',   // Amarelo
+        'hsl(340, 83%, 53%)',  // Rosa
+      ];
+
+      const tiposFormatados = Object.entries(tipos).map(([tipo, quantidade]: [string, any], index) => ({
         nome: tipo,
         valor: total > 0 ? Math.round((quantidade / total) * 100) : 0,
-        cor: 'hsl(var(--primary))'
+        cor: coresPaleta[index % coresPaleta.length]
       }));
 
       setTiposConsulta(tiposFormatados);
