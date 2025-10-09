@@ -114,7 +114,7 @@ export const BloqueioAgendaModal = ({ defaultDate, children, bloqueio, isOpen, o
           )}
         </DialogTrigger>
       )}
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[550px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>{isEditing ? 'Editar Bloqueio' : 'Bloquear Horário na Agenda'}</DialogTitle>
@@ -134,7 +134,7 @@ export const BloqueioAgendaModal = ({ defaultDate, children, bloqueio, isOpen, o
               />
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="data_inicio">Início *</Label>
                 <Input
@@ -143,6 +143,7 @@ export const BloqueioAgendaModal = ({ defaultDate, children, bloqueio, isOpen, o
                   value={formData.data_inicio}
                   onChange={(e) => handleChange("data_inicio", e.target.value)}
                   required
+                  className="w-full"
                 />
               </div>
               
@@ -154,6 +155,7 @@ export const BloqueioAgendaModal = ({ defaultDate, children, bloqueio, isOpen, o
                   value={formData.data_fim}
                   onChange={(e) => handleChange("data_fim", e.target.value)}
                   required
+                  className="w-full"
                 />
               </div>
             </div>
