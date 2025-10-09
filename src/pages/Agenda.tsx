@@ -381,7 +381,13 @@ export default function Agenda() {
             onDesmarcarAgendamento={handleDesmarcar}
             onMarcarRealizadoAgendamento={handleMarcarRealizado}
             onExcluirBloqueio={handleExcluirBloqueio}
-            onNovaConsulta={() => setIsNewConsultaOpen(true)}
+            onNovaConsulta={(dataHora: Date) => {
+              setNewConsulta(prev => ({
+                ...prev,
+                data_inicio: dataHora.toISOString(),
+              }));
+              setIsNewConsultaOpen(true);
+            }}
           />
         ) : (
           <div className="space-y-4">
@@ -562,7 +568,13 @@ export default function Agenda() {
             onDesmarcarAgendamento={handleDesmarcar}
             onMarcarRealizadoAgendamento={handleMarcarRealizado}
             onExcluirBloqueio={handleExcluirBloqueio}
-            onNovaConsulta={() => setIsNewConsultaOpen(true)}
+            onNovaConsulta={(dataHora: Date) => {
+              setNewConsulta(prev => ({
+                ...prev,
+                data_inicio: dataHora.toISOString(),
+              }));
+              setIsNewConsultaOpen(true);
+            }}
           />
         ) : (
           <VisaoSemanal

@@ -30,7 +30,7 @@ interface VisaoDiariaProps {
   onDesmarcarAgendamento: (id: string) => void;
   onMarcarRealizadoAgendamento: (id: string) => void;
   onExcluirBloqueio: (id: string) => void;
-  onNovaConsulta: () => void;
+  onNovaConsulta: (dataHora: Date) => void;
 }
 
 export function VisaoDiaria({
@@ -102,8 +102,10 @@ export function VisaoDiaria({
   };
 
   const handleNovaConsultaNoHorario = (time: string) => {
-    // Aqui você pode pré-preencher o horário no formulário
-    onNovaConsulta();
+    const [hours, minutes] = time.split(':').map(Number);
+    const dataHora = new Date(selectedDate);
+    dataHora.setHours(hours, minutes, 0, 0);
+    onNovaConsulta(dataHora);
   };
 
   return (

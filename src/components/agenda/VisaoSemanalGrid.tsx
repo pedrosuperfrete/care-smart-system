@@ -30,7 +30,7 @@ interface VisaoSemanalGridProps {
   onDesmarcarAgendamento: (id: string) => void;
   onMarcarRealizadoAgendamento: (id: string) => void;
   onExcluirBloqueio: (id: string) => void;
-  onNovaConsulta: () => void;
+  onNovaConsulta: (dataHora: Date) => void;
 }
 
 export function VisaoSemanalGrid({
@@ -234,7 +234,12 @@ export function VisaoSemanalGrid({
                       <Button
                         variant="ghost"
                         className="w-full h-full text-xs text-gray-300 hover:bg-gray-50 hover:text-gray-600"
-                        onClick={onNovaConsulta}
+                        onClick={() => {
+                          const [hours, minutes] = time.split(':').map(Number);
+                          const dataHora = new Date(dia);
+                          dataHora.setHours(hours, minutes, 0, 0);
+                          onNovaConsulta(dataHora);
+                        }}
                       >
                         <Plus className="h-3 w-3" />
                       </Button>
