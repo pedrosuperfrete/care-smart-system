@@ -10,11 +10,15 @@ import { Calendar, Download, FileText, TrendingUp, Users, DollarSign } from 'luc
 import { useRelatorios } from '@/hooks/useRelatorios';
 import { useExportarRelatorios } from '@/hooks/useExportarRelatorios';
 import { toast } from '@/hooks/use-toast';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
+import { DateRange } from 'react-day-picker';
 
 export default function Relatorios() {
   const [periodo, setPeriodo] = useState('mes');
   const [tipoRelatorio, setTipoRelatorio] = useState('consultas');
   const [periodoPersonalizado, setPeriodoPersonalizado] = useState('ultimo-mes');
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [usarDateRange, setUsarDateRange] = useState(false);
 
   const { 
     loading, 
@@ -25,7 +29,11 @@ export default function Relatorios() {
     tiposConsulta,
     statusConsultas,
     statusPagamentos
-  } = useRelatorios(periodo);
+  } = useRelatorios(
+    usarDateRange ? 'custom' : periodo,
+    dateRange?.from,
+    dateRange?.to
+  );
 
   const { exportarCSV, exportarPDF } = useExportarRelatorios();
 
@@ -77,18 +85,38 @@ export default function Relatorios() {
           </p>
         </div>
         
-        <div className="flex space-x-2">
-          <Select value={periodo} onValueChange={setPeriodo}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="semana">Semana</SelectItem>
-              <SelectItem value="mes">Mês</SelectItem>
-              <SelectItem value="trimestre">Trimestre</SelectItem>
-              <SelectItem value="ano">Ano</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="flex items-center space-x-2">
+          {!usarDateRange ? (
+            <Select value={periodo} onValueChange={setPeriodo}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="semana">Semana</SelectItem>
+                <SelectItem value="mes">Mês</SelectItem>
+                <SelectItem value="trimestre">Trimestre</SelectItem>
+                <SelectItem value="ano">Ano</SelectItem>
+              </SelectContent>
+            </Select>
+          ) : (
+            <DateRangePicker
+              dateRange={dateRange}
+              onDateRangeChange={setDateRange}
+            />
+          )}
+          
+          <Button
+            variant="outline"
+            onClick={() => {
+              setUsarDateRange(!usarDateRange);
+              if (!usarDateRange) {
+                setDateRange(undefined);
+              }
+            }}
+          >
+            <Calendar className="mr-2 h-4 w-4" />
+            {usarDateRange ? 'Períodos' : 'Data Customizada'}
+          </Button>
           
           <Button variant="outline" onClick={handleExportarCSV}>
             <Download className="mr-2 h-4 w-4" />

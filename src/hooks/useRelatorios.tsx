@@ -38,7 +38,7 @@ export interface StatusPagamento {
   cor: string;
 }
 
-export const useRelatorios = (periodo: string = 'mes') => {
+export const useRelatorios = (periodo: string = 'mes', dataInicio?: Date, dataFim?: Date) => {
   const { user, userProfile } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,6 +50,14 @@ export const useRelatorios = (periodo: string = 'mes') => {
   const [statusPagamentos, setStatusPagamentos] = useState<StatusPagamento[]>([]);
 
   const getDateRange = (periodo: string) => {
+    // Se datas customizadas foram fornecidas, usar elas
+    if (dataInicio && dataFim) {
+      return {
+        inicio: dataInicio,
+        fim: dataFim
+      };
+    }
+    
     const hoje = new Date();
     
     switch (periodo) {
