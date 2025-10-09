@@ -42,6 +42,27 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
   const updatePaciente = useUpdatePaciente();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showLimiteModal, setShowLimiteModal] = useState(false);
+  
+  // Formata telefone inicial se houver
+  const formatarTelefoneInicial = (telefone: string | null) => {
+    if (!telefone) return '';
+    const numbers = telefone.replace(/\D/g, '').slice(0, 11);
+    let formatted = '';
+    if (numbers.length > 0) {
+      formatted = '(' + numbers.substring(0, 2);
+      if (numbers.length >= 3) {
+        formatted += ') ' + numbers.substring(2, 7);
+      }
+      if (numbers.length >= 8) {
+        formatted += '-' + numbers.substring(7, 11);
+      }
+    }
+    return formatted;
+  };
+  
+  const [telefoneFormatado, setTelefoneFormatado] = useState(
+    formatarTelefoneInicial(paciente?.telefone || '')
+  );
 
   const {
     register,
@@ -184,8 +205,28 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
               <Label htmlFor="telefone">Telefone</Label>
               <Input
                 id="telefone"
-                {...register('telefone')}
                 placeholder="(11) 99999-9999"
+                maxLength={15}
+                value={telefoneFormatado}
+                onChange={(e) => {
+                  const input = e.target.value;
+                  const numbers = input.replace(/\D/g, '').slice(0, 11);
+                  
+                  // Aplica a máscara enquanto digita
+                  let formatted = '';
+                  if (numbers.length > 0) {
+                    formatted = '(' + numbers.substring(0, 2);
+                    if (numbers.length >= 3) {
+                      formatted += ') ' + numbers.substring(2, 7);
+                    }
+                    if (numbers.length >= 8) {
+                      formatted += '-' + numbers.substring(7, 11);
+                    }
+                  }
+                  
+                  setTelefoneFormatado(formatted);
+                  setValue('telefone', numbers);
+                }}
               />
             </div>
 
