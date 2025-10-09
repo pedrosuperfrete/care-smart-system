@@ -149,7 +149,7 @@ export function VisaoSemanalGrid({
     const minutes = inicio.getMinutes();
     const baseHour = 7; // Início da grade às 7h
     const totalMinutes = (hours - baseHour) * 60 + minutes;
-    return totalMinutes * (40 / 60); // Converter para pixels (40px por hora = 0.67px por minuto)
+    return (totalMinutes / 30) * 40; // Cada 30min = 40px
   };
 
   const calcularAltura = (dataInicio: string, dataFim: string) => {
@@ -157,7 +157,7 @@ export function VisaoSemanalGrid({
     const fim = new Date(dataFim);
     const diffMs = fim.getTime() - inicio.getTime();
     const diffMinutes = diffMs / (1000 * 60);
-    return diffMinutes * (40 / 60); // Converter para pixels
+    return (diffMinutes / 30) * 40; // Cada 30min = 40px
   };
 
   const isSameDay = (date1: Date, date2: Date) => {

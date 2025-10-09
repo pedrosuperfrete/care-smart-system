@@ -136,7 +136,7 @@ export function VisaoDiaria({
     const minutes = inicio.getMinutes();
     const baseHour = 7; // Início da grade às 7h
     const totalMinutes = (hours - baseHour) * 60 + minutes;
-    return totalMinutes; // pixels = minutos (1px por minuto)
+    return totalMinutes * 2; // Cada 30min = 60px, então cada minuto = 2px
   };
 
   const calcularAltura = (dataInicio: string, dataFim: string) => {
@@ -144,7 +144,7 @@ export function VisaoDiaria({
     const fim = new Date(dataFim);
     const diffMs = fim.getTime() - inicio.getTime();
     const diffMinutes = diffMs / (1000 * 60);
-    return diffMinutes; // pixels = minutos
+    return diffMinutes * 2; // Cada minuto = 2px
   };
 
   const handleNovaConsultaNoHorario = (time: string) => {
