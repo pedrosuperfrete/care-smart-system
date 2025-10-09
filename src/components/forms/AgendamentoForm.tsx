@@ -35,10 +35,11 @@ type NovoPacienteFormData = z.infer<typeof novoPacienteSchema>;
 interface AgendamentoFormProps {
   agendamento?: Agendamento;
   pacienteId?: string;
+  dataHoraInicial?: Date;
   onSuccess?: () => void;
 }
 
-export function AgendamentoForm({ agendamento, pacienteId, onSuccess }: AgendamentoFormProps) {
+export function AgendamentoForm({ agendamento, pacienteId, dataHoraInicial, onSuccess }: AgendamentoFormProps) {
   const { profissional, user, clinicaAtual } = useAuth();
   const queryClient = useQueryClient();
   const createMutation = useCreateAgendamento();
@@ -67,13 +68,33 @@ export function AgendamentoForm({ agendamento, pacienteId, onSuccess }: Agendame
   // Se o usuário é profissional, usar automaticamente seu ID. Se é recepcionista, mostrar lista
   const isProfissional = profissional && user;
   
+  const getDataInicioDefault = () => {
+    if (agendamento?.data_inicio) {
+      return new Date(agendamento.data_inicio).toISOString().slice(0, 16);
+    }
+    if (dataHoraInicial) {
+      return dataHoraInicial.toISOString().slice(0, 16);
+    }
+    return '';
+  };
+
+  const getDataFimDefault = () => {
+    if (agendamento?.data_fim) {
+      return new Date(agendamento.data_fim).toISOString().slice(0, 16);
+    }
+    if (dataHoraInicial) {
+      const dataFim = new Date(dataHoraInicial);
+      dataFim.setHours(dataFim.getHours() + 1);
+      return dataFim.toISOString().slice(0, 16);
+    }
+    return '';
+  };
+
   const [formData, setFormData] = useState({
     paciente_id: agendamento?.paciente_id || pacienteId || '',
     profissional_id: agendamento?.profissional_id || (isProfissional ? profissional?.id || '' : ''),
-    data_inicio: agendamento?.data_inicio ? 
-      new Date(agendamento.data_inicio).toISOString().slice(0, 16) : '',
-    data_fim: agendamento?.data_fim ? 
-      new Date(agendamento.data_fim).toISOString().slice(0, 16) : '',
+    data_inicio: getDataInicioDefault(),
+    data_fim: getDataFimDefault(),
     tipo_servico: agendamento?.tipo_servico || '',
     valor: agendamento?.valor?.toString() || '',
     observacoes: agendamento?.observacoes || '',

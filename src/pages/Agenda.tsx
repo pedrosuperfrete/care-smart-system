@@ -55,6 +55,7 @@ export default function Agenda() {
   const [useGridView, setUseGridView] = useState(true); // Nova opção para grade de horários
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isNewConsultaOpen, setIsNewConsultaOpen] = useState(false);
+  const [dataHoraSelecionada, setDataHoraSelecionada] = useState<Date | undefined>(undefined);
   const [agendamentoParaEditar, setAgendamentoParaEditar] = useState<Agendamento | null>(null);
   const [bloqueioParaEditar, setBloqueioParaEditar] = useState<BloqueioAgenda | null>(null);
   const [bloqueioParaExcluir, setBloqueioParaExcluir] = useState<BloqueioAgenda | null>(null);
@@ -316,7 +317,13 @@ export default function Agenda() {
             </BloqueioAgendaModal>
           )}
 
-          <Dialog open={isNewConsultaOpen} onOpenChange={setIsNewConsultaOpen}>
+          <Dialog 
+            open={isNewConsultaOpen} 
+            onOpenChange={(open) => {
+              setIsNewConsultaOpen(open);
+              if (!open) setDataHoraSelecionada(undefined);
+            }}
+          >
             <DialogTrigger asChild>
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
@@ -331,7 +338,13 @@ export default function Agenda() {
                 </DialogDescription>
               </DialogHeader>
               
-              <AgendamentoForm onSuccess={() => setIsNewConsultaOpen(false)} />
+              <AgendamentoForm 
+                dataHoraInicial={dataHoraSelecionada}
+                onSuccess={() => {
+                  setIsNewConsultaOpen(false);
+                  setDataHoraSelecionada(undefined);
+                }} 
+              />
             </DialogContent>
           </Dialog>
         </div>
@@ -382,10 +395,7 @@ export default function Agenda() {
             onMarcarRealizadoAgendamento={handleMarcarRealizado}
             onExcluirBloqueio={handleExcluirBloqueio}
             onNovaConsulta={(dataHora: Date) => {
-              setNewConsulta(prev => ({
-                ...prev,
-                data_inicio: dataHora.toISOString(),
-              }));
+              setDataHoraSelecionada(dataHora);
               setIsNewConsultaOpen(true);
             }}
           />
@@ -569,10 +579,7 @@ export default function Agenda() {
             onMarcarRealizadoAgendamento={handleMarcarRealizado}
             onExcluirBloqueio={handleExcluirBloqueio}
             onNovaConsulta={(dataHora: Date) => {
-              setNewConsulta(prev => ({
-                ...prev,
-                data_inicio: dataHora.toISOString(),
-              }));
+              setDataHoraSelecionada(dataHora);
               setIsNewConsultaOpen(true);
             }}
           />
