@@ -149,7 +149,15 @@ export function VisaoSemanalGrid({
     const minutes = inicio.getMinutes();
     const baseHour = 7; // Início da grade às 7h
     const totalMinutes = (hours - baseHour) * 60 + minutes;
-    return (totalMinutes / 30) * 40; // Cada 30min = 40px
+    const posicao = (totalMinutes / 30) * 40; // Cada 30min = 40px
+    console.log('VisaoSemanal - calcularPosicaoTop:', {
+      dataInicio,
+      hours,
+      minutes,
+      totalMinutes,
+      posicao
+    });
+    return posicao;
   };
 
   const calcularAltura = (dataInicio: string, dataFim: string) => {
@@ -157,7 +165,14 @@ export function VisaoSemanalGrid({
     const fim = new Date(dataFim);
     const diffMs = fim.getTime() - inicio.getTime();
     const diffMinutes = diffMs / (1000 * 60);
-    return (diffMinutes / 30) * 40; // Cada 30min = 40px
+    const altura = (diffMinutes / 30) * 40; // Cada 30min = 40px
+    console.log('VisaoSemanal - calcularAltura:', {
+      dataInicio,
+      dataFim,
+      diffMinutes,
+      altura
+    });
+    return altura;
   };
 
   const isSameDay = (date1: Date, date2: Date) => {
