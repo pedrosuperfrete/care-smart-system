@@ -184,6 +184,22 @@ export function AgendamentoForm({ agendamento, pacienteId, dataHoraInicial, onSu
         setFormData(prev => ({ ...prev, valor: tipoServico.preco!.toString() }));
       }
     }
+    
+    // Auto-preencher hora fim (1 hora depois) quando hora início é alterada
+    if (field === 'data_hora_inicio' && value) {
+      const dataInicio = new Date(value);
+      const dataFim = new Date(dataInicio);
+      dataFim.setHours(dataFim.getHours() + 1);
+      
+      const year = dataFim.getFullYear();
+      const month = String(dataFim.getMonth() + 1).padStart(2, '0');
+      const day = String(dataFim.getDate()).padStart(2, '0');
+      const hour = String(dataFim.getHours()).padStart(2, '0');
+      const minute = String(dataFim.getMinutes()).padStart(2, '0');
+      const dataHoraFim = `${year}-${month}-${day}T${hour}:${minute}`;
+      
+      setFormData(prev => ({ ...prev, data_hora_fim: dataHoraFim }));
+    }
   };
 
   const handleCreatePaciente = async (data: NovoPacienteFormData) => {
