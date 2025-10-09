@@ -18,6 +18,11 @@ export interface DadosGrafico {
   mes?: string;
   consultas?: number;
   receita?: number;
+  recebido?: number;
+  aReceber?: number;
+  aGanhar?: number;
+  emAtraso?: number;
+  pacientes?: number;
 }
 
 export interface TipoConsulta {
@@ -429,36 +434,61 @@ export const useRelatorios = (periodo: string = 'mes', dataInicio?: Date, dataFi
           // Primeiro buscar agendamentos dos profissionais no período
           const { data: agendamentos } = await supabase
             .from('agendamentos')
-            .select('id')
+            .select('id, status, data_inicio')
             .in('profissional_id', profissionalIds)
             .gte('data_inicio', inicio.toISOString())
             .lte('data_inicio', fim.toISOString());
 
           if (!agendamentos || agendamentos.length === 0) {
             console.log(`Nenhum agendamento para ${mes}`);
-            return { mes, receita: 0 };
+            return { mes, receita: 0, recebido: 0, aReceber: 0, aGanhar: 0, emAtraso: 0 };
           }
 
           const agendamentoIds = agendamentos.map(a => a.id);
-          console.log(`Agendamentos de ${mes}:`, agendamentoIds);
-
-          // Agora buscar pagamentos desses agendamentos
-          const { data: pagamentos, error } = await supabase
-            .from('pagamentos')
-            .select('valor_pago, valor_total, status')
-            .in('agendamento_id', agendamentoIds)
-            .eq('status', 'pago');
-
-          if (error) {
-            console.error(`Erro buscar receita mensal para ${mes}:`, error);
-            return { mes, receita: 0 };
-          }
+          const agora = new Date();
           
-          console.log(`Pagamentos pagos de ${mes}:`, pagamentos);
-          const receita = pagamentos?.reduce((acc, p) => acc + (Number(p.valor_pago) > 0 ? Number(p.valor_pago) : Number(p.valor_total)), 0) || 0;
-          console.log(`Receita ${mes}:`, receita);
+          // Agendamentos realizados (já passaram)
+          const agendamentosRealizados = agendamentos.filter(a => 
+            new Date(a.data_inicio) < agora && a.status === 'realizado'
+          ).map(a => a.id);
+          
+          // Agendamentos a realizar (ainda não passaram)
+          const agendamentosARealizar = agendamentos.filter(a => 
+            new Date(a.data_inicio) >= agora && a.status === 'pendente'
+          ).map(a => a.id);
 
-          return { mes, receita };
+          // Buscar todos os pagamentos desses agendamentos
+          const { data: pagamentos } = await supabase
+            .from('pagamentos')
+            .select('valor_pago, valor_total, status, data_vencimento, agendamento_id')
+            .in('agendamento_id', agendamentoIds);
+
+          // Total Recebido - pagamentos com status 'pago'
+          const recebido = pagamentos?.filter(p => p.status === 'pago')
+            .reduce((acc, p) => acc + (Number(p.valor_pago) > 0 ? Number(p.valor_pago) : Number(p.valor_total)), 0) || 0;
+
+          // A Receber - consultas já realizadas mas ainda não pagas
+          const aReceber = pagamentos?.filter(p => 
+            agendamentosRealizados.includes(p.agendamento_id) && 
+            p.status === 'pendente'
+          ).reduce((acc, p) => acc + Number(p.valor_total), 0) || 0;
+
+          // A Ganhar - consultas futuras (a realizar)
+          const aGanhar = pagamentos?.filter(p => 
+            agendamentosARealizar.includes(p.agendamento_id) && 
+            p.status === 'pendente'
+          ).reduce((acc, p) => acc + Number(p.valor_total), 0) || 0;
+
+          // Em Atraso - pagamentos vencidos
+          const emAtraso = pagamentos?.filter(p => 
+            p.status === 'vencido' || 
+            (p.status === 'pendente' && p.data_vencimento && new Date(p.data_vencimento) < agora)
+          ).reduce((acc, p) => acc + Number(p.valor_total), 0) || 0;
+
+          const receita = recebido; // Mantém compatibilidade com código existente
+          console.log(`Dados ${mes}:`, { recebido, aReceber, aGanhar, emAtraso });
+
+          return { mes, receita, recebido, aReceber, aGanhar, emAtraso };
         })
       );
 

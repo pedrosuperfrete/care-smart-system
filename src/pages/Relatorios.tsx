@@ -209,7 +209,7 @@ export default function Relatorios() {
           <CardHeader>
             <CardTitle>Receita Mensal</CardTitle>
             <CardDescription>
-              Evolução da receita nos últimos 6 meses
+              Evolução financeira nos últimos 6 meses
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -223,8 +223,38 @@ export default function Relatorios() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="mes" />
                   <YAxis />
-                  <Tooltip formatter={(value: any) => [`R$ ${value}`, 'Receita']} />
-                  <Line type="monotone" dataKey="receita" stroke="hsl(var(--success))" />
+                  <Tooltip 
+                    formatter={(value: any) => [`R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, '']} 
+                    labelFormatter={(label) => `Mês: ${label}`}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="recebido" 
+                    stroke="hsl(142, 76%, 36%)" 
+                    name="Total Recebido"
+                    strokeWidth={2}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="aReceber" 
+                    stroke="hsl(38, 92%, 50%)" 
+                    name="A Receber"
+                    strokeWidth={2}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="aGanhar" 
+                    stroke="hsl(221, 83%, 53%)" 
+                    name="A Ganhar"
+                    strokeWidth={2}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="emAtraso" 
+                    stroke="hsl(0, 84%, 60%)" 
+                    name="Em Atraso"
+                    strokeWidth={2}
+                  />
                 </LineChart>
               </ResponsiveContainer>
             )}
