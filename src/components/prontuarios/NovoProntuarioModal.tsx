@@ -9,6 +9,8 @@ import { useAgendamentos } from '@/hooks/useAgendamentos';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfissionais } from '@/hooks/useProfissionais';
 import { toast } from 'sonner';
+import { TemplateModal } from './TemplateModal';
+import { Plus } from 'lucide-react';
 
 interface NovoProntuarioModalProps {
   isOpen: boolean;
@@ -20,6 +22,7 @@ export function NovoProntuarioModal({ isOpen, onClose, pacienteId }: NovoProntua
   const [templateSelecionado, setTemplateSelecionado] = useState('');
   const [conteudo, setConteudo] = useState('');
   const [agendamentoSelecionado, setAgendamentoSelecionado] = useState('');
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
 
   const { user } = useAuth();
   const { data: agendamentos = [] } = useAgendamentos();
@@ -108,7 +111,19 @@ export function NovoProntuarioModal({ isOpen, onClose, pacienteId }: NovoProntua
         <div className="space-y-6">
           {/* Template Selection */}
           <div className="space-y-2">
-            <Label htmlFor="template">Template (Opcional)</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="template">Template (Opcional)</Label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsTemplateModalOpen(true)}
+                className="h-8 gap-1"
+              >
+                <Plus className="h-4 w-4" />
+                Novo
+              </Button>
+            </div>
             <Select value={templateSelecionado} onValueChange={handleTemplateChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione um template ou deixe em branco" />
@@ -173,6 +188,11 @@ export function NovoProntuarioModal({ isOpen, onClose, pacienteId }: NovoProntua
           </div>
         </div>
       </DialogContent>
+
+      <TemplateModal
+        isOpen={isTemplateModalOpen}
+        onClose={() => setIsTemplateModalOpen(false)}
+      />
     </Dialog>
   );
 }
