@@ -238,42 +238,44 @@ export function VisaoSemanalGrid({
               {bloqueios.filter(bl => isSameDay(new Date(bl.data_inicio), dia)).map((bloqueio) => (
                 <div
                   key={`bloqueio-${bloqueio.id}`}
-                  className="absolute left-1 right-1 bg-orange-100 border border-orange-200 p-1 rounded text-xs z-10 cursor-pointer hover:shadow-md transition-shadow"
+                  className="absolute left-1 right-1 bg-orange-100 border border-orange-200 p-1 rounded text-xs z-10 cursor-pointer hover:shadow-md transition-shadow overflow-hidden"
                   style={{
                     top: `${calcularPosicaoTop(bloqueio.data_inicio)}px`,
                     height: `${Math.max(calcularAltura(bloqueio.data_inicio, bloqueio.data_fim), 30)}px`
                   }}
                 >
-                  <div className="font-medium text-orange-800 truncate text-[10px]">
-                    {bloqueio.titulo}
-                  </div>
-                  <div className="flex justify-between items-center mt-1">
-                    <Badge variant="outline" className="text-[9px] text-orange-700 border-orange-300 h-4">
-                      Bloqueado
-                    </Badge>
-                    <div className="flex gap-1">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-4 w-4 p-0"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setBloqueioParaEditar(bloqueio);
-                        }}
-                      >
-                        <Edit className="h-2 w-2" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-4 w-4 p-0 text-destructive"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setBloqueioParaExcluir(bloqueio);
-                        }}
-                      >
-                        <Trash2 className="h-2 w-2" />
-                      </Button>
+                  <div className="flex flex-col h-full">
+                    <div className="font-medium text-orange-800 truncate text-[10px]">
+                      {bloqueio.titulo}
+                    </div>
+                    <div className="flex justify-between items-center gap-1 mt-auto">
+                      <Badge variant="outline" className="text-[9px] text-orange-700 border-orange-300 h-4 flex-shrink-0">
+                        Bloqueado
+                      </Badge>
+                      <div className="flex gap-0.5 flex-shrink-0">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-4 w-4 p-0 hover:bg-orange-200"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setBloqueioParaEditar(bloqueio);
+                          }}
+                        >
+                          <Edit className="h-2 w-2" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-4 w-4 p-0 text-destructive hover:bg-orange-200"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setBloqueioParaExcluir(bloqueio);
+                          }}
+                        >
+                          <Trash2 className="h-2 w-2" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -283,7 +285,7 @@ export function VisaoSemanalGrid({
               {agendamentos.filter(ag => !ag.desmarcada && isSameDay(new Date(ag.data_inicio), dia)).map((agendamento) => (
                 <div
                   key={`agendamento-${agendamento.id}`}
-                  className={`absolute left-1 right-1 bg-blue-50 border border-blue-200 p-1 rounded text-xs z-10 cursor-pointer hover:shadow-md transition-shadow ${
+                  className={`absolute left-1 right-1 bg-blue-50 border border-blue-200 p-1 rounded text-xs z-10 cursor-pointer hover:shadow-md transition-shadow overflow-hidden ${
                     agendamento.desmarcada ? 'opacity-50' : ''
                   }`}
                   style={{
@@ -291,20 +293,20 @@ export function VisaoSemanalGrid({
                     height: `${Math.max(calcularAltura(agendamento.data_inicio, agendamento.data_fim), 30)}px`
                   }}
                 >
-                  <div className={`font-medium truncate text-[10px] ${agendamento.desmarcada ? 'line-through' : ''}`}>
-                    {agendamento.pacientes?.nome}
-                  </div>
-                  <div className="flex justify-between items-center mt-1">
-                    <Badge className={`text-[9px] h-4 ${getStatusColor(agendamento.status || 'pendente')}`}>
-                      {agendamento.desmarcada ? 'Desmarcada' : getStatusText(agendamento.status || 'pendente')}
-                    </Badge>
-                    <div className="flex gap-1">
+                  <div className="flex flex-col h-full">
+                    <div className={`font-medium truncate text-[10px] ${agendamento.desmarcada ? 'line-through' : ''}`}>
+                      {agendamento.pacientes?.nome}
+                    </div>
+                    <div className="flex justify-between items-center gap-1 mt-auto">
+                      <Badge className={`text-[9px] h-4 flex-shrink-0 ${getStatusColor(agendamento.status || 'pendente')}`}>
+                        {agendamento.desmarcada ? 'Desmarcada' : getStatusText(agendamento.status || 'pendente')}
+                      </Badge>
                       {!agendamento.desmarcada && (
-                        <>
+                        <div className="flex gap-0.5 flex-shrink-0">
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="h-4 w-4 p-0"
+                            className="h-4 w-4 p-0 hover:bg-blue-200"
                             onClick={(e) => {
                               e.stopPropagation();
                               onEditarAgendamento(agendamento);
@@ -316,7 +318,7 @@ export function VisaoSemanalGrid({
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="h-4 w-4 p-0"
+                              className="h-4 w-4 p-0 hover:bg-blue-200"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onConfirmarAgendamento(agendamento.id);
@@ -329,7 +331,7 @@ export function VisaoSemanalGrid({
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="h-4 w-4 p-0"
+                              className="h-4 w-4 p-0 hover:bg-blue-200"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onMarcarRealizadoAgendamento(agendamento.id);
@@ -338,7 +340,7 @@ export function VisaoSemanalGrid({
                               ✓
                             </Button>
                           )}
-                        </>
+                        </div>
                       )}
                     </div>
                   </div>
