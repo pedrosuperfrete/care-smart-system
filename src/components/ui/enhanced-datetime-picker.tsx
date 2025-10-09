@@ -49,7 +49,13 @@ export function EnhancedDateTimePicker({
       try {
         const parsedDate = parse(val, "dd/MM/yyyy HH:mm", new Date());
         if (isValid(parsedDate)) {
-          onChange?.(parsedDate.toISOString().slice(0, 16));
+          // Usar formato local ao invés de ISO para evitar problema de fuso horário
+          const year = parsedDate.getFullYear();
+          const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
+          const day = String(parsedDate.getDate()).padStart(2, '0');
+          const hour = String(parsedDate.getHours()).padStart(2, '0');
+          const minute = String(parsedDate.getMinutes()).padStart(2, '0');
+          onChange?.(`${year}-${month}-${day}T${hour}:${minute}`);
           setCurrentMonth(parsedDate);
           setHours(parsedDate.getHours().toString().padStart(2, '0'));
           setMinutes(parsedDate.getMinutes().toString().padStart(2, '0'));
@@ -64,7 +70,13 @@ export function EnhancedDateTimePicker({
     if (selectedDate) {
       selectedDate.setHours(parseInt(hours), parseInt(minutes));
       setInputValue(format(selectedDate, "dd/MM/yyyy HH:mm"));
-      onChange?.(selectedDate.toISOString().slice(0, 16));
+      // Usar formato local ao invés de ISO para evitar problema de fuso horário
+      const year = selectedDate.getFullYear();
+      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(selectedDate.getDate()).padStart(2, '0');
+      const hour = String(selectedDate.getHours()).padStart(2, '0');
+      const minute = String(selectedDate.getMinutes()).padStart(2, '0');
+      onChange?.(`${year}-${month}-${day}T${hour}:${minute}`);
       setCurrentMonth(selectedDate);
     }
   };
@@ -77,7 +89,13 @@ export function EnhancedDateTimePicker({
       const newDate = new Date(dateFromValue);
       newDate.setHours(parseInt(newHours), parseInt(newMinutes));
       setInputValue(format(newDate, "dd/MM/yyyy HH:mm"));
-      onChange?.(newDate.toISOString().slice(0, 16));
+      // Usar formato local ao invés de ISO para evitar problema de fuso horário
+      const year = newDate.getFullYear();
+      const month = String(newDate.getMonth() + 1).padStart(2, '0');
+      const day = String(newDate.getDate()).padStart(2, '0');
+      const hour = String(newDate.getHours()).padStart(2, '0');
+      const minute = String(newDate.getMinutes()).padStart(2, '0');
+      onChange?.(`${year}-${month}-${day}T${hour}:${minute}`);
     }
   };
 
