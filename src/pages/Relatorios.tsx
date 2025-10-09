@@ -167,7 +167,7 @@ export default function Relatorios() {
                 <BarChart data={consultasPorDia}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="dia" />
-                  <YAxis />
+                  <YAxis allowDecimals={false} />
                   <Tooltip />
                   <Bar dataKey="consultas" fill="hsl(var(--primary))" />
                 </BarChart>
