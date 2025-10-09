@@ -290,10 +290,10 @@ export function useDesmarcarAgendamento() {
   
   return useMutation({
     mutationFn: async (id: string) => {
-      // Reverter status de confirmado para pendente
+      // Marcar consulta como desmarcada
       const { data, error } = await supabase
         .from('agendamentos')
-        .update({ status: 'pendente' })
+        .update({ desmarcada: true })
         .eq('id', id)
         .select(`
           *,
@@ -308,10 +308,10 @@ export function useDesmarcarAgendamento() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agendamentos'] });
       queryClient.invalidateQueries({ queryKey: ['atividades-recentes'] });
-      toast.success('Confirmação removida com sucesso!');
+      toast.success('Consulta desmarcada com sucesso!');
     },
     onError: (error: any) => {
-      toast.error('Erro ao remover confirmação: ' + error.message);
+      toast.error('Erro ao desmarcar consulta: ' + error.message);
     },
   });
 }
