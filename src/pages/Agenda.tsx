@@ -350,6 +350,9 @@ export default function Agenda() {
         </div>
       </div>
 
+      {/* Google Calendar Integration - apenas para profissionais/admins */}
+      {!isRecepcionista && <GoogleCalendarConnect />}
+
       {/* Navegação de Data */}
       <Card>
         <CardContent className="pt-6">
@@ -375,9 +378,6 @@ export default function Agenda() {
           </div>
         </CardContent>
       </Card>
-
-      {/* Google Calendar Integration - apenas para profissionais/admins */}
-      {!isRecepcionista && <GoogleCalendarConnect />}
 
       {/* Conteúdo baseado na visualização */}
       {viewMode === 'dia' && (
