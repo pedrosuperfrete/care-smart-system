@@ -84,18 +84,16 @@ export function VisaoDiaria({
     const [hours, minutes] = time.split(':').map(Number);
     slotTime.setHours(hours, minutes, 0, 0);
 
-    // Verificar agendamentos
+    // Verificar agendamentos - renderizar apenas no horário de início
     const agendamento = agendamentos.find(ag => {
       const inicio = new Date(ag.data_inicio);
-      const fim = new Date(ag.data_fim);
-      return slotTime >= inicio && slotTime < fim && !ag.desmarcada;
+      return slotTime.getTime() === inicio.getTime() && !ag.desmarcada;
     });
 
-    // Verificar bloqueios
+    // Verificar bloqueios - renderizar apenas no horário de início
     const bloqueio = bloqueios.find(bl => {
       const inicio = new Date(bl.data_inicio);
-      const fim = new Date(bl.data_fim);
-      return slotTime >= inicio && slotTime < fim;
+      return slotTime.getTime() === inicio.getTime();
     });
 
     return { agendamento, bloqueio };
