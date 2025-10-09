@@ -290,9 +290,10 @@ export function useDesmarcarAgendamento() {
   
   return useMutation({
     mutationFn: async (id: string) => {
+      // Reverter status de confirmado para pendente
       const { data, error } = await supabase
         .from('agendamentos')
-        .update({ desmarcada: true })
+        .update({ status: 'pendente' })
         .eq('id', id)
         .select(`
           *,
@@ -302,34 +303,19 @@ export function useDesmarcarAgendamento() {
         .single();
       
       if (error) throw error;
-
-      // Excluir evento do Google Calendar
-      try {
-        await supabase.functions.invoke('google-calendar', {
-          body: {
-            action: 'delete',
-            agendamentoId: id,
-          },
-        });
-      } catch (calendarError) {
-        console.warn('Erro ao excluir evento do Google Calendar:', calendarError);
-      }
-
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agendamentos'] });
-      queryClient.invalidateQueries({ queryKey: ['agendamentos-hoje'] });
-      queryClient.invalidateQueries({ queryKey: ['proximos-agendamentos'] });
-      queryClient.invalidateQueries({ queryKey: ['agendamentos-stats'] });
       queryClient.invalidateQueries({ queryKey: ['atividades-recentes'] });
-      toast.success('Agendamento desmarcado com sucesso!');
+      toast.success('Confirmação removida com sucesso!');
     },
     onError: (error: any) => {
-      toast.error('Erro ao desmarcar agendamento: ' + error.message);
+      toast.error('Erro ao remover confirmação: ' + error.message);
     },
   });
 }
+
 
 export function useMarcarRealizado() {
   const queryClient = useQueryClient();

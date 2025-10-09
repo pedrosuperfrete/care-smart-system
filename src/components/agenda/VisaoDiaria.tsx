@@ -314,17 +314,30 @@ export function VisaoDiaria({
                           </Button>
                         )}
                         {agendamento.status === 'confirmado' && (
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            className="h-6 px-2 text-xs"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onMarcarRealizadoAgendamento(agendamento.id);
-                            }}
-                          >
-                            ✓
-                          </Button>
+                          <>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              className="h-6 px-2 text-xs"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onMarcarRealizadoAgendamento(agendamento.id);
+                              }}
+                            >
+                              ✓
+                            </Button>
+                            <Button 
+                              size="sm"
+                              variant="outline"
+                              className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDesmarcarAgendamento(agendamento.id);
+                              }}
+                            >
+                              <XCircle className="h-3 w-3" />
+                            </Button>
+                          </>
                         )}
                       </>
                     )}

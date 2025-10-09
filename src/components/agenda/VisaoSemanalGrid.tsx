@@ -323,17 +323,30 @@ export function VisaoSemanalGrid({
                           </Button>
                         )}
                         {agendamento.status === 'confirmado' && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-4 w-4 p-0 hover:bg-blue-200 flex-shrink-0"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onMarcarRealizadoAgendamento(agendamento.id);
-                            }}
-                          >
-                            ✓
-                          </Button>
+                          <>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-4 w-4 p-0 hover:bg-blue-200 flex-shrink-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onMarcarRealizadoAgendamento(agendamento.id);
+                              }}
+                            >
+                              ✓
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-4 w-4 p-0 hover:bg-red-200 text-destructive flex-shrink-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDesmarcarAgendamento(agendamento.id);
+                              }}
+                            >
+                              <XCircle className="h-2 w-2" />
+                            </Button>
+                          </>
                         )}
                       </>
                     )}
