@@ -288,9 +288,7 @@ export default function Relatorios() {
             )}
           </CardContent>
         </Card>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
             <CardTitle>Tipos de Consulta</CardTitle>
@@ -330,7 +328,9 @@ export default function Relatorios() {
             )}
           </CardContent>
         </Card>
+      </div>
 
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
             <CardTitle>Status das Consultas</CardTitle>
@@ -373,63 +373,6 @@ export default function Relatorios() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Status dos Pagamentos</CardTitle>
-            <CardDescription>
-              Distribuição dos valores por status de pagamento
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="h-[300px] flex items-center justify-center">
-                <Skeleton className="h-full w-full" />
-              </div>
-            ) : statusPagamentos.length > 0 && statusPagamentos.some(item => item.valor > 0) ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={statusPagamentos.filter(item => item.valor > 0)}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={true}
-                    label={({ nome, valor, cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
-                      const RADIAN = Math.PI / 180;
-                      const radius = outerRadius + 30;
-                      const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                      const y = cy + radius * Math.sin(-midAngle * RADIAN);
-                      return (
-                        <text 
-                          x={x} 
-                          y={y} 
-                          fill="hsl(var(--foreground))" 
-                          textAnchor={x > cx ? 'start' : 'end'} 
-                          dominantBaseline="central"
-                          className="text-sm"
-                        >
-                          {`${nome}: R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-                        </text>
-                      );
-                    }}
-                    outerRadius={80}
-                    fill="hsl(var(--primary))"
-                    dataKey="valor"
-                  >
-                    {statusPagamentos.filter(item => item.valor > 0).map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.cor} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value: any) => [`R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 'Valor']} />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                <p>Nenhum dado disponível para o período selecionado</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
         <Card>
           <CardHeader>
             <CardTitle>Relatórios Detalhados</CardTitle>
