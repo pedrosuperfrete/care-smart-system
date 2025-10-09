@@ -151,11 +151,6 @@ export function VisaoDiaria({
         {timeSlots.map((time) => {
           const { agendamento, bloqueio, isOccupied, isSlotIntermediario } = isSlotOccupied(time);
           
-          // Não renderizar slots intermediários (que estão dentro de um agendamento/bloqueio)
-          if (isSlotIntermediario) {
-            return null;
-          }
-          
           return (
             <div key={time} className="flex items-center min-h-[60px] border-b border-gray-100">
               {/* Coluna do horário */}

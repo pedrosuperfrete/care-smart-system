@@ -190,10 +190,7 @@ export function VisaoSemanalGrid({
                 
                 return (
                   <div key={dayIndex} className="border border-gray-100 min-h-[40px]">
-                    {isSlotIntermediario ? (
-                      // Slot intermediário - não renderizar nada
-                      null
-                    ) : bloqueio ? (
+                    {isSlotIntermediario ? null : bloqueio ? (
                       // Mostrar bloqueio
                       <div 
                         className="bg-orange-100 border border-orange-200 p-1 rounded text-xs"
