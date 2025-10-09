@@ -182,22 +182,31 @@ export function VisaoSemanalGrid({
   };
 
   return (
-    <div className="overflow-x-auto -mx-4 lg:-mx-6">
-      <div className="min-w-[800px] px-4 lg:px-6">
-        {/* Cabeçalho com dias da semana - Fixo no topo */}
-        <div className="grid grid-cols-8 gap-1 mb-2 sticky top-0 bg-background z-30 py-2 -mt-2">
-          <div className="w-16 text-xs font-medium text-gray-500 bg-background"></div>
-          {diasSemana.map((dia, index) => (
-            <div key={index} className="text-center p-2 border rounded bg-card shadow-sm">
-              <div className="text-xs font-medium text-gray-600">
-                {diasSemanaLabels[index]}
-              </div>
-              <div className="text-sm font-semibold">
-                {dia.getDate()}
-              </div>
+    <div>
+      {/* Cabeçalho com dias da semana - Fixo no topo */}
+      <div className="sticky top-0 bg-background z-50 pb-2 pt-2 border-b shadow-sm mb-2">
+        <div className="overflow-x-auto">
+          <div className="min-w-[800px]">
+            <div className="grid grid-cols-8 gap-1">
+              <div className="w-16 text-xs font-medium text-muted-foreground"></div>
+              {diasSemana.map((dia, index) => (
+                <div key={index} className="text-center p-2 border rounded bg-card">
+                  <div className="text-xs font-medium text-muted-foreground">
+                    {diasSemanaLabels[index]}
+                  </div>
+                  <div className="text-sm font-semibold">
+                    {dia.getDate()}
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
+      </div>
+
+      {/* Grade de horários com scroll horizontal */}
+      <div className="overflow-x-auto">
+        <div className="min-w-[800px]">
 
         {/* Grade de horários */}
         <div className="grid grid-cols-8 gap-1">
@@ -344,6 +353,7 @@ export function VisaoSemanalGrid({
           ))}
         </div>
       </div>
+    </div>
 
       {/* Modal para editar bloqueio */}
       {bloqueioParaEditar && (
