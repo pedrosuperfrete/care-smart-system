@@ -96,7 +96,28 @@ export function VisaoDiaria({
       return slotTime.getTime() === inicio.getTime();
     });
 
-    return { agendamento, bloqueio };
+    // Verificar se o slot está dentro de um agendamento ou bloqueio (para desabilitar clique)
+    const dentroDeBloqueio = bloqueios.some(bl => {
+      const inicio = new Date(bl.data_inicio);
+      const fim = new Date(bl.data_fim);
+      return slotTime >= inicio && slotTime < fim;
+    });
+
+    const dentroDeAgendamento = agendamentos.some(ag => {
+      const inicio = new Date(ag.data_inicio);
+      const fim = new Date(ag.data_fim);
+      return slotTime >= inicio && slotTime < fim && !ag.desmarcada;
+    });
+
+    return { agendamento, bloqueio, isOccupied: dentroDeBloqueio || dentroDeAgendamento };
+  };
+
+  const calcularSlots = (dataInicio: string, dataFim: string) => {
+    const inicio = new Date(dataInicio);
+    const fim = new Date(dataFim);
+    const diffMs = fim.getTime() - inicio.getTime();
+    const diffMinutes = diffMs / (1000 * 60);
+    return Math.ceil(diffMinutes / 30); // Cada slot tem 30 minutos
   };
 
   const handleNovaConsultaNoHorario = (time: string) => {
@@ -110,7 +131,7 @@ export function VisaoDiaria({
     <div className="space-y-2">
       <div className="grid grid-cols-1 gap-1">
         {timeSlots.map((time) => {
-          const { agendamento, bloqueio } = isSlotOccupied(time);
+          const { agendamento, bloqueio, isOccupied } = isSlotOccupied(time);
           
           return (
             <div key={time} className="flex items-center min-h-[60px] border-b border-gray-100">
@@ -123,7 +144,12 @@ export function VisaoDiaria({
               <div className="flex-1 ml-4">
                 {bloqueio ? (
                   // Mostrar bloqueio
-                  <Card className="border-orange-200 bg-orange-50">
+                  <Card 
+                    className="border-orange-200 bg-orange-50"
+                    style={{ 
+                      minHeight: `${calcularSlots(bloqueio.data_inicio, bloqueio.data_fim) * 60}px`
+                    }}
+                  >
                     <CardContent className="p-3">
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
@@ -167,7 +193,12 @@ export function VisaoDiaria({
                   </Card>
                 ) : agendamento ? (
                   // Mostrar agendamento
-                  <Card className={`hover:shadow-md transition-shadow ${agendamento.desmarcada ? 'opacity-50' : ''}`}>
+                  <Card 
+                    className={`hover:shadow-md transition-shadow ${agendamento.desmarcada ? 'opacity-50' : ''}`}
+                    style={{ 
+                      minHeight: `${calcularSlots(agendamento.data_inicio, agendamento.data_fim) * 60}px`
+                    }}
+                  >
                     <CardContent className="p-3">
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
@@ -240,7 +271,7 @@ export function VisaoDiaria({
                       </div>
                     </CardContent>
                   </Card>
-                ) : (
+                ) : !isOccupied ? (
                   // Slot disponível
                   <Button
                     variant="ghost"
@@ -250,7 +281,7 @@ export function VisaoDiaria({
                     <Plus className="h-4 w-4 mr-2" />
                     Horário disponível - Clique para agendar
                   </Button>
-                )}
+                ) : null}
               </div>
             </div>
           );

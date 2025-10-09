@@ -109,7 +109,28 @@ export function VisaoSemanalGrid({
       return slotTime.getTime() === inicio.getTime();
     });
 
-    return { agendamento, bloqueio };
+    // Verificar se o slot está dentro de um agendamento ou bloqueio (para desabilitar clique)
+    const dentroDeBloqueio = bloqueios.some(bl => {
+      const inicio = new Date(bl.data_inicio);
+      const fim = new Date(bl.data_fim);
+      return slotTime >= inicio && slotTime < fim;
+    });
+
+    const dentroDeAgendamento = agendamentos.some(ag => {
+      const inicio = new Date(ag.data_inicio);
+      const fim = new Date(ag.data_fim);
+      return slotTime >= inicio && slotTime < fim && !ag.desmarcada;
+    });
+
+    return { agendamento, bloqueio, isOccupied: dentroDeBloqueio || dentroDeAgendamento };
+  };
+
+  const calcularSlots = (dataInicio: string, dataFim: string) => {
+    const inicio = new Date(dataInicio);
+    const fim = new Date(dataFim);
+    const diffMs = fim.getTime() - inicio.getTime();
+    const diffMinutes = diffMs / (1000 * 60);
+    return Math.ceil(diffMinutes / 30); // Cada slot tem 30 minutos
   };
 
   const isSameDay = (date1: Date, date2: Date) => {
@@ -147,13 +168,18 @@ export function VisaoSemanalGrid({
               
               {/* Colunas dos dias */}
               {diasSemana.map((dia, dayIndex) => {
-                const { agendamento, bloqueio } = isSlotOccupied(time, dia);
+                const { agendamento, bloqueio, isOccupied } = isSlotOccupied(time, dia);
                 
                 return (
                   <div key={dayIndex} className="border border-gray-100 min-h-[40px]">
                     {bloqueio ? (
                       // Mostrar bloqueio
-                      <div className="bg-orange-100 border border-orange-200 h-full p-1 rounded text-xs">
+                      <div 
+                        className="bg-orange-100 border border-orange-200 p-1 rounded text-xs"
+                        style={{ 
+                          minHeight: `${calcularSlots(bloqueio.data_inicio, bloqueio.data_fim) * 40}px`
+                        }}
+                      >
                         <div className="font-medium text-orange-800 truncate">
                           {bloqueio.titulo}
                         </div>
@@ -183,7 +209,12 @@ export function VisaoSemanalGrid({
                       </div>
                     ) : agendamento ? (
                       // Mostrar agendamento
-                      <div className={`bg-blue-50 border border-blue-200 h-full p-1 rounded text-xs ${agendamento.desmarcada ? 'opacity-50' : ''}`}>
+                      <div 
+                        className={`bg-blue-50 border border-blue-200 p-1 rounded text-xs ${agendamento.desmarcada ? 'opacity-50' : ''}`}
+                        style={{ 
+                          minHeight: `${calcularSlots(agendamento.data_inicio, agendamento.data_fim) * 40}px`
+                        }}
+                      >
                         <div className={`font-medium truncate ${agendamento.desmarcada ? 'line-through' : ''}`}>
                           {agendamento.pacientes?.nome}
                         </div>
@@ -227,7 +258,7 @@ export function VisaoSemanalGrid({
                           </div>
                         </div>
                       </div>
-                    ) : (
+                    ) : !isOccupied ? (
                       // Slot disponível
                       <Button
                         variant="ghost"
@@ -241,7 +272,7 @@ export function VisaoSemanalGrid({
                       >
                         <Plus className="h-3 w-3" />
                       </Button>
-                    )}
+                    ) : null}
                   </div>
                 );
               })}
