@@ -354,30 +354,32 @@ export default function Agenda() {
       {!isRecepcionista && <GoogleCalendarConnect />}
 
       {/* Navegação de Data */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between">
-            <Button variant="outline" onClick={() => navegarData('prev')}>
-              <ChevronLeft className="h-4 w-4 mr-2" />
-              Anterior
-            </Button>
-            
-            <div className="text-center">
-              <h2 className="text-xl font-semibold">
-                {getDateRangeText()}
-              </h2>
-              <p className="text-gray-600">
-                {getAgendamentosCount()} consulta(s) agendada(s)
-              </p>
+      <div className="sticky top-0 z-10 bg-background pb-2">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <Button variant="outline" onClick={() => navegarData('prev')}>
+                <ChevronLeft className="h-4 w-4 mr-2" />
+                Anterior
+              </Button>
+              
+              <div className="text-center">
+                <h2 className="text-xl font-semibold">
+                  {getDateRangeText()}
+                </h2>
+                <p className="text-gray-600">
+                  {getAgendamentosCount()} consulta(s) agendada(s)
+                </p>
+              </div>
+              
+              <Button variant="outline" onClick={() => navegarData('next')}>
+                Próximo
+                <ChevronRight className="h-4 w-4 ml-2" />
+              </Button>
             </div>
-            
-            <Button variant="outline" onClick={() => navegarData('next')}>
-              Próximo
-              <ChevronRight className="h-4 w-4 ml-2" />
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Conteúdo baseado na visualização */}
       {viewMode === 'dia' && (
