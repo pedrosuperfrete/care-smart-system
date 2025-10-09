@@ -120,7 +120,7 @@ export function EnhancedDateTimePicker({
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
+        <PopoverContent className="w-auto p-0 max-h-[600px] overflow-y-auto" align="start">
           <div className="p-3">
             {/* Input manual para data e hora */}
             <div className="mb-3">
@@ -242,7 +242,7 @@ export function EnhancedDateTimePicker({
             </div>
 
             {/* Botão para confirmar */}
-            <div className="mt-3">
+            <div className="mt-3 pt-3 border-t sticky bottom-0 bg-popover">
               <Button 
                 className="w-full" 
                 size="sm"
