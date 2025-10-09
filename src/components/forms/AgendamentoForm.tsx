@@ -186,7 +186,7 @@ export function AgendamentoForm({ agendamento, pacienteId, dataHoraInicial, onSu
     }
     
     // Auto-preencher hora fim (1 hora depois) quando hora início é alterada
-    if (field === 'data_hora_inicio' && value) {
+    if (field === 'data_inicio' && value) {
       const dataInicio = new Date(value);
       const dataFim = new Date(dataInicio);
       dataFim.setHours(dataFim.getHours() + 1);
@@ -198,7 +198,7 @@ export function AgendamentoForm({ agendamento, pacienteId, dataHoraInicial, onSu
       const minute = String(dataFim.getMinutes()).padStart(2, '0');
       const dataHoraFim = `${year}-${month}-${day}T${hour}:${minute}`;
       
-      setFormData(prev => ({ ...prev, data_hora_fim: dataHoraFim }));
+      setFormData(prev => ({ ...prev, data_fim: dataHoraFim }));
     }
   };
 
