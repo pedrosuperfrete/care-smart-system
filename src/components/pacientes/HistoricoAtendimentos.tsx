@@ -72,24 +72,41 @@ export function HistoricoAtendimentos({ agendamentos }: HistoricoAtendimentosPro
           </p>
         ) : (
           <div className="space-y-3">
-            {currentItems.map((agendamento) => (
-              <div key={agendamento.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <History className="h-4 w-4 text-gray-500" />
-                  <div>
-                    <div className="font-medium">
-                      {formatDateTimeLocal(agendamento.data_inicio).split(' ')[0]}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {agendamento.tipo_servico} - {(agendamento as any).profissionais?.nome || 'Profissional não informado'}
+            {currentItems.map((agendamento) => {
+              const getStatusText = (agendamento: Agendamento) => {
+                if (agendamento.desmarcada) return 'desmarcada';
+                return agendamento.status || 'pendente';
+              };
+
+              const getStatusColor = (agendamento: Agendamento) => {
+                if (agendamento.desmarcada) return 'bg-gray-100 text-gray-600';
+                switch (agendamento.status) {
+                  case 'realizado': return 'bg-success text-success-foreground';
+                  case 'confirmado': return 'bg-primary text-primary-foreground';
+                  case 'pendente': return 'bg-warning text-warning-foreground';
+                  default: return 'bg-destructive text-destructive-foreground';
+                }
+              };
+
+              return (
+                <div key={agendamento.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <History className="h-4 w-4 text-gray-500" />
+                    <div>
+                      <div className={`font-medium ${agendamento.desmarcada ? 'line-through text-gray-500' : ''}`}>
+                        {formatDateTimeLocal(agendamento.data_inicio).split(',')[0]}
+                      </div>
+                      <div className={`text-sm text-gray-500 ${agendamento.desmarcada ? 'line-through' : ''}`}>
+                        {agendamento.tipo_servico} - {(agendamento as any).profissionais?.nome || 'Profissional não informado'}
+                      </div>
                     </div>
                   </div>
+                  <Badge className={getStatusColor(agendamento)}>
+                    {getStatusText(agendamento)}
+                  </Badge>
                 </div>
-                <Badge variant="outline">
-                  {agendamento.status}
-                </Badge>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </CardContent>
