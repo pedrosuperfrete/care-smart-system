@@ -1,4 +1,4 @@
-import { Calendar, Users, FileText, DollarSign, Home, Settings, User, Clock, CreditCard, LogOut, ChevronDown, AlertTriangle, MessageSquare } from "lucide-react";
+import { Calendar, Users, FileText, DollarSign, Home, Settings, User, Clock, CreditCard, LogOut, ChevronDown, AlertTriangle, MessageSquare, MessageCircle } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -66,6 +66,11 @@ export function AppSidebar() {
       url: "/app/erros-sistema",
       icon: AlertTriangle,
       hideFor: ['recepcionista'],
+    },
+    {
+      title: "Feedback",
+      url: "/app/feedback",
+      icon: MessageCircle,
     },
     {
       title: "Configurações",
