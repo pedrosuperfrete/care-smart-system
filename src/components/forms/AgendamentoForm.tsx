@@ -9,7 +9,7 @@ import { useCreateAgendamento, useUpdateAgendamento } from '@/hooks/useAgendamen
 import { usePacientes, useCreatePaciente } from '@/hooks/usePacientes';
 import { useProfissionais } from '@/hooks/useProfissionais';
 import { useAuth } from '@/hooks/useAuth';
-import { useTiposServicos } from '@/hooks/useTiposServicos';
+import { useTiposServicos, useCreateTipoServico } from '@/hooks/useTiposServicos';
 import { Tables } from '@/integrations/supabase/types';
 import { Plus } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -32,6 +32,13 @@ const novoPacienteSchema = z.object({
 
 type NovoPacienteFormData = z.infer<typeof novoPacienteSchema>;
 
+const novoTipoServicoSchema = z.object({
+  nome: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
+  preco: z.string().optional(),
+});
+
+type NovoTipoServicoFormData = z.infer<typeof novoTipoServicoSchema>;
+
 interface AgendamentoFormProps {
   agendamento?: Agendamento;
   pacienteId?: string;
@@ -48,10 +55,13 @@ export function AgendamentoForm({ agendamento, pacienteId, dataHoraInicial, onSu
   const { data: profissionais = [] } = useProfissionais();
   const { data: tiposServicos = [], isLoading: loadingTipos } = useTiposServicos();
   const createPaciente = useCreatePaciente();
+  const createTipoServico = useCreateTipoServico();
 
   const [showNovoPacienteDialog, setShowNovoPacienteDialog] = useState(false);
   const [isCreatingPaciente, setIsCreatingPaciente] = useState(false);
   const [telefoneFormatado, setTelefoneFormatado] = useState('');
+  const [showNovoTipoServicoDialog, setShowNovoTipoServicoDialog] = useState(false);
+  const [isCreatingTipoServico, setIsCreatingTipoServico] = useState(false);
 
   const novoPacienteForm = useForm<NovoPacienteFormData>({
     resolver: zodResolver(novoPacienteSchema),
@@ -60,6 +70,14 @@ export function AgendamentoForm({ agendamento, pacienteId, dataHoraInicial, onSu
       cpf: '',
       telefone: '',
       email: '',
+    },
+  });
+
+  const novoTipoServicoForm = useForm<NovoTipoServicoFormData>({
+    resolver: zodResolver(novoTipoServicoSchema),
+    defaultValues: {
+      nome: '',
+      preco: '',
     },
   });
 
@@ -208,6 +226,40 @@ export function AgendamentoForm({ agendamento, pacienteId, dataHoraInicial, onSu
     }
   };
 
+  const handleCreateTipoServico = async (data: NovoTipoServicoFormData) => {
+    if (!clinicaAtual) return;
+
+    setIsCreatingTipoServico(true);
+    try {
+      const tipoServicoData = {
+        nome: data.nome,
+        preco: data.preco ? parseFloat(data.preco) : undefined,
+        clinica_id: clinicaAtual,
+        profissional_id: profissional?.id,
+      };
+
+      const novoTipoServico = await createTipoServico.mutateAsync(tipoServicoData);
+      
+      // Aguarda a query de tipos de serviço ser atualizada
+      await queryClient.refetchQueries({ queryKey: ['tipos-servicos'] });
+      
+      // Seleciona o tipo de serviço recém-criado
+      setFormData(prev => ({ 
+        ...prev, 
+        tipo_servico: novoTipoServico.nome,
+        valor: novoTipoServico.preco?.toString() || ''
+      }));
+      
+      // Fecha o dialog e limpa o formulário
+      setShowNovoTipoServicoDialog(false);
+      novoTipoServicoForm.reset();
+    } catch (error: any) {
+      console.error('Erro ao criar tipo de serviço:', error);
+    } finally {
+      setIsCreatingTipoServico(false);
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -296,12 +348,24 @@ export function AgendamentoForm({ agendamento, pacienteId, dataHoraInicial, onSu
           <Label htmlFor="tipo_servico">Tipo de Serviço</Label>
           <Select 
             value={formData.tipo_servico} 
-            onValueChange={(value) => handleChange('tipo_servico', value)}
+            onValueChange={(value) => {
+              if (value === 'novo-tipo-servico') {
+                setShowNovoTipoServicoDialog(true);
+              } else {
+                handleChange('tipo_servico', value);
+              }
+            }}
           >
             <SelectTrigger>
               <SelectValue placeholder="Selecione o tipo" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="novo-tipo-servico" className="font-medium text-primary">
+                <div className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Criar novo tipo de serviço
+                </div>
+              </SelectItem>
               {loadingTipos ? (
                 <div className="p-2 text-sm text-muted-foreground">Carregando tipos de serviço...</div>
               ) : tiposServicos.length === 0 ? (
@@ -487,6 +551,58 @@ export function AgendamentoForm({ agendamento, pacienteId, dataHoraInicial, onSu
               </Button>
               <Button type="submit" disabled={isCreatingPaciente}>
                 {isCreatingPaciente ? 'Criando...' : 'Criar Paciente'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para criar novo tipo de serviço */}
+      <Dialog open={showNovoTipoServicoDialog} onOpenChange={setShowNovoTipoServicoDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Criar Novo Tipo de Serviço</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={novoTipoServicoForm.handleSubmit(handleCreateTipoServico)} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="novo-tipo-nome">Nome *</Label>
+              <Input
+                id="novo-tipo-nome"
+                {...novoTipoServicoForm.register('nome')}
+                placeholder="Ex: Consulta, Terapia de Casal..."
+              />
+              {novoTipoServicoForm.formState.errors.nome && (
+                <p className="text-sm text-destructive">
+                  {novoTipoServicoForm.formState.errors.nome.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="novo-tipo-preco">Preço (R$)</Label>
+              <Input
+                id="novo-tipo-preco"
+                type="number"
+                step="0.01"
+                {...novoTipoServicoForm.register('preco')}
+                placeholder="0,00"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowNovoTipoServicoDialog(false);
+                  novoTipoServicoForm.reset();
+                }}
+                disabled={isCreatingTipoServico}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isCreatingTipoServico}>
+                {isCreatingTipoServico ? 'Criando...' : 'Criar Tipo de Serviço'}
               </Button>
             </div>
           </form>
