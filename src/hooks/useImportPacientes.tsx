@@ -67,6 +67,10 @@ export function useImportPacientes() {
         Papa.parse(file, {
           header: true,
           skipEmptyLines: true,
+          transformHeader: (header: string) => {
+            // Normalizar nomes das colunas: remover espaços e converter para lowercase
+            return header.trim().toLowerCase();
+          },
           complete: (results) => {
             resolve(results.data as PacienteImport[]);
           },
@@ -83,8 +87,22 @@ export function useImportPacientes() {
             const data = e.target?.result;
             const workbook = XLSX.read(data, { type: 'binary' });
             const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-            const jsonData = XLSX.utils.sheet_to_json(firstSheet) as PacienteImport[];
-            resolve(jsonData);
+            const jsonData = XLSX.utils.sheet_to_json(firstSheet, {
+              raw: false,
+              defval: '',
+            });
+            
+            // Normalizar nomes das colunas do Excel também
+            const normalizedData = jsonData.map((row: any) => {
+              const normalizedRow: any = {};
+              Object.keys(row).forEach((key) => {
+                const normalizedKey = key.trim().toLowerCase();
+                normalizedRow[normalizedKey] = row[key];
+              });
+              return normalizedRow;
+            });
+            
+            resolve(normalizedData as PacienteImport[]);
           } catch (error) {
             reject(error);
           }
@@ -112,7 +130,7 @@ export function useImportPacientes() {
         const linha = i + 2; // +2 porque linha 1 é o cabeçalho e arrays começam em 0
 
         // Validação básica
-        if (!paciente.nome || !paciente.cpf) {
+        if (!paciente.nome || !paciente.cpf || paciente.nome.trim() === '' || paciente.cpf.trim() === '') {
           errors.push(`Linha ${linha}: Nome e CPF são obrigatórios`);
           continue;
         }
