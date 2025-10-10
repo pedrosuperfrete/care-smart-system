@@ -12,9 +12,10 @@ import { PacienteDetalhes } from '@/components/PacienteDetalhes';
 import { AgendamentoForm } from '@/components/forms/AgendamentoForm';
 import { usePacientes, usePacientesStats } from '@/hooks/usePacientes';
 import { usePacientesComAgendamentos } from '@/hooks/usePacientesComAgendamentos';
-import { Users, Plus, Search, MoreVertical, Eye, Edit, Calendar, History, Phone, Mail, MapPin } from 'lucide-react';
+import { Users, Plus, Search, MoreVertical, Eye, Edit, Calendar, History, Phone, Mail, MapPin, FileUp } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import { fromLocalDateString } from '@/lib/dateUtils';
+import { ImportPacientesDialog } from '@/components/pacientes/ImportPacientesDialog';
 
 type Paciente = Tables<'pacientes'>;
 
@@ -29,6 +30,7 @@ export default function Pacientes() {
   const [isEditPacienteOpen, setIsEditPacienteOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isAgendamentoOpen, setIsAgendamentoOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
 
   const filteredPacientes = pacientes.filter(paciente => {
     // Busca dinâmica por nome, CPF ou email (case-insensitive)
@@ -94,23 +96,30 @@ export default function Pacientes() {
           </p>
         </div>
         
-        <Dialog open={isNewPacienteOpen} onOpenChange={setIsNewPacienteOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Novo Paciente
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Novo Paciente</DialogTitle>
-              <DialogDescription>
-                Cadastre um novo paciente na clínica
-              </DialogDescription>
-            </DialogHeader>
-            <PacienteForm onSuccess={() => setIsNewPacienteOpen(false)} />
-          </DialogContent>
-        </Dialog>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setIsImportOpen(true)}>
+            <FileUp className="mr-2 h-4 w-4" />
+            Importar Pacientes
+          </Button>
+          
+          <Dialog open={isNewPacienteOpen} onOpenChange={setIsNewPacienteOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Novo Paciente
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Novo Paciente</DialogTitle>
+                <DialogDescription>
+                  Cadastre um novo paciente na clínica
+                </DialogDescription>
+              </DialogHeader>
+              <PacienteForm onSuccess={() => setIsNewPacienteOpen(false)} />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Filtros e Estatísticas */}
@@ -369,6 +378,12 @@ export default function Pacientes() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Dialog de Importação de Pacientes */}
+      <ImportPacientesDialog 
+        open={isImportOpen} 
+        onOpenChange={setIsImportOpen}
+      />
     </div>
   );
 }
