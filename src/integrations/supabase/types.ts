@@ -299,6 +299,13 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "logs_acesso_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       modelos_documentos: {
@@ -713,6 +720,13 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "profissionais_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       prontuarios: {
@@ -762,6 +776,13 @@ export type Database = {
             columns: ["editado_por"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prontuarios_editado_por_fkey"
+            columns: ["editado_por"]
+            isOneToOne: false
+            referencedRelation: "users_safe"
             referencedColumns: ["id"]
           },
           {
@@ -920,6 +941,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_usuarios_clinicas_users"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "users_safe"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "usuarios_clinicas_clinica_id_fkey"
             columns: ["clinica_id"]
             isOneToOne: false
@@ -1025,7 +1053,39 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      users_safe: {
+        Row: {
+          ativo: boolean | null
+          criado_em: string | null
+          email: string | null
+          id: string | null
+          nome: string | null
+          plano: string | null
+          subscription_end_date: string | null
+          tipo_usuario: Database["public"]["Enums"]["tipo_usuario"] | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          criado_em?: string | null
+          email?: string | null
+          id?: string | null
+          nome?: string | null
+          plano?: string | null
+          subscription_end_date?: string | null
+          tipo_usuario?: Database["public"]["Enums"]["tipo_usuario"] | null
+        }
+        Update: {
+          ativo?: boolean | null
+          criado_em?: string | null
+          email?: string | null
+          id?: string | null
+          nome?: string | null
+          plano?: string | null
+          subscription_end_date?: string | null
+          tipo_usuario?: Database["public"]["Enums"]["tipo_usuario"] | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       can_create_patient: {
@@ -1070,6 +1130,17 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      get_clinic_users_safe: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          ativo: boolean
+          criado_em: string
+          email: string
+          id: string
+          nome: string
+          tipo_usuario: Database["public"]["Enums"]["tipo_usuario"]
+        }[]
+      }
       get_current_profissional_id: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -1077,6 +1148,19 @@ export type Database = {
       get_current_user_clinica: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_safe_user_profile: {
+        Args: { _user_id: string }
+        Returns: {
+          ativo: boolean
+          criado_em: string
+          email: string
+          id: string
+          nome: string
+          plano: string
+          subscription_end_date: string
+          tipo_usuario: Database["public"]["Enums"]["tipo_usuario"]
+        }[]
       }
       get_user_clinicas: {
         Args: Record<PropertyKey, never>
