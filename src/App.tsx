@@ -22,6 +22,7 @@ import Configuracoes from "./pages/Configuracoes";
 import ErrosSistema from "./pages/ErrosSistema";
 import Feedback from "./pages/Feedback";
 import NotFound from "./pages/NotFound";
+import PagamentoSucesso from "./pages/PagamentoSucesso";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +45,10 @@ function AppRoutes() {
       {/* Rotas da Plataforma - /app/* */}
       <Route path="/app/auth" element={
         user ? <Navigate to="/app/dashboard" replace /> : <Auth />
+      } />
+      
+      <Route path="/app/pagamento-sucesso" element={
+        !user ? <Navigate to="/app/auth" replace /> : <PagamentoSucesso />
       } />
       
       <Route path="/app/onboarding" element={

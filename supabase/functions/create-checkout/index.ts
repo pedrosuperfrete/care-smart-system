@@ -71,8 +71,8 @@ serve(async (req) => {
         },
       ],
       mode: "subscription",
-      success_url: `${req.headers.get("origin")}/configuracoes?tab=assinatura&success=true`,
-      cancel_url: `${req.headers.get("origin")}/configuracoes?tab=assinatura&canceled=true`,
+      success_url: `${req.headers.get("origin")}/app/pagamento-sucesso`,
+      cancel_url: `${req.headers.get("origin")}/app/configuracoes?tab=assinatura&canceled=true`,
       metadata: {
         profissional_id: profissional.id,
       },
