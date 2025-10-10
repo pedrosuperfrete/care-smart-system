@@ -21,6 +21,7 @@ interface PacienteImport {
   data_nascimento?: string;
   cep?: string;
   endereco?: string;
+  bairro?: string;
   cidade?: string;
   estado?: string;
   observacoes?: string;
@@ -154,6 +155,7 @@ export function useImportPacientes() {
           telefone: paciente.telefone?.trim() || null,
           cep: paciente.cep?.trim() || null,
           endereco: paciente.endereco?.trim() || null,
+          bairro: paciente.bairro?.trim() || null,
           cidade: paciente.cidade?.trim() || null,
           estado: paciente.estado?.trim().toUpperCase() || null,
           observacoes: paciente.observacoes?.trim() || null,

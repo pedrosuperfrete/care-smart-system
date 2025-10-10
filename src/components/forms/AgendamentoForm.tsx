@@ -216,6 +216,7 @@ export function AgendamentoForm({ agendamento, pacienteId, dataHoraInicial, onSu
         data_nascimento: data.data_nascimento ? toLocalDateString(data.data_nascimento) : null,
               cep: null,
               endereco: null,
+              bairro: null,
               cidade: null,
               estado: null,
               observacoes: null,

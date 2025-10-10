@@ -435,6 +435,7 @@ export type Database = {
         Row: {
           ativo: boolean
           atualizado_em: string
+          bairro: string | null
           cep: string | null
           cidade: string | null
           clinica_id: string
@@ -456,6 +457,7 @@ export type Database = {
         Insert: {
           ativo?: boolean
           atualizado_em?: string
+          bairro?: string | null
           cep?: string | null
           cidade?: string | null
           clinica_id: string
@@ -477,6 +479,7 @@ export type Database = {
         Update: {
           ativo?: boolean
           atualizado_em?: string
+          bairro?: string | null
           cep?: string | null
           cidade?: string | null
           clinica_id?: string

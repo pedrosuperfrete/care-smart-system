@@ -26,6 +26,7 @@ const pacienteSchema = z.object({
   telefone: z.string().optional(),
   cep: z.string().optional(),
   endereco: z.string().optional(),
+  bairro: z.string().optional(),
   cidade: z.string().optional(),
   estado: z.string().optional(),
   observacoes: z.string().optional(),
@@ -90,6 +91,7 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
       telefone: paciente.telefone || '',
       cep: (paciente as any).cep || '',
       endereco: paciente.endereco || '',
+      bairro: (paciente as any).bairro || '',
       cidade: (paciente as any).cidade || '',
       estado: (paciente as any).estado || '',
       observacoes: paciente.observacoes || '',
@@ -135,6 +137,7 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
         telefone: data.telefone || null,
         cep: data.cep || null,
         endereco: data.endereco || null,
+        bairro: data.bairro || null,
         cidade: data.cidade || null,
         estado: data.estado || null,
         observacoes: data.observacoes || null,
@@ -172,7 +175,8 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
     <Card>
       <CardContent className="pt-6">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {/* Linha 1: Nome, CPF, Data de Nascimento */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="space-y-1">
               <Label htmlFor="nome">Nome *</Label>
               <Input
@@ -194,11 +198,10 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
                 maxLength={14}
                 onChange={(e) => {
                   const formatted = formatCPF(e.target.value);
-                  setValue('cpf', formatted.replace(/\D/g, '')); // Armazena apenas números
-                  e.target.value = formatted; // Mostra formatado
+                  setValue('cpf', formatted.replace(/\D/g, ''));
+                  e.target.value = formatted;
                 }}
                 onKeyPress={(e) => {
-                  // Permite apenas números, backspace, delete e teclas de navegação
                   if (!/[\d]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
                     e.preventDefault();
                   }
@@ -218,7 +221,10 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
                 disabled={(date) => date > new Date()}
               />
             </div>
+          </div>
 
+          {/* Linha 2: Telefone, Email, Origem */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="space-y-1">
               <Label htmlFor="telefone">Telefone</Label>
               <Input
@@ -230,7 +236,6 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
                   const input = e.target.value;
                   const numbers = input.replace(/\D/g, '').slice(0, 11);
                   
-                  // Aplica a máscara enquanto digita
                   let formatted = '';
                   if (numbers.length > 0) {
                     formatted = '(' + numbers.substring(0, 2);
@@ -276,20 +281,6 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="tipo_paciente">Tipo de Paciente</Label>
-              <Select value={tipoPaciente} onValueChange={(value) => setValue('tipo_paciente', value as any)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="novo">Novo</SelectItem>
-                  <SelectItem value="recorrente">Recorrente</SelectItem>
-                  <SelectItem value="antigo">Antigo</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1">
               <Label htmlFor="origem">Origem</Label>
               <Select value={origem} onValueChange={(value) => setValue('origem', value)}>
                 <SelectTrigger>
@@ -302,6 +293,23 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
                   <SelectItem value="google">Google</SelectItem>
                   <SelectItem value="marketing">Marketing</SelectItem>
                   <SelectItem value="outros">Outros</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Linha 3: Tipo de Paciente, Modalidade do Atendimento */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label htmlFor="tipo_paciente">Tipo de Paciente</Label>
+              <Select value={tipoPaciente} onValueChange={(value) => setValue('tipo_paciente', value as any)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="novo">Novo</SelectItem>
+                  <SelectItem value="recorrente">Recorrente</SelectItem>
+                  <SelectItem value="antigo">Antigo</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -321,42 +329,54 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
             </div>
           </div>
 
-          <div className="space-y-1">
-            <Label htmlFor="cep">CEP</Label>
-            <Input
-              id="cep"
-              placeholder="00000-000"
-              maxLength={9}
-              value={cepFormatado}
-              onChange={(e) => {
-                const input = e.target.value;
-                const numbers = input.replace(/\D/g, '').slice(0, 8);
-                
-                // Aplica a máscara enquanto digita
-                let formatted = '';
-                if (numbers.length > 0) {
-                  formatted = numbers.substring(0, 5);
-                  if (numbers.length >= 6) {
-                    formatted += '-' + numbers.substring(5, 8);
+          {/* Linha 4: CEP, Rua/Número/Complemento */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div className="space-y-1">
+              <Label htmlFor="cep">CEP</Label>
+              <Input
+                id="cep"
+                placeholder="00000-000"
+                maxLength={9}
+                value={cepFormatado}
+                onChange={(e) => {
+                  const input = e.target.value;
+                  const numbers = input.replace(/\D/g, '').slice(0, 8);
+                  
+                  let formatted = '';
+                  if (numbers.length > 0) {
+                    formatted = numbers.substring(0, 5);
+                    if (numbers.length >= 6) {
+                      formatted += '-' + numbers.substring(5, 8);
+                    }
                   }
-                }
-                
-                setCepFormatado(formatted);
-                setValue('cep', numbers);
-              }}
-            />
+                  
+                  setCepFormatado(formatted);
+                  setValue('cep', numbers);
+                }}
+              />
+            </div>
+
+            <div className="space-y-1 md:col-span-3">
+              <Label htmlFor="endereco">Rua, número e complemento</Label>
+              <Input
+                id="endereco"
+                {...register('endereco')}
+                placeholder="Rua, número, complemento"
+              />
+            </div>
           </div>
 
-          <div className="space-y-1">
-            <Label htmlFor="endereco">Rua, número e complemento</Label>
-            <Input
-              id="endereco"
-              {...register('endereco')}
-              placeholder="Rua, número, complemento"
-            />
-          </div>
+          {/* Linha 5: Bairro, Cidade, Estado */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="space-y-1">
+              <Label htmlFor="bairro">Bairro</Label>
+              <Input
+                id="bairro"
+                {...register('bairro')}
+                placeholder="Bairro"
+              />
+            </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label htmlFor="cidade">Cidade</Label>
               <Input
