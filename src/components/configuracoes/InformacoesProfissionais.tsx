@@ -66,26 +66,6 @@ export function InformacoesProfissionais({ profileData, setProfileData, handleSe
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>CNPJ da Clínica</Label>
-            <Input
-              value={profileData.cnpj_clinica || ''}
-              onChange={(e) => setProfileData({ ...profileData, cnpj_clinica: e.target.value })}
-              placeholder="00.000.000/0001-00"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Endereço da Clínica</Label>
-            <Input
-              value={profileData.endereco_clinica || ''}
-              onChange={(e) => setProfileData({ ...profileData, endereco_clinica: e.target.value })}
-              placeholder="Endereço completo"
-            />
-          </div>
-        </div>
-
         <HorarioAtendimento
           value={profileData.horarios_atendimento}
           onChange={(horarios) => setProfileData({ ...profileData, horarios_atendimento: horarios })}
