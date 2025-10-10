@@ -48,7 +48,10 @@ function AppRoutes() {
       } />
       
       <Route path="/app/pagamento-sucesso" element={
-        !user ? <Navigate to="/app/auth" replace /> : <PagamentoSucesso />
+        !user ? <Navigate to="/app/auth" replace /> :
+        <ProtectedRoute>
+          <PagamentoSucesso />
+        </ProtectedRoute>
       } />
       
       <Route path="/app/onboarding" element={
