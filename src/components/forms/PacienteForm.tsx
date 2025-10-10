@@ -28,6 +28,7 @@ const pacienteSchema = z.object({
   observacoes: z.string().optional(),
   tipo_paciente: z.enum(['novo', 'recorrente', 'antigo']).optional(),
   origem: z.string().optional(),
+  modalidade_atendimento: z.string().optional(),
 });
 
 type PacienteFormData = z.infer<typeof pacienteSchema>;
@@ -84,6 +85,7 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
       observacoes: paciente.observacoes || '',
       tipo_paciente: paciente.tipo_paciente || 'novo',
       origem: (paciente as any).origem || '',
+      modalidade_atendimento: (paciente as any).modalidade_atendimento || '',
     } : {
       tipo_paciente: 'novo',
     },
@@ -91,6 +93,7 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
 
   const tipoPaciente = watch('tipo_paciente');
   const origem = watch('origem');
+  const modalidadeAtendimento = watch('modalidade_atendimento');
   const dataNascimento = watch('data_nascimento');
 
   // Função para formatar CPF (apenas números)
@@ -124,6 +127,7 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
         observacoes: data.observacoes || null,
         tipo_paciente: data.tipo_paciente || 'novo' as const,
         origem: data.origem || null,
+        modalidade_atendimento: data.modalidade_atendimento || null,
         ativo: true,
       };
 
@@ -288,6 +292,20 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
                   <SelectItem value="google">Google</SelectItem>
                   <SelectItem value="marketing">Marketing</SelectItem>
                   <SelectItem value="outros">Outros</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="modalidade_atendimento">Modalidade do atendimento</Label>
+              <Select value={modalidadeAtendimento} onValueChange={(value) => setValue('modalidade_atendimento', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a modalidade" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="plano">Atendimento pelo plano</SelectItem>
+                  <SelectItem value="particular_reembolso">Particular com reembolso</SelectItem>
+                  <SelectItem value="particular">Particular</SelectItem>
                 </SelectContent>
               </Select>
             </div>

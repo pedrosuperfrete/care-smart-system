@@ -443,6 +443,7 @@ export type Database = {
           endereco: string | null
           id: string
           inadimplente: boolean | null
+          modalidade_atendimento: string | null
           nome: string
           observacoes: string | null
           origem: string | null
@@ -460,6 +461,7 @@ export type Database = {
           endereco?: string | null
           id?: string
           inadimplente?: boolean | null
+          modalidade_atendimento?: string | null
           nome: string
           observacoes?: string | null
           origem?: string | null
@@ -477,6 +479,7 @@ export type Database = {
           endereco?: string | null
           id?: string
           inadimplente?: boolean | null
+          modalidade_atendimento?: string | null
           nome?: string
           observacoes?: string | null
           origem?: string | null

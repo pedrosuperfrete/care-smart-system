@@ -217,6 +217,7 @@ export function AgendamentoForm({ agendamento, pacienteId, dataHoraInicial, onSu
         endereco: null,
         observacoes: null,
         origem: null,
+        modalidade_atendimento: null,
         tipo_paciente: 'novo' as const,
         ativo: true,
         inadimplente: false,
