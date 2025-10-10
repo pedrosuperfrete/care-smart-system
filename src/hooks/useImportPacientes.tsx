@@ -21,6 +21,7 @@ interface PacienteImport {
   data_nascimento?: string;
   endereco?: string;
   observacoes?: string;
+  origem?: string;
 }
 
 export function useImportPacientes() {
@@ -149,6 +150,7 @@ export function useImportPacientes() {
           telefone: paciente.telefone?.trim() || null,
           endereco: paciente.endereco?.trim() || null,
           observacoes: paciente.observacoes?.trim() || null,
+          origem: paciente.origem?.trim() || null,
         };
 
         // Processar data de nascimento

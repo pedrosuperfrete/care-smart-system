@@ -445,6 +445,7 @@ export type Database = {
           inadimplente: boolean | null
           nome: string
           observacoes: string | null
+          origem: string | null
           telefone: string | null
           tipo_paciente: Database["public"]["Enums"]["tipo_paciente"]
         }
@@ -461,6 +462,7 @@ export type Database = {
           inadimplente?: boolean | null
           nome: string
           observacoes?: string | null
+          origem?: string | null
           telefone?: string | null
           tipo_paciente?: Database["public"]["Enums"]["tipo_paciente"]
         }
@@ -477,6 +479,7 @@ export type Database = {
           inadimplente?: boolean | null
           nome?: string
           observacoes?: string | null
+          origem?: string | null
           telefone?: string | null
           tipo_paciente?: Database["public"]["Enums"]["tipo_paciente"]
         }

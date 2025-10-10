@@ -27,6 +27,7 @@ const pacienteSchema = z.object({
   endereco: z.string().optional(),
   observacoes: z.string().optional(),
   tipo_paciente: z.enum(['novo', 'recorrente', 'antigo']).optional(),
+  origem: z.string().optional(),
 });
 
 type PacienteFormData = z.infer<typeof pacienteSchema>;
@@ -82,12 +83,14 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
       endereco: paciente.endereco || '',
       observacoes: paciente.observacoes || '',
       tipo_paciente: paciente.tipo_paciente || 'novo',
+      origem: (paciente as any).origem || '',
     } : {
       tipo_paciente: 'novo',
     },
   });
 
   const tipoPaciente = watch('tipo_paciente');
+  const origem = watch('origem');
   const dataNascimento = watch('data_nascimento');
 
   // Função para formatar CPF (apenas números)
@@ -120,6 +123,7 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
         endereco: data.endereco || null,
         observacoes: data.observacoes || null,
         tipo_paciente: data.tipo_paciente || 'novo' as const,
+        origem: data.origem || null,
         ativo: true,
       };
 
@@ -267,6 +271,23 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
                   <SelectItem value="novo">Novo</SelectItem>
                   <SelectItem value="recorrente">Recorrente</SelectItem>
                   <SelectItem value="antigo">Antigo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="origem">Origem</Label>
+              <Select value={origem} onValueChange={(value) => setValue('origem', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a origem" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="indicacao_amigo">Indicação amigo</SelectItem>
+                  <SelectItem value="indicacao_paciente">Indicação paciente</SelectItem>
+                  <SelectItem value="instagram">Instagram</SelectItem>
+                  <SelectItem value="google">Google</SelectItem>
+                  <SelectItem value="marketing">Marketing</SelectItem>
+                  <SelectItem value="outros">Outros</SelectItem>
                 </SelectContent>
               </Select>
             </div>

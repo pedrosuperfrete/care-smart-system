@@ -59,6 +59,7 @@ export function ImportPacientesDialog({ open, onOpenChange }: ImportPacientesDia
               <code className="mx-1 px-2 py-1 bg-muted rounded text-sm">telefone</code>,
               <code className="mx-1 px-2 py-1 bg-muted rounded text-sm">data_nascimento</code> (formato DD/MM/AAAA),
               <code className="mx-1 px-2 py-1 bg-muted rounded text-sm">endereco</code>,
+              <code className="mx-1 px-2 py-1 bg-muted rounded text-sm">origem</code>,
               <code className="mx-1 px-2 py-1 bg-muted rounded text-sm">observacoes</code>
             </AlertDescription>
           </Alert>
