@@ -435,12 +435,15 @@ export type Database = {
         Row: {
           ativo: boolean
           atualizado_em: string
+          cep: string | null
+          cidade: string | null
           clinica_id: string
           cpf: string
           criado_em: string
           data_nascimento: string | null
           email: string | null
           endereco: string | null
+          estado: string | null
           id: string
           inadimplente: boolean | null
           modalidade_atendimento: string | null
@@ -453,12 +456,15 @@ export type Database = {
         Insert: {
           ativo?: boolean
           atualizado_em?: string
+          cep?: string | null
+          cidade?: string | null
           clinica_id: string
           cpf: string
           criado_em?: string
           data_nascimento?: string | null
           email?: string | null
           endereco?: string | null
+          estado?: string | null
           id?: string
           inadimplente?: boolean | null
           modalidade_atendimento?: string | null
@@ -471,12 +477,15 @@ export type Database = {
         Update: {
           ativo?: boolean
           atualizado_em?: string
+          cep?: string | null
+          cidade?: string | null
           clinica_id?: string
           cpf?: string
           criado_em?: string
           data_nascimento?: string | null
           email?: string | null
           endereco?: string | null
+          estado?: string | null
           id?: string
           inadimplente?: boolean | null
           modalidade_atendimento?: string | null

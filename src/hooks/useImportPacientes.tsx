@@ -19,7 +19,10 @@ interface PacienteImport {
   email?: string;
   telefone?: string;
   data_nascimento?: string;
+  cep?: string;
   endereco?: string;
+  cidade?: string;
+  estado?: string;
   observacoes?: string;
   origem?: string;
   modalidade_atendimento?: string;
@@ -149,7 +152,10 @@ export function useImportPacientes() {
           clinica_id: clinica.id,
           email: paciente.email?.trim() || null,
           telefone: paciente.telefone?.trim() || null,
+          cep: paciente.cep?.trim() || null,
           endereco: paciente.endereco?.trim() || null,
+          cidade: paciente.cidade?.trim() || null,
+          estado: paciente.estado?.trim().toUpperCase() || null,
           observacoes: paciente.observacoes?.trim() || null,
           origem: paciente.origem?.trim() || null,
           modalidade_atendimento: paciente.modalidade_atendimento?.trim() || null,

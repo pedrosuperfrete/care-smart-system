@@ -24,7 +24,10 @@ const pacienteSchema = z.object({
   data_nascimento: z.date().optional(),
   email: z.string().email('Email inválido').optional().or(z.literal('')),
   telefone: z.string().optional(),
+  cep: z.string().optional(),
   endereco: z.string().optional(),
+  cidade: z.string().optional(),
+  estado: z.string().optional(),
   observacoes: z.string().optional(),
   tipo_paciente: z.enum(['novo', 'recorrente', 'antigo']).optional(),
   origem: z.string().optional(),
@@ -65,6 +68,10 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
   const [telefoneFormatado, setTelefoneFormatado] = useState(
     formatarTelefoneInicial(paciente?.telefone || '')
   );
+  
+  const [cepFormatado, setCepFormatado] = useState(
+    paciente?.cep || ''
+  );
 
   const {
     register,
@@ -81,7 +88,10 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
       data_nascimento: paciente.data_nascimento ? fromLocalDateString(paciente.data_nascimento) : undefined,
       email: paciente.email || '',
       telefone: paciente.telefone || '',
+      cep: (paciente as any).cep || '',
       endereco: paciente.endereco || '',
+      cidade: (paciente as any).cidade || '',
+      estado: (paciente as any).estado || '',
       observacoes: paciente.observacoes || '',
       tipo_paciente: paciente.tipo_paciente || 'novo',
       origem: (paciente as any).origem || '',
@@ -123,7 +133,10 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
         email: data.email || null,
         data_nascimento: data.data_nascimento ? toLocalDateString(data.data_nascimento) : null,
         telefone: data.telefone || null,
+        cep: data.cep || null,
         endereco: data.endereco || null,
+        cidade: data.cidade || null,
+        estado: data.estado || null,
         observacoes: data.observacoes || null,
         tipo_paciente: data.tipo_paciente || 'novo' as const,
         origem: data.origem || null,
@@ -157,10 +170,7 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
 
   return (
     <Card>
-      <CardHeader className="pb-4">
-        <CardTitle>{paciente ? 'Editar Paciente' : 'Novo Paciente'}</CardTitle>
-      </CardHeader>
-      <CardContent>
+      <CardContent className="pt-6">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="space-y-1">
@@ -312,12 +322,64 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
           </div>
 
           <div className="space-y-1">
-            <Label htmlFor="endereco">Endereço</Label>
+            <Label htmlFor="cep">CEP</Label>
+            <Input
+              id="cep"
+              placeholder="00000-000"
+              maxLength={9}
+              value={cepFormatado}
+              onChange={(e) => {
+                const input = e.target.value;
+                const numbers = input.replace(/\D/g, '').slice(0, 8);
+                
+                // Aplica a máscara enquanto digita
+                let formatted = '';
+                if (numbers.length > 0) {
+                  formatted = numbers.substring(0, 5);
+                  if (numbers.length >= 6) {
+                    formatted += '-' + numbers.substring(5, 8);
+                  }
+                }
+                
+                setCepFormatado(formatted);
+                setValue('cep', numbers);
+              }}
+            />
+          </div>
+
+          <div className="space-y-1">
+            <Label htmlFor="endereco">Rua, número e complemento</Label>
             <Input
               id="endereco"
               {...register('endereco')}
-              placeholder="Rua, número, bairro, cidade"
+              placeholder="Rua, número, complemento"
             />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label htmlFor="cidade">Cidade</Label>
+              <Input
+                id="cidade"
+                {...register('cidade')}
+                placeholder="Cidade"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="estado">Estado</Label>
+              <Input
+                id="estado"
+                {...register('estado')}
+                placeholder="UF"
+                maxLength={2}
+                onChange={(e) => {
+                  const value = e.target.value.toUpperCase();
+                  setValue('estado', value);
+                  e.target.value = value;
+                }}
+              />
+            </div>
           </div>
 
           <div className="space-y-1">
