@@ -12,7 +12,7 @@ import { Tables } from '@/integrations/supabase/types';
 import { formatDateTimeLocal } from '@/lib/dateUtils';
 
 export default function Dashboard() {
-  const { userProfile, isAdmin, isProfissional, isRecepcionista } = useAuth();
+  const { userProfile, profissional, isAdmin, isProfissional, isRecepcionista } = useAuth();
   const { data: pacientesStats } = usePacientesStats();
   const { data: agendamentosStats } = useAgendamentosStats();
   const { data: financeiroStats } = useFinanceiroStats();
@@ -79,7 +79,7 @@ export default function Dashboard() {
     <div className="p-8 space-y-8">
       <div>
         <h1 className="text-3xl font-bold">
-          Bem-vindo, {userProfile?.nome || userProfile?.email?.split('@')[0]}!
+          Bem-vindo, {profissional?.nome_clinica || userProfile?.nome || userProfile?.email?.split('@')[0]}!
         </h1>
         <p className="text-gray-600 mt-1">
           Aqui está um resumo da sua clínica hoje.
