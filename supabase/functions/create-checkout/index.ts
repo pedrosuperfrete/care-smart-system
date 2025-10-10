@@ -13,28 +13,52 @@ serve(async (req) => {
   }
 
   try {
+    // ⚠️ SECURITY: Explicit authentication check
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Authorization header missing" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+      );
+    }
+
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
       { auth: { persistSession: false } }
     );
 
-    const authHeader = req.headers.get("Authorization")!;
     const token = authHeader.replace("Bearer ", "");
-    const { data } = await supabaseClient.auth.getUser(token);
-    const user = data.user;
+    const { data, error: authError } = await supabaseClient.auth.getUser(token);
     
-    if (!user?.email) throw new Error("Usuário não autenticado");
+    if (authError || !data.user) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+      );
+    }
+    
+    const user = data.user;
+    if (!user.email) {
+      return new Response(
+        JSON.stringify({ error: "User email not found" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
+    }
 
-    // Buscar dados do profissional
+    // ⚠️ SECURITY: Verify user is a professional before creating checkout
     const { data: profissional, error: profError } = await supabaseClient
       .from('profissionais')
-      .select('*')
+      .select('id, nome, stripe_customer_id, assinatura_ativa')
       .eq('user_id', user.id)
+      .eq('ativo', true)
       .single();
 
     if (profError || !profissional) {
-      throw new Error("Profissional não encontrado");
+      return new Response(
+        JSON.stringify({ error: "Only professionals can subscribe" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
+      );
     }
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {

@@ -48,8 +48,29 @@ export default function Auth() {
           return;
         }
         
-        if (password.length < 6) {
-          toast.error('A senha deve ter pelo menos 6 caracteres');
+        // ⚠️ SECURITY: Strengthen password requirements
+        if (password.length < 8) {
+          toast.error('A senha deve ter pelo menos 8 caracteres');
+          return;
+        }
+        
+        if (!/[A-Z]/.test(password)) {
+          toast.error('A senha deve conter pelo menos uma letra maiúscula');
+          return;
+        }
+        
+        if (!/[a-z]/.test(password)) {
+          toast.error('A senha deve conter pelo menos uma letra minúscula');
+          return;
+        }
+        
+        if (!/[0-9]/.test(password)) {
+          toast.error('A senha deve conter pelo menos um número');
+          return;
+        }
+        
+        if (!/[^A-Za-z0-9]/.test(password)) {
+          toast.error('A senha deve conter pelo menos um caractere especial (!@#$%^&*)');
           return;
         }
         
@@ -245,7 +266,7 @@ export default function Auth() {
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       className="pl-10 pr-10 h-12"
                       required
-                      minLength={6}
+                      minLength={8}
                     />
                     <button
                       type="button"

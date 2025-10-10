@@ -18,18 +18,63 @@ import { toLocalDateString, fromLocalDateString } from '@/lib/dateUtils';
 
 type Paciente = Tables<'pacientes'>;
 
+// ⚠️ SECURITY: CPF validation with algorithm check
+const validateCPF = (cpf: string): boolean => {
+  const cleanCPF = cpf.replace(/\D/g, '');
+  if (cleanCPF.length !== 11) return false;
+  
+  // Check for known invalid patterns (all digits the same)
+  if (/^(\d)\1{10}$/.test(cleanCPF)) return false;
+  
+  // Validate check digits using CPF algorithm
+  let sum = 0;
+  for (let i = 0; i < 9; i++) {
+    sum += parseInt(cleanCPF.charAt(i)) * (10 - i);
+  }
+  let digit = 11 - (sum % 11);
+  if (digit > 9) digit = 0;
+  if (digit !== parseInt(cleanCPF.charAt(9))) return false;
+  
+  sum = 0;
+  for (let i = 0; i < 10; i++) {
+    sum += parseInt(cleanCPF.charAt(i)) * (11 - i);
+  }
+  digit = 11 - (sum % 11);
+  if (digit > 9) digit = 0;
+  if (digit !== parseInt(cleanCPF.charAt(10))) return false;
+  
+  return true;
+};
+
 const pacienteSchema = z.object({
-  nome: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
-  cpf: z.string().min(11, 'CPF deve ter 11 dígitos'),
+  nome: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres').max(255, 'Nome muito longo'),
+  cpf: z.string()
+    .min(11, 'CPF deve ter 11 dígitos')
+    .refine(validateCPF, 'CPF inválido'),
   data_nascimento: z.date().optional(),
-  email: z.string().email('Email inválido').optional().or(z.literal('')),
-  telefone: z.string().optional(),
+  email: z.string()
+    .email('Email inválido')
+    .max(255, 'Email muito longo')
+    .refine((val) => {
+      if (!val) return true;
+      // Prevent email injection attacks
+      return !/[<>\"'\[\]\\]/.test(val);
+    }, 'Email contém caracteres inválidos')
+    .optional()
+    .or(z.literal('')),
+  telefone: z.string()
+    .optional()
+    .refine((val) => {
+      if (!val) return true;
+      const clean = val.replace(/\D/g, '');
+      return clean.length === 10 || clean.length === 11;
+    }, 'Telefone deve ter 10 ou 11 dígitos'),
   cep: z.string().optional(),
-  endereco: z.string().optional(),
-  bairro: z.string().optional(),
-  cidade: z.string().optional(),
-  estado: z.string().optional(),
-  observacoes: z.string().optional(),
+  endereco: z.string().max(500, 'Endereço muito longo').optional(),
+  bairro: z.string().max(100, 'Bairro muito longo').optional(),
+  cidade: z.string().max(100, 'Cidade muito longa').optional(),
+  estado: z.string().max(2, 'Estado deve ter 2 caracteres').optional(),
+  observacoes: z.string().max(2000, 'Observações muito longas').optional(),
   tipo_paciente: z.enum(['novo', 'recorrente', 'antigo']).optional(),
   origem: z.string().optional(),
   modalidade_atendimento: z.string().optional(),

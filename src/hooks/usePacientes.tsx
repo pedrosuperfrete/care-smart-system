@@ -9,6 +9,9 @@ type Paciente = Tables<'pacientes'>;
 type InsertPaciente = Omit<Paciente, 'id' | 'criado_em' | 'atualizado_em'>;
 type UpdatePaciente = Partial<InsertPaciente>;
 
+// ⚠️ SECURITY: This hook uses role-based access control for patient data.
+// Receptionists cannot see medical observations, address details, or origin information.
+// The get_patients_for_role() function enforces column-level security.
 export function usePacientes() {
   const { logSupabaseError } = useErrorLogger();
   
@@ -16,29 +19,14 @@ export function usePacientes() {
     queryKey: ['pacientes'],
     queryFn: async () => {
       try {
-        // Buscar clínicas do usuário
-        const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
-        console.log('Clínicas do usuário na query de pacientes:', clinicasUsuario);
-        
-        if (!clinicasUsuario || clinicasUsuario.length === 0) {
-          console.log('Usuário não tem clínicas associadas');
-          return [];
-        }
-
-        // Filtrar pacientes pelas clínicas do usuário
-        const clinicaIds = clinicasUsuario.map(c => c.clinica_id);
-        
+        // Use secure role-based function instead of direct table query
+        // This automatically filters columns based on user role
         const { data, error } = await supabase
-          .from('pacientes')
-          .select('*')
-          .in('clinica_id', clinicaIds)
-          .eq('ativo', true)
-          .order('criado_em', { ascending: false });
+          .rpc('get_patients_for_role');
         
-        console.log('Pacientes filtrados por clínica:', data);
         if (error) {
           console.error('Erro ao buscar pacientes:', error);
-          await logSupabaseError('buscar_pacientes', error, { clinicaIds });
+          await logSupabaseError('buscar_pacientes', error);
           throw error;
         }
         return data || [];

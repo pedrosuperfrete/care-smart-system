@@ -1092,6 +1092,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      can_see_patient_sensitive_data: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       create_user_by_admin: {
         Args:
           | {
@@ -1148,6 +1152,31 @@ export type Database = {
       get_current_user_clinica: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_patients_for_role: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          ativo: boolean
+          atualizado_em: string
+          bairro: string
+          cep: string
+          cidade: string
+          clinica_id: string
+          cpf: string
+          criado_em: string
+          data_nascimento: string
+          email: string
+          endereco: string
+          estado: string
+          id: string
+          inadimplente: boolean
+          modalidade_atendimento: string
+          nome: string
+          observacoes: string
+          origem: string
+          telefone: string
+          tipo_paciente: Database["public"]["Enums"]["tipo_paciente"]
+        }[]
       }
       get_safe_user_profile: {
         Args: { _user_id: string }
