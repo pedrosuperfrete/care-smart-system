@@ -189,6 +189,31 @@ export default function Onboarding() {
         toast.success('Nova clínica criada com sucesso!');
       }
 
+      // Criar tipos de serviço na tabela tipos_servicos
+      if (step2Data.servicos_precos && step2Data.servicos_precos.length > 0) {
+        console.log('Criando tipos de serviço:', step2Data.servicos_precos);
+        
+        const tiposServicosData = step2Data.servicos_precos.map(servico => ({
+          nome: servico.nome,
+          preco: parseFloat(servico.preco) || 0,
+          clinica_id: clinicaId,
+          profissional_id: profissional?.id,
+          ativo: true
+        }));
+
+        const { error: servicosError } = await supabase
+          .from('tipos_servicos')
+          .insert(tiposServicosData);
+
+        if (servicosError) {
+          console.error('Erro ao criar tipos de serviço:', servicosError);
+          toast.error('Erro ao salvar tipos de serviço: ' + servicosError.message);
+          // Não retornamos aqui para permitir que o resto continue
+        } else {
+          console.log('Tipos de serviço criados com sucesso!');
+        }
+      }
+
       // Atualizar dados do profissional
       const completeData = {
         nome: step1Data.nome,
