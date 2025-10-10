@@ -4,11 +4,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tables } from '@/integrations/supabase/types';
 
-type UserProfile = Tables<'users'>;
+// Tipo seguro que exclui campos sensíveis da tabela users
+type SafeUserProfile = Pick<Tables<'users'>, 
+  'id' | 'email' | 'nome' | 'tipo_usuario' | 'ativo' | 'criado_em' | 'plano' | 'subscription_end_date'
+>;
+
 type Profissional = Tables<'profissionais'>;
 
 interface PerfilBasicoProps {
-  userProfile: UserProfile | null;
+  userProfile: SafeUserProfile | null;
   profissional: Profissional | null;
   profileData: any;
   setProfileData: (data: any) => void;

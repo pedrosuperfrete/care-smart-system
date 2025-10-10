@@ -820,6 +820,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           ativo: boolean
@@ -1064,12 +1085,23 @@ export type Database = {
           tipo_papel: string
         }[]
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
       is_admin_clinica: {
         Args: { clinica_uuid?: string }
+        Returns: boolean
+      }
+      is_profissional: {
+        Args: Record<PropertyKey, never>
         Returns: boolean
       }
       is_recepcionista: {
@@ -1090,6 +1122,7 @@ export type Database = {
       }
     }
     Enums: {
+      app_role: "admin" | "profissional" | "recepcionista"
       forma_pagamento: "pix" | "cartao" | "dinheiro" | "link"
       status_agendamento: "pendente" | "confirmado" | "realizado" | "faltou"
       status_emissao_nf: "emitida" | "pendente" | "erro"
@@ -1223,6 +1256,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "profissional", "recepcionista"],
       forma_pagamento: ["pix", "cartao", "dinheiro", "link"],
       status_agendamento: ["pendente", "confirmado", "realizado", "faltou"],
       status_emissao_nf: ["emitida", "pendente", "erro"],

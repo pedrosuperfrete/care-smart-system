@@ -5,12 +5,17 @@ import { Tables } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 import { useErrorLogger } from './useErrorLogger';
 
+// Tipo seguro que exclui campos sensíveis da tabela users
+type SafeUserProfile = Pick<Tables<'users'>, 
+  'id' | 'email' | 'nome' | 'tipo_usuario' | 'ativo' | 'criado_em' | 'plano' | 'subscription_end_date'
+>;
+
 type UserProfile = Tables<'users'>;
 type Profissional = Tables<'profissionais'>;
 
 interface AuthContextType {
   user: User | null;
-  userProfile: UserProfile | null;
+  userProfile: SafeUserProfile | null; // Usando tipo seguro sem campos sensíveis
   profissional: Profissional | null;
   loading: boolean;
   clinicaAtual: string | null;
@@ -19,7 +24,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
   signUp: (email: string, password: string, tipoUsuario?: 'admin' | 'profissional' | 'recepcionista') => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
-  updateProfile: (data: Partial<UserProfile>) => Promise<void>;
+  updateProfile: (data: Partial<SafeUserProfile>) => Promise<void>; // Usando tipo seguro
   updateProfissional: (data: Partial<Profissional>) => Promise<void>;
   isAdmin: boolean;
   isProfissional: boolean;
@@ -32,7 +37,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [userProfile, setUserProfile] = useState<SafeUserProfile | null>(null); // Usando tipo seguro
   const [profissional, setProfissional] = useState<Profissional | null>(null);
   const [loading, setLoading] = useState(true);
   const [clinicaAtual, setClinicaAtual] = useState<string | null>(null);
@@ -84,10 +89,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const errorLogger = createErrorLogger();
     
     try {
-      // Buscar perfil do usuário - usar maybeSingle para evitar erro se não existir
+      // Buscar perfil do usuário - APENAS CAMPOS NÃO-SENSÍVEIS
+      // NUNCA incluir: senha_hash, stripe_customer_id, subscription_id, subscription_status
       const { data: userProfileData, error: userError } = await supabase
         .from('users')
-        .select('*')
+        .select('id, email, nome, tipo_usuario, ativo, criado_em, plano, subscription_end_date')
         .eq('id', userId)
         .maybeSingle();
 
@@ -369,7 +375,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   };
 
-  const updateProfile = async (data: Partial<UserProfile>) => {
+  const updateProfile = async (data: Partial<SafeUserProfile>) => {
     if (!user) return;
 
     const { error } = await supabase
