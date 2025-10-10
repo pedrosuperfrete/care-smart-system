@@ -91,7 +91,7 @@ export function GerenciarTiposServicos() {
             <DialogTrigger asChild>
               <Button size="sm">
                 <Plus className="h-4 w-4 mr-2" />
-                Novo Tipo
+                Novo Serviço
               </Button>
             </DialogTrigger>
             <DialogContent>
