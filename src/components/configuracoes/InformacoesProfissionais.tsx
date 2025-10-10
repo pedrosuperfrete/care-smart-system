@@ -58,11 +58,11 @@ export function InformacoesProfissionais({ profileData, setProfileData, handleSe
         </div>
 
         <div className="space-y-2">
-          <Label>Nome da Clínica</Label>
+          <Label>Como gostaria de ser chamado(a)</Label>
           <Input
             value={profileData.nome_clinica}
             onChange={(e) => setProfileData({ ...profileData, nome_clinica: e.target.value })}
-            placeholder="Nome que será exibido aos pacientes"
+            placeholder="Dr, Dra, Sr."
           />
         </div>
 
