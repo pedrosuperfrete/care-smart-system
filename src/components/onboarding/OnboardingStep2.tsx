@@ -102,7 +102,7 @@ export function OnboardingStep2({ data, onDataChange, onSubmit, onBack, onSkip, 
   return (
     <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
-        <CardTitle>Complete seu Perfil - Etapa 2 de 2</CardTitle>
+        <CardTitle>Complete seu perfil</CardTitle>
         <CardDescription>
           Últimas informações para finalizar seu cadastro
         </CardDescription>
@@ -130,6 +130,7 @@ export function OnboardingStep2({ data, onDataChange, onSubmit, onBack, onSkip, 
                 value={data.cnpj_clinica}
                 onChange={(e) => onDataChange({ ...data, cnpj_clinica: e.target.value })}
                 placeholder="00.000.000/0000-00"
+                maxLength={18}
               />
               {errors.cnpj_clinica && (
                 <p className="text-sm text-red-600">{errors.cnpj_clinica}</p>
