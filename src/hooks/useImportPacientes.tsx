@@ -229,6 +229,7 @@ export function useImportPacientes() {
           // Verificar se já existe paciente com mesmo CPF ou telefone na clínica
           let pacienteExistente = null;
           
+          // 1. Buscar por CPF (se informado)
           if (cpfLimpo) {
             const { data: existenteByCpf } = await supabase
               .from('pacientes')
@@ -239,14 +240,37 @@ export function useImportPacientes() {
             pacienteExistente = existenteByCpf;
           }
           
-          if (!pacienteExistente && telefoneLimpo) {
-            const { data: existenteByTel } = await supabase
+          // 2. Buscar por telefone (se não encontrou por CPF e telefone informado)
+          if (!pacienteExistente && telefoneLimpo && telefoneLimpo.length >= 8) {
+            // Buscar todos os pacientes da clínica com telefone similar
+            const { data: possiveisMatches } = await supabase
+              .from('pacientes')
+              .select('id, telefone')
+              .eq('clinica_id', clinica.id)
+              .not('telefone', 'is', null);
+            
+            if (possiveisMatches) {
+              // Comparar os últimos 8 dígitos do telefone
+              const telSuffix = telefoneLimpo.slice(-8);
+              const match = possiveisMatches.find(p => {
+                const pTelLimpo = p.telefone?.replace(/\D/g, '') || '';
+                return pTelLimpo.slice(-8) === telSuffix;
+              });
+              if (match) {
+                pacienteExistente = { id: match.id };
+              }
+            }
+          }
+          
+          // 3. Buscar por nome exato (se não encontrou por CPF/telefone)
+          if (!pacienteExistente && paciente.nome) {
+            const { data: existenteByNome } = await supabase
               .from('pacientes')
               .select('id')
               .eq('clinica_id', clinica.id)
-              .ilike('telefone', `%${telefoneLimpo.slice(-8)}%`)
+              .ilike('nome', paciente.nome.trim())
               .maybeSingle();
-            pacienteExistente = existenteByTel;
+            pacienteExistente = existenteByNome;
           }
 
           let error;
