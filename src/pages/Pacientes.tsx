@@ -36,11 +36,12 @@ export default function Pacientes() {
     // Busca dinâmica por nome, CPF ou email (case-insensitive)
     const searchLower = searchTerm.toLowerCase().trim();
     if (searchLower) {
-      const nomeMatch = paciente.nome.toLowerCase().includes(searchLower);
-      const cpfMatch = paciente.cpf.replace(/\D/g, '').includes(searchTerm.replace(/\D/g, ''));
-      const emailMatch = paciente.email && paciente.email.toLowerCase().includes(searchLower);
+      const nomeMatch = paciente.nome?.toLowerCase().includes(searchLower) || false;
+      const cpfMatch = paciente.cpf ? paciente.cpf.replace(/\D/g, '').includes(searchTerm.replace(/\D/g, '')) : false;
+      const emailMatch = paciente.email ? paciente.email.toLowerCase().includes(searchLower) : false;
+      const telefoneMatch = paciente.telefone ? paciente.telefone.replace(/\D/g, '').includes(searchTerm.replace(/\D/g, '')) : false;
       
-      if (!nomeMatch && !cpfMatch && !emailMatch) {
+      if (!nomeMatch && !cpfMatch && !emailMatch && !telefoneMatch) {
         return false;
       }
     }
