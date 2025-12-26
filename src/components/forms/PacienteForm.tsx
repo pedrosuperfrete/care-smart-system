@@ -332,11 +332,12 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
                   <SelectValue placeholder="Selecione a origem" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="indicacao_amigo">Indicação amigo</SelectItem>
+                  <SelectItem value="indicacao_amigo_familia">Indicação amigo/família</SelectItem>
                   <SelectItem value="indicacao_paciente">Indicação paciente</SelectItem>
-                  <SelectItem value="instagram">Instagram</SelectItem>
-                  <SelectItem value="google">Google</SelectItem>
+                  <SelectItem value="indicacao_medico">Indicação médico</SelectItem>
+                  <SelectItem value="doctoralia">Doctoralia</SelectItem>
                   <SelectItem value="marketing">Marketing</SelectItem>
+                  <SelectItem value="instagram">Instagram</SelectItem>
                   <SelectItem value="outros">Outros</SelectItem>
                 </SelectContent>
               </Select>
