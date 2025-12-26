@@ -43,9 +43,15 @@ export default function Pacientes() {
     if (searchLower) {
       const nomeLower = removeAcentos(paciente.nome?.toLowerCase() || '');
       const nomeMatch = nomeLower.includes(searchLower);
-      const cpfMatch = paciente.cpf ? paciente.cpf.replace(/\D/g, '').includes(searchTerm.replace(/\D/g, '')) : false;
+
+      const numericSearch = searchTerm.replace(/\D/g, '').trim();
+      const cpfMatch = numericSearch
+        ? (paciente.cpf ? paciente.cpf.replace(/\D/g, '').includes(numericSearch) : false)
+        : false;
       const emailMatch = paciente.email ? paciente.email.toLowerCase().includes(searchLower) : false;
-      const telefoneMatch = paciente.telefone ? paciente.telefone.replace(/\D/g, '').includes(searchTerm.replace(/\D/g, '')) : false;
+      const telefoneMatch = numericSearch
+        ? (paciente.telefone ? paciente.telefone.replace(/\D/g, '').includes(numericSearch) : false)
+        : false;
       
       if (!nomeMatch && !cpfMatch && !emailMatch && !telefoneMatch) {
         return false;
