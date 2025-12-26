@@ -111,29 +111,33 @@ export function ImportPacientesDialog({ open, onOpenChange }: ImportPacientesDia
 
           {/* Resultado da Importação */}
           {importResult && (
-            <Alert className={importResult.success ? 'border-green-500' : 'border-red-500'}>
-              {importResult.success ? (
-                <CheckCircle className="h-4 w-4 text-green-500" />
+            <Alert className={importResult.imported > 0 ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'}>
+              {importResult.imported > 0 ? (
+                <CheckCircle className="h-4 w-4 text-green-600" />
               ) : (
-                <AlertCircle className="h-4 w-4 text-red-500" />
+                <AlertCircle className="h-4 w-4 text-red-600" />
               )}
               <AlertDescription>
-                <strong>{importResult.success ? 'Sucesso!' : 'Erro'}</strong>
-                <p className="mt-1">{importResult.message}</p>
+                <strong className={importResult.imported > 0 ? 'text-green-700' : 'text-red-700'}>
+                  {importResult.imported > 0 ? 'Importação concluída!' : 'Falha na importação'}
+                </strong>
+                <p className="mt-1 text-foreground">{importResult.message}</p>
                 {importResult.imported > 0 && (
-                  <p className="mt-1 text-sm">
-                    {importResult.imported} paciente(s) importado(s) com sucesso
+                  <p className="mt-1 text-sm text-green-700 font-medium">
+                    ✓ {importResult.imported} paciente(s) importado(s) com sucesso
                   </p>
                 )}
                 {importResult.errors.length > 0 && (
-                  <div className="mt-2 text-sm">
-                    <p className="font-medium">Erros encontrados:</p>
-                    <ul className="list-disc list-inside mt-1 space-y-1">
-                      {importResult.errors.slice(0, 5).map((error, idx) => (
+                  <div className="mt-3 text-sm">
+                    <p className="font-medium text-red-700">
+                      ✗ {importResult.errors.length} erro(s) encontrado(s):
+                    </p>
+                    <ul className="list-disc list-inside mt-1 space-y-1 text-red-600 max-h-40 overflow-y-auto">
+                      {importResult.errors.slice(0, 10).map((error, idx) => (
                         <li key={idx}>{error}</li>
                       ))}
-                      {importResult.errors.length > 5 && (
-                        <li>... e mais {importResult.errors.length - 5} erro(s)</li>
+                      {importResult.errors.length > 10 && (
+                        <li className="font-medium">... e mais {importResult.errors.length - 10} erro(s)</li>
                       )}
                     </ul>
                   </div>
