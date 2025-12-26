@@ -43,6 +43,18 @@ export interface StatusPagamento {
   cor: string;
 }
 
+export interface OrigemPaciente {
+  nome: string;
+  valor: number;
+  cor: string;
+}
+
+export interface ModalidadeAtendimento {
+  nome: string;
+  valor: number;
+  cor: string;
+}
+
 export const useRelatorios = (periodo: string = 'mes', dataInicio?: Date, dataFim?: Date) => {
   const { user, userProfile } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -54,6 +66,8 @@ export const useRelatorios = (periodo: string = 'mes', dataInicio?: Date, dataFi
   const [tiposConsulta, setTiposConsulta] = useState<TipoConsulta[]>([]);
   const [statusConsultas, setStatusConsultas] = useState<StatusConsulta[]>([]);
   const [statusPagamentos, setStatusPagamentos] = useState<StatusPagamento[]>([]);
+  const [origensPacientes, setOrigensPacientes] = useState<OrigemPaciente[]>([]);
+  const [modalidadesAtendimento, setModalidadesAtendimento] = useState<ModalidadeAtendimento[]>([]);
 
   const getDateRange = (periodo: string) => {
     // Se datas customizadas foram fornecidas, usar elas
@@ -839,6 +853,107 @@ export const useRelatorios = (periodo: string = 'mes', dataInicio?: Date, dataFi
     }
   };
 
+  const buscarOrigensPacientes = async () => {
+    if (!user || !userProfile) return;
+
+    try {
+      // Buscar clínicas do usuário
+      const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
+      
+      if (!clinicasUsuario || clinicasUsuario.length === 0) return;
+
+      const clinicaIds = clinicasUsuario.map(c => c.clinica_id);
+
+      // Buscar pacientes da clínica
+      const { data: pacientes } = await supabase
+        .from('pacientes')
+        .select('origem')
+        .in('clinica_id', clinicaIds)
+        .eq('ativo', true);
+
+      if (!pacientes || pacientes.length === 0) {
+        setOrigensPacientes([]);
+        return;
+      }
+
+      // Agrupar por origem
+      const origensMap: Record<string, number> = {};
+      pacientes.forEach(p => {
+        const origem = p.origem || 'Não informado';
+        origensMap[origem] = (origensMap[origem] || 0) + 1;
+      });
+
+      const cores = [
+        'hsl(221, 83%, 53%)',   // Azul
+        'hsl(142, 76%, 36%)',   // Verde
+        'hsl(38, 92%, 50%)',    // Laranja
+        'hsl(280, 65%, 60%)',   // Roxo
+        'hsl(0, 84%, 60%)',     // Vermelho
+        'hsl(180, 65%, 45%)',   // Ciano
+        'hsl(45, 93%, 47%)',    // Amarelo
+      ];
+
+      const origens = Object.entries(origensMap).map(([nome, valor], index) => ({
+        nome,
+        valor,
+        cor: cores[index % cores.length]
+      }));
+
+      setOrigensPacientes(origens);
+    } catch (err) {
+      console.error('Erro ao buscar origens dos pacientes:', err);
+    }
+  };
+
+  const buscarModalidadesAtendimento = async () => {
+    if (!user || !userProfile) return;
+
+    try {
+      // Buscar clínicas do usuário
+      const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
+      
+      if (!clinicasUsuario || clinicasUsuario.length === 0) return;
+
+      const clinicaIds = clinicasUsuario.map(c => c.clinica_id);
+
+      // Buscar pacientes da clínica
+      const { data: pacientes } = await supabase
+        .from('pacientes')
+        .select('modalidade_atendimento')
+        .in('clinica_id', clinicaIds)
+        .eq('ativo', true);
+
+      if (!pacientes || pacientes.length === 0) {
+        setModalidadesAtendimento([]);
+        return;
+      }
+
+      // Agrupar por modalidade
+      const modalidadesMap: Record<string, number> = {};
+      pacientes.forEach(p => {
+        const modalidade = p.modalidade_atendimento || 'Não informado';
+        modalidadesMap[modalidade] = (modalidadesMap[modalidade] || 0) + 1;
+      });
+
+      const cores = [
+        'hsl(142, 76%, 36%)',   // Verde
+        'hsl(221, 83%, 53%)',   // Azul
+        'hsl(38, 92%, 50%)',    // Laranja
+        'hsl(280, 65%, 60%)',   // Roxo
+      ];
+
+      const modalidades = Object.entries(modalidadesMap).map(([nome, valor], index) => ({
+        nome,
+        valor,
+        cor: cores[index % cores.length]
+      }));
+
+      setModalidadesAtendimento(modalidades);
+    } catch (err) {
+      console.error('Erro ao buscar modalidades de atendimento:', err);
+    }
+  };
+
   useEffect(() => {
     const carregarDados = async () => {
       setLoading(true);
@@ -851,7 +966,9 @@ export const useRelatorios = (periodo: string = 'mes', dataInicio?: Date, dataFi
         buscarNovosPacientesPorMes(),
         buscarTiposConsulta(),
         buscarStatusConsultas(),
-        buscarStatusPagamentos()
+        buscarStatusPagamentos(),
+        buscarOrigensPacientes(),
+        buscarModalidadesAtendimento()
       ]);
 
       setLoading(false);
@@ -871,6 +988,8 @@ export const useRelatorios = (periodo: string = 'mes', dataInicio?: Date, dataFi
     novosPacientesPorMes,
     tiposConsulta,
     statusConsultas,
-    statusPagamentos
+    statusPagamentos,
+    origensPacientes,
+    modalidadesAtendimento
   };
 };
