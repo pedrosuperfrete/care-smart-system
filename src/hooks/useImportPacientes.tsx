@@ -225,7 +225,12 @@ export function useImportPacientes() {
             });
 
           if (error) {
-            errors.push(`Linha ${linha}: ${error.message}`);
+            // Traduzir erros comuns para mensagens mais claras
+            if (error.message.includes('row-level security policy')) {
+              errors.push(`Linha ${linha}: Sem permissão para criar/atualizar pacientes. Verifique se sua assinatura está ativa ou se você atingiu o limite de pacientes.`);
+            } else {
+              errors.push(`Linha ${linha}: ${error.message}`);
+            }
           } else {
             imported++;
           }
