@@ -29,6 +29,54 @@ interface PacienteImport {
   modalidade_atendimento?: string;
 }
 
+// Mapeamento flexível de colunas CSV -> campos do banco
+const COLUMN_MAPPINGS: Record<string, string[]> = {
+  nome: ['nome', 'name', 'nome completo', 'nome_completo', 'nomecompleto', 'paciente', 'patient', 'full_name', 'fullname'],
+  cpf: ['cpf', 'cpf_cnpj', 'documento', 'document', 'cpfcnpj'],
+  email: ['email', 'e-mail', 'e_mail', 'mail', 'correio', 'email_paciente'],
+  telefone: ['telefone', 'phone', 'tel', 'celular', 'cell', 'mobile', 'fone', 'whatsapp', 'contato', 'telefone_paciente'],
+  data_nascimento: ['data_nascimento', 'data nascimento', 'datanascimento', 'nascimento', 'birth', 'birthday', 'birth_date', 'birthdate', 'dt_nascimento', 'dt nascimento', 'data_nasc', 'data nasc'],
+  cep: ['cep', 'zip', 'zipcode', 'zip_code', 'codigo_postal', 'postal'],
+  endereco: ['endereco', 'endereço', 'address', 'rua', 'street', 'logradouro', 'endereco_completo'],
+  bairro: ['bairro', 'neighborhood', 'district', 'setor'],
+  cidade: ['cidade', 'city', 'municipio', 'município'],
+  estado: ['estado', 'state', 'uf', 'sigla_estado'],
+  observacoes: ['observacoes', 'observações', 'obs', 'notes', 'notas', 'comentarios', 'comentários', 'comments', 'anotacoes', 'anotações'],
+  origem: ['origem', 'origin', 'source', 'indicacao', 'indicação', 'como_conheceu', 'como conheceu'],
+  modalidade_atendimento: ['modalidade_atendimento', 'modalidade atendimento', 'modalidade', 'tipo_atendimento', 'tipo atendimento', 'convenio', 'convênio', 'plano'],
+};
+
+// Função para mapear header do CSV para campo do banco
+const mapHeaderToField = (header: string): string | null => {
+  const normalizedHeader = header.trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Remove acentos
+    .replace(/[_\-\s]+/g, ' '); // Normaliza separadores
+
+  for (const [field, variations] of Object.entries(COLUMN_MAPPINGS)) {
+    const normalizedVariations = variations.map(v => 
+      v.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[_\-\s]+/g, ' ')
+    );
+    if (normalizedVariations.includes(normalizedHeader)) {
+      return field;
+    }
+  }
+  return null;
+};
+
+// Normaliza uma linha de dados mapeando headers para campos conhecidos
+const normalizeRow = (row: Record<string, any>): PacienteImport => {
+  const normalized: Record<string, any> = {};
+  
+  for (const [originalKey, value] of Object.entries(row)) {
+    const mappedField = mapHeaderToField(originalKey);
+    if (mappedField && value !== undefined && value !== null && value !== '') {
+      normalized[mappedField] = String(value);
+    }
+  }
+  
+  return normalized as PacienteImport;
+};
+
 export function useImportPacientes() {
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const { toast } = useToast();
@@ -38,10 +86,10 @@ export function useImportPacientes() {
   const parseDate = (dateStr: string): string | null => {
     if (!dateStr) return null;
     
-    // Tenta formatos: DD/MM/YYYY, DD-MM-YYYY, YYYY-MM-DD
+    // Tenta formatos: DD/MM/YYYY, DD-MM-YYYY, YYYY-MM-DD, D/M/YYYY
     const patterns = [
-      /^(\d{2})[\/\-](\d{2})[\/\-](\d{4})$/,  // DD/MM/YYYY ou DD-MM-YYYY
-      /^(\d{4})[\/\-](\d{2})[\/\-](\d{2})$/   // YYYY-MM-DD
+      /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/,  // DD/MM/YYYY ou D/M/YYYY
+      /^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/   // YYYY-MM-DD
     ];
 
     for (const pattern of patterns) {
@@ -49,10 +97,14 @@ export function useImportPacientes() {
       if (match) {
         if (match[1].length === 4) {
           // YYYY-MM-DD
-          return `${match[1]}-${match[2]}-${match[3]}`;
+          const month = match[2].padStart(2, '0');
+          const day = match[3].padStart(2, '0');
+          return `${match[1]}-${month}-${day}`;
         } else {
           // DD/MM/YYYY -> YYYY-MM-DD
-          return `${match[3]}-${match[2]}-${match[1]}`;
+          const day = match[1].padStart(2, '0');
+          const month = match[2].padStart(2, '0');
+          return `${match[3]}-${month}-${day}`;
         }
       }
     }
@@ -73,12 +125,10 @@ export function useImportPacientes() {
         Papa.parse(file, {
           header: true,
           skipEmptyLines: true,
-          transformHeader: (header: string) => {
-            // Normalizar nomes das colunas: remover espaços e converter para lowercase
-            return header.trim().toLowerCase();
-          },
           complete: (results) => {
-            resolve(results.data as PacienteImport[]);
+            // Normalizar cada linha mapeando headers para campos conhecidos
+            const normalizedData = (results.data as Record<string, any>[]).map(normalizeRow);
+            resolve(normalizedData);
           },
           error: (error) => {
             reject(error);
@@ -98,17 +148,9 @@ export function useImportPacientes() {
               defval: '',
             });
             
-            // Normalizar nomes das colunas do Excel também
-            const normalizedData = jsonData.map((row: any) => {
-              const normalizedRow: any = {};
-              Object.keys(row).forEach((key) => {
-                const normalizedKey = key.trim().toLowerCase();
-                normalizedRow[normalizedKey] = row[key];
-              });
-              return normalizedRow;
-            });
-            
-            resolve(normalizedData as PacienteImport[]);
+            // Normalizar cada linha mapeando headers para campos conhecidos
+            const normalizedData = (jsonData as Record<string, any>[]).map(normalizeRow);
+            resolve(normalizedData);
           } catch (error) {
             reject(error);
           }
