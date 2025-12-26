@@ -29,7 +29,9 @@ export default function Relatorios() {
     novosPacientesPorMes,
     tiposConsulta,
     statusConsultas,
-    statusPagamentos
+    statusPagamentos,
+    origensPacientes,
+    modalidadesAtendimento
   } = useRelatorios(
     usarDateRange ? 'custom' : periodo,
     dateRange?.from,
@@ -366,6 +368,89 @@ export default function Relatorios() {
             ) : (
               <div className="h-[300px] flex items-center justify-center text-muted-foreground">
                 <p>Nenhum dado disponível para o período selecionado</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Gráficos de Origem e Modalidade de Atendimento */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Origem dos Pacientes</CardTitle>
+            <CardDescription>
+              Distribuição por canal de aquisição
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="h-[300px] flex items-center justify-center">
+                <Skeleton className="h-full w-full" />
+              </div>
+            ) : origensPacientes.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={origensPacientes}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ nome, percent }) => `${nome} ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="hsl(var(--primary))"
+                    dataKey="valor"
+                  >
+                    {origensPacientes.map((entry, index) => (
+                      <Cell key={`cell-origem-${index}`} fill={entry.cor} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value: any, name: any, props: any) => [`${value} pacientes`, props.payload.nome]} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                <p>Nenhum dado de origem disponível</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Modalidade de Atendimento</CardTitle>
+            <CardDescription>
+              Distribuição por tipo de atendimento
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="h-[300px] flex items-center justify-center">
+                <Skeleton className="h-full w-full" />
+              </div>
+            ) : modalidadesAtendimento.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={modalidadesAtendimento}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ nome, percent }) => `${nome} ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="hsl(var(--primary))"
+                    dataKey="valor"
+                  >
+                    {modalidadesAtendimento.map((entry, index) => (
+                      <Cell key={`cell-modalidade-${index}`} fill={entry.cor} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value: any, name: any, props: any) => [`${value} pacientes`, props.payload.nome]} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                <p>Nenhum dado de modalidade disponível</p>
               </div>
             )}
           </CardContent>
