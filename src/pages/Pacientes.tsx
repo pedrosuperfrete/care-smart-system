@@ -229,7 +229,7 @@ export default function Pacientes() {
               className="hover:shadow-md transition-shadow cursor-pointer"
               onClick={() => {
                 setSelectedPaciente(paciente);
-                setIsDetailsOpen(true);
+                setIsEditPacienteOpen(true);
               }}
             >
               <CardContent className="pt-6">
@@ -360,18 +360,19 @@ export default function Pacientes() {
         </SheetContent>
       </Sheet>
 
-      {/* Dialog de Edição do Paciente */}
+      {/* Dialog de Visualização/Edição do Paciente */}
       <Dialog open={isEditPacienteOpen} onOpenChange={setIsEditPacienteOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Editar Paciente</DialogTitle>
+            <DialogTitle>Detalhes do Paciente</DialogTitle>
             <DialogDescription>
-              Atualize as informações do paciente
+              Visualize ou edite as informações do paciente
             </DialogDescription>
           </DialogHeader>
           {selectedPaciente && (
             <PacienteForm 
               paciente={selectedPaciente}
+              viewMode={true}
               onSuccess={() => {
                 setIsEditPacienteOpen(false);
                 setSelectedPaciente(null);

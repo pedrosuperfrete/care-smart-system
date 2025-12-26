@@ -85,14 +85,16 @@ type PacienteFormData = z.infer<typeof pacienteSchema>;
 interface PacienteFormProps {
   paciente?: Paciente;
   onSuccess?: () => void;
+  viewMode?: boolean;
 }
 
-export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
+export function PacienteForm({ paciente, onSuccess, viewMode = false }: PacienteFormProps) {
   const { clinicaAtual } = useAuth();
   const createPaciente = useCreatePaciente();
   const updatePaciente = useUpdatePaciente();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showLimiteModal, setShowLimiteModal] = useState(false);
+  const [isEditing, setIsEditing] = useState(!viewMode);
   
   // Formata telefone inicial se houver
   const formatarTelefoneInicial = (telefone: string | null) => {
@@ -216,6 +218,8 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
     }
   };
 
+  const isDisabled = !isEditing;
+
   return (
     <Card>
       <CardContent className="pt-6">
@@ -228,6 +232,7 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
                 id="nome"
                 {...register('nome')}
                 placeholder="Nome completo"
+                disabled={isDisabled}
               />
               {errors.nome && (
                 <p className="text-sm text-red-600">{errors.nome.message}</p>
@@ -241,6 +246,7 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
                 {...register('cpf')}
                 placeholder="000.000.000-00"
                 maxLength={14}
+                disabled={isDisabled}
                 onChange={(e) => {
                   const formatted = formatCPF(e.target.value);
                   setValue('cpf', formatted.replace(/\D/g, ''));
@@ -259,12 +265,20 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
 
             <div className="space-y-1">
               <Label>Data de Nascimento</Label>
-              <EnhancedDatePicker
-                date={dataNascimento}
-                onDateChange={(date) => setValue('data_nascimento', date)}
-                placeholder="Selecione a data"
-                disabled={(date) => date > new Date()}
-              />
+              {isDisabled ? (
+                <Input
+                  value={dataNascimento ? dataNascimento.toLocaleDateString('pt-BR') : ''}
+                  disabled
+                  placeholder="Selecione a data"
+                />
+              ) : (
+                <EnhancedDatePicker
+                  date={dataNascimento}
+                  onDateChange={(date) => setValue('data_nascimento', date)}
+                  placeholder="Selecione a data"
+                  disabled={(date) => date > new Date()}
+                />
+              )}
             </div>
           </div>
 
@@ -277,6 +291,7 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
                 placeholder="(11) 99999-9999"
                 maxLength={15}
                 value={telefoneFormatado}
+                disabled={isDisabled}
                 onChange={(e) => {
                   const input = e.target.value;
                   const numbers = input.replace(/\D/g, '').slice(0, 11);
@@ -305,6 +320,7 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
                 type="email"
                 {...register('email')}
                 placeholder="email@exemplo.com"
+                disabled={isDisabled}
                 onInvalid={(e) => {
                   const target = e.target as HTMLInputElement;
                   if (target.validity.typeMismatch) {
@@ -327,7 +343,7 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
 
             <div className="space-y-1">
               <Label htmlFor="origem">Origem</Label>
-              <Select value={origem} onValueChange={(value) => setValue('origem', value)}>
+              <Select value={origem} onValueChange={(value) => setValue('origem', value)} disabled={isDisabled}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione a origem" />
                 </SelectTrigger>
@@ -348,7 +364,7 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label htmlFor="tipo_paciente">Tipo de Paciente</Label>
-              <Select value={tipoPaciente} onValueChange={(value) => setValue('tipo_paciente', value as any)}>
+              <Select value={tipoPaciente} onValueChange={(value) => setValue('tipo_paciente', value as any)} disabled={isDisabled}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o tipo" />
                 </SelectTrigger>
@@ -362,7 +378,7 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
 
             <div className="space-y-1">
               <Label htmlFor="modalidade_atendimento">Modalidade do atendimento</Label>
-              <Select value={modalidadeAtendimento} onValueChange={(value) => setValue('modalidade_atendimento', value)}>
+              <Select value={modalidadeAtendimento} onValueChange={(value) => setValue('modalidade_atendimento', value)} disabled={isDisabled}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione a modalidade" />
                 </SelectTrigger>
@@ -384,6 +400,7 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
                 placeholder="00000-000"
                 maxLength={9}
                 value={cepFormatado}
+                disabled={isDisabled}
                 onChange={(e) => {
                   const input = e.target.value;
                   const numbers = input.replace(/\D/g, '').slice(0, 8);
@@ -408,6 +425,7 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
                 id="endereco"
                 {...register('endereco')}
                 placeholder="Rua, número, complemento"
+                disabled={isDisabled}
               />
             </div>
           </div>
@@ -420,6 +438,7 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
                 id="bairro"
                 {...register('bairro')}
                 placeholder="Bairro"
+                disabled={isDisabled}
               />
             </div>
 
@@ -429,6 +448,7 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
                 id="cidade"
                 {...register('cidade')}
                 placeholder="Cidade"
+                disabled={isDisabled}
               />
             </div>
 
@@ -439,6 +459,7 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
                 {...register('estado')}
                 placeholder="UF"
                 maxLength={2}
+                disabled={isDisabled}
                 onChange={(e) => {
                   const value = e.target.value.toUpperCase();
                   setValue('estado', value);
@@ -455,17 +476,28 @@ export function PacienteForm({ paciente, onSuccess }: PacienteFormProps) {
               {...register('observacoes')}
               placeholder="Observações adicionais sobre o paciente"
               rows={2}
+              disabled={isDisabled}
             />
           </div>
 
           <div className="flex justify-end space-x-2">
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="min-w-[120px]"
-            >
-              {isSubmitting ? 'Salvando...' : paciente ? 'Atualizar' : 'Criar'}
-            </Button>
+            {viewMode && !isEditing ? (
+              <Button
+                type="button"
+                onClick={() => setIsEditing(true)}
+                className="min-w-[120px]"
+              >
+                Editar
+              </Button>
+            ) : (
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="min-w-[120px]"
+              >
+                {isSubmitting ? 'Salvando...' : paciente ? 'Atualizar' : 'Criar'}
+              </Button>
+            )}
           </div>
         </form>
       </CardContent>
