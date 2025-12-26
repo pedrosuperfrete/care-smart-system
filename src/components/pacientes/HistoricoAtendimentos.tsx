@@ -16,11 +16,17 @@ interface HistoricoAtendimentosProps {
 export function HistoricoAtendimentos({ agendamentos }: HistoricoAtendimentosProps) {
   const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 5;
-  const totalPages = Math.ceil(agendamentos.length / itemsPerPage);
+  
+  // Ordenar por data, mais recentes primeiro
+  const sortedAgendamentos = [...agendamentos].sort((a, b) => 
+    new Date(b.data_inicio).getTime() - new Date(a.data_inicio).getTime()
+  );
+  
+  const totalPages = Math.ceil(sortedAgendamentos.length / itemsPerPage);
   
   const startIndex = currentPage * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentItems = agendamentos.slice(startIndex, endIndex);
+  const currentItems = sortedAgendamentos.slice(startIndex, endIndex);
 
   const goToPreviousPage = () => {
     setCurrentPage(prev => Math.max(0, prev - 1));
@@ -30,6 +36,36 @@ export function HistoricoAtendimentos({ agendamentos }: HistoricoAtendimentosPro
     setCurrentPage(prev => Math.min(totalPages - 1, prev + 1));
   };
 
+  const getStatusText = (agendamento: Agendamento) => {
+    if (agendamento.desmarcada) return 'Desmarcada';
+    switch (agendamento.status) {
+      case 'realizado': return 'Realizado';
+      case 'confirmado': return 'Confirmado';
+      case 'pendente': return 'Pendente';
+      case 'faltou': return 'Faltou';
+      default: return 'Pendente';
+    }
+  };
+
+  const getStatusColor = (agendamento: Agendamento) => {
+    if (agendamento.desmarcada) return 'bg-muted text-muted-foreground';
+    switch (agendamento.status) {
+      case 'realizado': return 'bg-success text-success-foreground';
+      case 'confirmado': return 'bg-primary text-primary-foreground';
+      case 'pendente': return 'bg-warning text-warning-foreground';
+      case 'faltou': return 'bg-destructive text-destructive-foreground';
+      default: return 'bg-muted text-muted-foreground';
+    }
+  };
+
+  const formatCurrency = (value: number | null) => {
+    if (!value) return null;
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -37,10 +73,10 @@ export function HistoricoAtendimentos({ agendamentos }: HistoricoAtendimentosPro
           <div>
             <CardTitle className="text-xl">Histórico de Atendimentos</CardTitle>
             <CardDescription>
-              Consultas anteriores do paciente
+              Todas as consultas do paciente ({sortedAgendamentos.length} {sortedAgendamentos.length === 1 ? 'consulta' : 'consultas'})
             </CardDescription>
           </div>
-          {agendamentos.length > itemsPerPage && (
+          {sortedAgendamentos.length > itemsPerPage && (
             <div className="flex items-center justify-center sm:justify-end space-x-2 w-full sm:w-auto">
               <Button
                 variant="outline"
@@ -50,7 +86,7 @@ export function HistoricoAtendimentos({ agendamentos }: HistoricoAtendimentosPro
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <span className="text-sm text-gray-500 whitespace-nowrap">
+              <span className="text-sm text-muted-foreground whitespace-nowrap">
                 {currentPage + 1} de {totalPages}
               </span>
               <Button
@@ -66,44 +102,56 @@ export function HistoricoAtendimentos({ agendamentos }: HistoricoAtendimentosPro
         </div>
       </CardHeader>
       <CardContent>
-        {agendamentos.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">
-            Nenhum atendimento anterior
+        {sortedAgendamentos.length === 0 ? (
+          <p className="text-muted-foreground text-center py-8">
+            Nenhum atendimento registrado
           </p>
         ) : (
           <div className="space-y-3">
             {currentItems.map((agendamento) => {
-              const getStatusText = (agendamento: Agendamento) => {
-                if (agendamento.desmarcada) return 'desmarcada';
-                return agendamento.status || 'pendente';
-              };
-
-              const getStatusColor = (agendamento: Agendamento) => {
-                if (agendamento.desmarcada) return 'bg-gray-100 text-gray-600';
-                switch (agendamento.status) {
-                  case 'realizado': return 'bg-success text-success-foreground';
-                  case 'confirmado': return 'bg-primary text-primary-foreground';
-                  case 'pendente': return 'bg-warning text-warning-foreground';
-                  default: return 'bg-destructive text-destructive-foreground';
-                }
-              };
-
+              const isRealizado = agendamento.status === 'realizado' && !agendamento.desmarcada;
+              
               return (
-                <div key={agendamento.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <History className="h-4 w-4 text-gray-500" />
-                    <div>
-                      <div className={`font-medium ${agendamento.desmarcada ? 'line-through text-gray-500' : ''}`}>
-                        {formatDateTimeLocal(agendamento.data_inicio).split(',')[0]}
-                      </div>
-                      <div className={`text-sm text-gray-500 ${agendamento.desmarcada ? 'line-through' : ''}`}>
-                        {agendamento.tipo_servico} - {(agendamento as any).profissionais?.nome || 'Profissional não informado'}
+                <div 
+                  key={agendamento.id} 
+                  className={`p-4 border rounded-lg ${agendamento.desmarcada ? 'bg-muted/30' : ''}`}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start space-x-3 flex-1 min-w-0">
+                      <History className="h-4 w-4 text-muted-foreground mt-1 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`font-medium ${agendamento.desmarcada ? 'line-through text-muted-foreground' : ''}`}>
+                            {formatDateTimeLocal(agendamento.data_inicio)}
+                          </span>
+                          <Badge className={getStatusColor(agendamento)}>
+                            {getStatusText(agendamento)}
+                          </Badge>
+                        </div>
+                        <div className={`text-sm text-muted-foreground mt-1 ${agendamento.desmarcada ? 'line-through' : ''}`}>
+                          <span className="font-medium text-foreground">{agendamento.tipo_servico}</span>
+                          {' • '}
+                          {(agendamento as any).profissionais?.nome || 'Profissional não informado'}
+                        </div>
+                        
+                        {/* Mostrar valor apenas para consultas realizadas */}
+                        {isRealizado && agendamento.valor && (
+                          <div className="mt-2 text-sm">
+                            <span className="font-semibold text-success">
+                              {formatCurrency(agendamento.valor)}
+                            </span>
+                          </div>
+                        )}
+                        
+                        {/* Observações se houver */}
+                        {agendamento.observacoes && (
+                          <div className="mt-2 text-sm text-muted-foreground italic">
+                            {agendamento.observacoes}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
-                  <Badge className={getStatusColor(agendamento)}>
-                    {getStatusText(agendamento)}
-                  </Badge>
                 </div>
               );
             })}
