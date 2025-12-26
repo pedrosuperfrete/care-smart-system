@@ -17,43 +17,92 @@ export function GoogleCalendarConnect() {
       setIsConnected(true);
     }
 
-    // Verificar se voltou da conexão do Google
+    // Check if returned from Google connection
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('connected') === 'true') {
       toast.success('Google Calendar conectado com sucesso!');
-      // Limpar o parâmetro da URL
+      // Clear the URL parameter
+      window.history.replaceState({}, '', '/agenda');
+    }
+    if (urlParams.get('error') === 'invalid_state') {
+      toast.error('Erro de segurança: sessão expirada. Tente novamente.');
+      window.history.replaceState({}, '', '/agenda');
+    }
+    if (urlParams.get('error') === 'forbidden') {
+      toast.error('Erro: você não tem permissão para conectar este profissional.');
       window.history.replaceState({}, '', '/agenda');
     }
   }, [profissional]);
 
   const handleConnectGoogle = async () => {
+    if (!profissional?.id) {
+      toast.error('Profissional não encontrado');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      // Buscar o Client ID do Google via Edge Function
-      const { data, error } = await supabase.functions.invoke('google-oauth-config');
+      // First, get a signed state parameter from the server
+      const { data: stateData, error: stateError } = await supabase.functions.invoke('google-oauth', {
+        body: { professionalId: profissional.id },
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        method: 'POST',
+      });
+
+      // The function call above doesn't work well with query params, so we need to call it differently
+      // We'll use fetch directly with the action parameter
+      const session = await supabase.auth.getSession();
+      if (!session.data.session) {
+        toast.error('Você precisa estar logado para conectar o Google Calendar');
+        return;
+      }
+
+      const stateResponse = await fetch(
+        `https://zxgkspeehamsrfhynbzr.supabase.co/functions/v1/google-oauth?action=generate-state`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.data.session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ professionalId: profissional.id }),
+        }
+      );
+
+      if (!stateResponse.ok) {
+        const errorData = await stateResponse.json();
+        throw new Error(errorData.error || 'Erro ao gerar estado de segurança');
+      }
+
+      const { state } = await stateResponse.json();
+
+      // Get the Google Client ID
+      const { data: configData, error: configError } = await supabase.functions.invoke('google-oauth-config');
       
-      if (error || !data?.clientId) {
+      if (configError || !configData?.clientId) {
         throw new Error('Configuração do Google não encontrada');
       }
 
       const redirectUri = 'https://zxgkspeehamsrfhynbzr.supabase.co/functions/v1/google-oauth';
       const scope = 'https://www.googleapis.com/auth/calendar';
       
-      // URL para autorização OAuth
+      // URL for OAuth authorization
       const authUrl = new URL('https://accounts.google.com/o/oauth2/auth');
-      authUrl.searchParams.set('client_id', data.clientId);
+      authUrl.searchParams.set('client_id', configData.clientId);
       authUrl.searchParams.set('redirect_uri', redirectUri);
       authUrl.searchParams.set('scope', scope);
       authUrl.searchParams.set('response_type', 'code');
       authUrl.searchParams.set('access_type', 'offline');
       authUrl.searchParams.set('prompt', 'consent');
-      authUrl.searchParams.set('state', profissional?.id || '');
+      authUrl.searchParams.set('state', state);
 
-      // Redirecionar para OAuth
+      // Redirect to OAuth
       window.location.href = authUrl.toString();
     } catch (error) {
-      console.error('Erro ao conectar com Google:', error);
-      toast.error('Erro ao conectar com Google Calendar');
+      console.error('Error connecting to Google:', error);
+      toast.error(error instanceof Error ? error.message : 'Erro ao conectar com Google Calendar');
     } finally {
       setIsLoading(false);
     }
@@ -72,7 +121,7 @@ export function GoogleCalendarConnect() {
       setIsConnected(false);
       toast.success('Desconectado do Google Calendar');
     } catch (error) {
-      console.error('Erro ao desconectar:', error);
+      console.error('Error disconnecting:', error);
       toast.error('Erro ao desconectar do Google Calendar');
     } finally {
       setIsLoading(false);
