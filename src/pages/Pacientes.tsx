@@ -32,11 +32,17 @@ export default function Pacientes() {
   const [isAgendamentoOpen, setIsAgendamentoOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
 
+  // Função para remover acentos para busca mais flexível
+  const removeAcentos = (str: string) => {
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  };
+
   const filteredPacientes = pacientes.filter(paciente => {
-    // Busca dinâmica por nome, CPF ou email (case-insensitive)
-    const searchLower = searchTerm.toLowerCase().trim();
+    // Busca dinâmica por nome, CPF ou email (case-insensitive e sem acentos)
+    const searchLower = removeAcentos(searchTerm.toLowerCase().trim());
     if (searchLower) {
-      const nomeMatch = paciente.nome?.toLowerCase().includes(searchLower) || false;
+      const nomeLower = removeAcentos(paciente.nome?.toLowerCase() || '');
+      const nomeMatch = nomeLower.includes(searchLower);
       const cpfMatch = paciente.cpf ? paciente.cpf.replace(/\D/g, '').includes(searchTerm.replace(/\D/g, '')) : false;
       const emailMatch = paciente.email ? paciente.email.toLowerCase().includes(searchLower) : false;
       const telefoneMatch = paciente.telefone ? paciente.telefone.replace(/\D/g, '').includes(searchTerm.replace(/\D/g, '')) : false;
