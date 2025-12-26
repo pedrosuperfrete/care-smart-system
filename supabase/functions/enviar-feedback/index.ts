@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "npm:resend@2.0.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
@@ -12,9 +13,6 @@ const corsHeaders = {
 interface FeedbackRequest {
   tipo: 'bug' | 'ideia' | 'duvida';
   mensagem: string;
-  userName: string;
-  userEmail: string;
-  userType: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -24,7 +22,42 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { tipo, mensagem, userName, userEmail, userType }: FeedbackRequest = await req.json();
+    // ========== AUTHENTICATION CHECK ==========
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      console.error("Missing Authorization header");
+      return new Response(
+        JSON.stringify({ error: "Authentication required" }),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!
+    );
+
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
+
+    if (authError || !user) {
+      console.error("Authentication failed:", authError?.message);
+      return new Response(
+        JSON.stringify({ error: "Invalid or expired token" }),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    console.log("Authenticated user:", user.id, user.email);
+    // ========== END AUTHENTICATION ==========
+
+    const { tipo, mensagem }: FeedbackRequest = await req.json();
 
     // Validação básica
     if (!tipo || !mensagem) {
@@ -37,6 +70,41 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Validate tipo is one of the allowed values
+    if (!['bug', 'ideia', 'duvida'].includes(tipo)) {
+      return new Response(
+        JSON.stringify({ error: "Tipo inválido" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    // Validate message length
+    if (mensagem.length < 10 || mensagem.length > 2000) {
+      return new Response(
+        JSON.stringify({ error: "Mensagem deve ter entre 10 e 2000 caracteres" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    // Get user info from authenticated user (not from request body)
+    const userEmail = user.email || "Email não disponível";
+    const userName = user.user_metadata?.nome || user.user_metadata?.name || user.email?.split('@')[0] || "Usuário";
+
+    // Get user type from database
+    const { data: userData } = await supabaseClient
+      .from('users_safe')
+      .select('tipo_usuario')
+      .eq('id', user.id)
+      .single();
+    
+    const userType = userData?.tipo_usuario || "N/A";
+
     // Mapeamento de tipos para labels
     const tipoLabels = {
       bug: '🐛 Bug Reportado',
@@ -46,11 +114,24 @@ const handler = async (req: Request): Promise<Response> => {
 
     const tipoLabel = tipoLabels[tipo] || tipo;
 
+    // Sanitize message for HTML (basic XSS prevention)
+    const sanitizedMessage = mensagem
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+
+    const sanitizedUserName = userName
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+
     // Enviar email para a equipe Donee
     const emailResponse = await resend.emails.send({
       from: "Donee Sistema <onboarding@resend.dev>",
       to: ["donnee@donee.com.br"],
-      subject: `[${tipoLabel}] Feedback do Sistema - ${userName}`,
+      subject: `[${tipoLabel}] Feedback do Sistema - ${sanitizedUserName}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -124,7 +205,7 @@ const handler = async (req: Request): Promise<Response> => {
             
             <div class="content">
               <div class="label">👤 Usuário:</div>
-              <div class="value">${userName}</div>
+              <div class="value">${sanitizedUserName}</div>
               
               <div class="label">📧 Email:</div>
               <div class="value">${userEmail}</div>
@@ -133,7 +214,7 @@ const handler = async (req: Request): Promise<Response> => {
               <div class="value">${userType}</div>
               
               <div class="label">💬 Mensagem:</div>
-              <div class="message-box">${mensagem}</div>
+              <div class="message-box">${sanitizedMessage}</div>
             </div>
             
             <div class="footer">
