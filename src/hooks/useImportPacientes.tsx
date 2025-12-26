@@ -174,16 +174,16 @@ export function useImportPacientes() {
         }
 
         try {
+          // Usar upsert para atualizar pacientes existentes pelo CPF
           const { error } = await supabase
             .from('pacientes')
-            .insert(pacienteData);
+            .upsert(pacienteData, { 
+              onConflict: 'cpf,clinica_id',
+              ignoreDuplicates: false 
+            });
 
           if (error) {
-            if (error.code === '23505') {
-              errors.push(`Linha ${linha}: CPF ${paciente.cpf} já cadastrado`);
-            } else {
-              errors.push(`Linha ${linha}: ${error.message}`);
-            }
+            errors.push(`Linha ${linha}: ${error.message}`);
           } else {
             imported++;
           }
