@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend } from 'recharts';
 import { Calendar, Download, FileText, TrendingUp, Users, DollarSign } from 'lucide-react';
 import { useRelatorios } from '@/hooks/useRelatorios';
 import { useExportarRelatorios } from '@/hooks/useExportarRelatorios';
@@ -385,31 +385,52 @@ export default function Relatorios() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="h-[300px] flex items-center justify-center">
+              <div className="h-[350px] flex items-center justify-center">
                 <Skeleton className="h-full w-full" />
               </div>
             ) : origensPacientes.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={origensPacientes}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ nome, percent }) => `${nome} ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
-                    fill="hsl(var(--primary))"
-                    dataKey="valor"
-                  >
-                    {origensPacientes.map((entry, index) => (
-                      <Cell key={`cell-origem-${index}`} fill={entry.cor} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value: any, name: any, props: any) => [`${value} pacientes`, props.payload.nome]} />
-                </PieChart>
-              </ResponsiveContainer>
+              <div className="space-y-4">
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie
+                      data={origensPacientes}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={70}
+                      fill="hsl(var(--primary))"
+                      dataKey="valor"
+                    >
+                      {origensPacientes.map((entry, index) => (
+                        <Cell key={`cell-origem-${index}`} fill={entry.cor} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value: any, name: any, props: any) => [`${value} pacientes`, props.payload.nome]} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="space-y-2 max-h-[150px] overflow-y-auto">
+                  {origensPacientes.map((item, index) => {
+                    const total = origensPacientes.reduce((acc, curr) => acc + curr.valor, 0);
+                    const percent = ((item.valor / total) * 100).toFixed(1);
+                    return (
+                      <div key={index} className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <div 
+                            className="w-3 h-3 rounded-full flex-shrink-0" 
+                            style={{ backgroundColor: item.cor }} 
+                          />
+                          <span className="truncate" title={item.nome}>{item.nome}</span>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                          <span className="text-muted-foreground">{item.valor}</span>
+                          <span className="font-medium w-14 text-right">{percent}%</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             ) : (
-              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+              <div className="h-[350px] flex items-center justify-center text-muted-foreground">
                 <p>Nenhum dado de origem disponível</p>
               </div>
             )}
@@ -425,31 +446,52 @@ export default function Relatorios() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="h-[300px] flex items-center justify-center">
+              <div className="h-[350px] flex items-center justify-center">
                 <Skeleton className="h-full w-full" />
               </div>
             ) : modalidadesAtendimento.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={modalidadesAtendimento}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ nome, percent }) => `${nome} ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
-                    fill="hsl(var(--primary))"
-                    dataKey="valor"
-                  >
-                    {modalidadesAtendimento.map((entry, index) => (
-                      <Cell key={`cell-modalidade-${index}`} fill={entry.cor} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value: any, name: any, props: any) => [`${value} pacientes`, props.payload.nome]} />
-                </PieChart>
-              </ResponsiveContainer>
+              <div className="space-y-4">
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie
+                      data={modalidadesAtendimento}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={70}
+                      fill="hsl(var(--primary))"
+                      dataKey="valor"
+                    >
+                      {modalidadesAtendimento.map((entry, index) => (
+                        <Cell key={`cell-modalidade-${index}`} fill={entry.cor} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value: any, name: any, props: any) => [`${value} pacientes`, props.payload.nome]} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="space-y-2 max-h-[150px] overflow-y-auto">
+                  {modalidadesAtendimento.map((item, index) => {
+                    const total = modalidadesAtendimento.reduce((acc, curr) => acc + curr.valor, 0);
+                    const percent = ((item.valor / total) * 100).toFixed(1);
+                    return (
+                      <div key={index} className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <div 
+                            className="w-3 h-3 rounded-full flex-shrink-0" 
+                            style={{ backgroundColor: item.cor }} 
+                          />
+                          <span className="truncate" title={item.nome}>{item.nome}</span>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                          <span className="text-muted-foreground">{item.valor}</span>
+                          <span className="font-medium w-14 text-right">{percent}%</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             ) : (
-              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+              <div className="h-[350px] flex items-center justify-center text-muted-foreground">
                 <p>Nenhum dado de modalidade disponível</p>
               </div>
             )}
