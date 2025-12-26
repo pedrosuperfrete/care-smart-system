@@ -34,9 +34,8 @@ export function PacienteDetalhes({ pacienteId, onClose }: PacienteDetalhesProps)
   const proximosAgendamentos = agendamentosPaciente.filter(ag => 
     new Date(ag.data_inicio) >= new Date() && !ag.desmarcada
   );
-  const historicoAgendamentos = agendamentosPaciente.filter(ag => 
-    new Date(ag.data_inicio) < new Date() || ag.desmarcada
-  );
+  // Histórico mostra TODOS os agendamentos do paciente
+  const historicoAgendamentos = agendamentosPaciente;
 
   return (
     <div className="space-y-6">
