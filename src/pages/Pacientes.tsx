@@ -412,14 +412,15 @@ export default function Pacientes() {
       />
 
       {/* Dialog de Prontuários do Paciente */}
-      {selectedPaciente && (
-        <ProntuariosPacienteDialog
-          open={isProntuariosOpen}
-          onOpenChange={setIsProntuariosOpen}
-          pacienteId={selectedPaciente.id}
-          pacienteNome={selectedPaciente.nome}
-        />
-      )}
+      <ProntuariosPacienteDialog
+        open={isProntuariosOpen}
+        onOpenChange={(open) => {
+          setIsProntuariosOpen(open);
+          if (!open) setSelectedPaciente(null);
+        }}
+        pacienteId={selectedPaciente?.id || ''}
+        pacienteNome={selectedPaciente?.nome || ''}
+      />
     </div>
   );
 }
