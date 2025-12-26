@@ -321,7 +321,7 @@ export function AgendamentoForm({ agendamento, pacienteId, dataHoraInicial, onSu
           <Label htmlFor="profissional">Profissional *</Label>
           {isProfissional ? (
             <Input
-              value={profissional?.nome || 'Profissional não encontrado'}
+              value={profissional?.nome || profissional?.especialidade || user?.email || 'Carregando...'}
               disabled
               className="bg-muted"
             />
