@@ -177,13 +177,23 @@ export function useImportPacientes() {
         const paciente = pacientes[i];
         const linha = i + 2; // +2 porque linha 1 é o cabeçalho e arrays começam em 0
 
-        // Validação básica
-        if (!paciente.nome || !paciente.cpf || paciente.nome.trim() === '' || paciente.cpf.trim() === '') {
-          errors.push(`Linha ${linha}: Nome e CPF são obrigatórios`);
+        // Validação: Nome é obrigatório, e precisa ter CPF ou telefone
+        if (!paciente.nome || paciente.nome.trim() === '') {
+          errors.push(`Linha ${linha}: Nome é obrigatório`);
           continue;
         }
 
-        if (!validateCPF(paciente.cpf)) {
+        const cpfLimpo = paciente.cpf?.replace(/\D/g, '') || '';
+        const telefoneLimpo = paciente.telefone?.replace(/\D/g, '') || '';
+
+        // Precisa ter pelo menos CPF ou telefone para identificar
+        if (!cpfLimpo && !telefoneLimpo) {
+          errors.push(`Linha ${linha}: É necessário informar CPF ou telefone`);
+          continue;
+        }
+
+        // Validar CPF apenas se foi informado
+        if (cpfLimpo && !validateCPF(cpfLimpo)) {
           errors.push(`Linha ${linha}: CPF inválido (${paciente.cpf})`);
           continue;
         }
@@ -191,7 +201,7 @@ export function useImportPacientes() {
         // Preparar dados do paciente
         const pacienteData: any = {
           nome: paciente.nome.trim(),
-          cpf: paciente.cpf.replace(/\D/g, ''),
+          cpf: cpfLimpo || `TEMP_${Date.now()}_${i}`, // CPF temporário se não informado
           clinica_id: clinica.id,
           email: paciente.email?.trim() || null,
           telefone: paciente.telefone?.trim() || null,
@@ -216,18 +226,51 @@ export function useImportPacientes() {
         }
 
         try {
-          // Usar upsert para atualizar pacientes existentes pelo CPF
-          const { error } = await supabase
-            .from('pacientes')
-            .upsert(pacienteData, { 
-              onConflict: 'cpf,clinica_id',
-              ignoreDuplicates: false 
-            });
+          // Verificar se já existe paciente com mesmo CPF ou telefone na clínica
+          let pacienteExistente = null;
+          
+          if (cpfLimpo) {
+            const { data: existenteByCpf } = await supabase
+              .from('pacientes')
+              .select('id')
+              .eq('clinica_id', clinica.id)
+              .eq('cpf', cpfLimpo)
+              .maybeSingle();
+            pacienteExistente = existenteByCpf;
+          }
+          
+          if (!pacienteExistente && telefoneLimpo) {
+            const { data: existenteByTel } = await supabase
+              .from('pacientes')
+              .select('id')
+              .eq('clinica_id', clinica.id)
+              .ilike('telefone', `%${telefoneLimpo.slice(-8)}%`)
+              .maybeSingle();
+            pacienteExistente = existenteByTel;
+          }
+
+          let error;
+          if (pacienteExistente) {
+            // Atualizar paciente existente
+            const { error: updateError } = await supabase
+              .from('pacientes')
+              .update(pacienteData)
+              .eq('id', pacienteExistente.id);
+            error = updateError;
+          } else {
+            // Inserir novo paciente
+            const { error: insertError } = await supabase
+              .from('pacientes')
+              .insert(pacienteData);
+            error = insertError;
+          }
 
           if (error) {
             // Traduzir erros comuns para mensagens mais claras
             if (error.message.includes('row-level security policy')) {
-              errors.push(`Linha ${linha}: Sem permissão para criar/atualizar pacientes. Verifique se sua assinatura está ativa ou se você atingiu o limite de pacientes.`);
+              errors.push(`Linha ${linha}: Sem permissão. Verifique sua assinatura ou limite de pacientes.`);
+            } else if (error.message.includes('duplicate key') || error.message.includes('unique constraint')) {
+              errors.push(`Linha ${linha}: Paciente já existe com este CPF ou telefone`);
             } else {
               errors.push(`Linha ${linha}: ${error.message}`);
             }
