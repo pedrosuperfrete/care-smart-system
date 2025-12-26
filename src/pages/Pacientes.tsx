@@ -224,7 +224,14 @@ export default function Pacientes() {
           </Card>
         ) : (
           filteredPacientes.map((paciente) => (
-            <Card key={paciente.id} className="hover:shadow-md transition-shadow">
+            <Card 
+              key={paciente.id} 
+              className="hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => {
+                setSelectedPaciente(paciente);
+                setIsDetailsOpen(true);
+              }}
+            >
               <CardContent className="pt-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                   <div className="flex-1 w-full">
@@ -282,7 +289,10 @@ export default function Pacientes() {
                     )}
                   </div>
                   
-                  <div className="flex sm:flex-col items-end gap-2 w-full sm:w-auto mt-4 sm:mt-0">
+                  <div 
+                    className="flex sm:flex-col items-end gap-2 w-full sm:w-auto mt-4 sm:mt-0"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="outline" size="sm" className="w-full sm:w-auto">
