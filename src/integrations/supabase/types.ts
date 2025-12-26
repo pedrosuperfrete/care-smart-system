@@ -446,7 +446,7 @@ export type Database = {
           cep: string | null
           cidade: string | null
           clinica_id: string
-          cpf: string
+          cpf: string | null
           criado_em: string
           data_nascimento: string | null
           email: string | null
@@ -468,7 +468,7 @@ export type Database = {
           cep?: string | null
           cidade?: string | null
           clinica_id: string
-          cpf: string
+          cpf?: string | null
           criado_em?: string
           data_nascimento?: string | null
           email?: string | null
@@ -490,7 +490,7 @@ export type Database = {
           cep?: string | null
           cidade?: string | null
           clinica_id?: string
-          cpf?: string
+          cpf?: string | null
           criado_em?: string
           data_nascimento?: string | null
           email?: string | null

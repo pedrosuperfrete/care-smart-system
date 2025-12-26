@@ -198,10 +198,10 @@ export function useImportPacientes() {
           continue;
         }
 
-        // Preparar dados do paciente
+        // Preparar dados do paciente (CPF agora é opcional/nullable)
         const pacienteData: any = {
           nome: paciente.nome.trim(),
-          cpf: cpfLimpo || `TEMP_${Date.now()}_${i}`, // CPF temporário se não informado
+          cpf: cpfLimpo || null, // CPF fica null se não informado
           clinica_id: clinica.id,
           email: paciente.email?.trim() || null,
           telefone: paciente.telefone?.trim() || null,
