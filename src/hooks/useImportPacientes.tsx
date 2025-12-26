@@ -29,6 +29,11 @@ interface PacienteImport {
   modalidade_atendimento?: string;
 }
 
+interface ImportInput {
+  file: File;
+  profissionalId?: string;
+}
+
 // Mapeamento flexível de colunas CSV -> campos do banco
 const COLUMN_MAPPINGS: Record<string, string[]> = {
   nome: ['nome', 'name', 'nome completo', 'nome_completo', 'nomecompleto', 'paciente', 'patient', 'full_name', 'fullname'],
@@ -164,9 +169,15 @@ export function useImportPacientes() {
   };
 
   const mutation = useMutation({
-    mutationFn: async (file: File) => {
+    mutationFn: async ({ file, profissionalId }: ImportInput) => {
       if (!clinica?.id) {
         throw new Error('Clínica não identificada');
+      }
+
+      // Log para debug
+      console.log('Importando pacientes para clínica:', clinica.id);
+      if (profissionalId) {
+        console.log('Profissional selecionado:', profissionalId);
       }
 
       const pacientes = await parseFile(file);

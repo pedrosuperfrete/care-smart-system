@@ -4,6 +4,10 @@ import { Button } from '@/components/ui/button';
 import { useImportPacientes } from '@/hooks/useImportPacientes';
 import { Upload, FileSpreadsheet, AlertCircle, CheckCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useAuth } from '@/hooks/useAuth';
+import { useProfissionais } from '@/hooks/useProfissionais';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 
 interface ImportPacientesDialogProps {
   open: boolean;
@@ -12,7 +16,10 @@ interface ImportPacientesDialogProps {
 
 export function ImportPacientesDialog({ open, onOpenChange }: ImportPacientesDialogProps) {
   const [file, setFile] = useState<File | null>(null);
+  const [selectedProfissionalId, setSelectedProfissionalId] = useState<string>('');
   const { importPacientes, isImporting, importResult, resetImportacao } = useImportPacientes();
+  const { isRecepcionista, profissional } = useAuth();
+  const { data: profissionais } = useProfissionais();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -29,18 +36,30 @@ export function ImportPacientesDialog({ open, onOpenChange }: ImportPacientesDia
   const handleImport = async () => {
     if (!file) return;
 
-    await importPacientes(file);
+    // Se for recepcionista, precisa selecionar um profissional
+    if (isRecepcionista && !selectedProfissionalId) {
+      alert('Por favor, selecione um profissional para associar os pacientes');
+      return;
+    }
+
+    // Passar o profissional_id selecionado (se for recepcionista) ou undefined
+    const profissionalIdToUse = isRecepcionista ? selectedProfissionalId : profissional?.id;
+    await importPacientes({ file, profissionalId: profissionalIdToUse });
   };
 
   const handleOpenChange = (nextOpen: boolean) => {
     // Ao fechar, limpar estado para permitir uma nova importação ao reabrir
     if (!nextOpen) {
       setFile(null);
+      setSelectedProfissionalId('');
       resetImportacao();
     }
 
     onOpenChange(nextOpen);
   };
+
+  // Pode importar se: tem arquivo E (não é recepcionista OU selecionou profissional)
+  const canImport = file && (!isRecepcionista || selectedProfissionalId);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -53,6 +72,34 @@ export function ImportPacientesDialog({ open, onOpenChange }: ImportPacientesDia
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Seleção de Profissional (apenas para recepcionistas) */}
+          {isRecepcionista && (
+            <div className="space-y-2">
+              <Label htmlFor="profissional-select">
+                Associar pacientes ao profissional <span className="text-destructive">*</span>
+              </Label>
+              <Select
+                value={selectedProfissionalId}
+                onValueChange={setSelectedProfissionalId}
+                disabled={isImporting}
+              >
+                <SelectTrigger id="profissional-select">
+                  <SelectValue placeholder="Selecione o profissional" />
+                </SelectTrigger>
+                <SelectContent>
+                  {profissionais?.map((prof) => (
+                    <SelectItem key={prof.id} value={prof.id}>
+                      {prof.nome} - {prof.especialidade}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Os pacientes importados serão associados a este profissional
+              </p>
+            </div>
+          )}
+
           {/* Instruções */}
           <Alert>
             <AlertCircle className="h-4 w-4" />
@@ -163,7 +210,7 @@ export function ImportPacientesDialog({ open, onOpenChange }: ImportPacientesDia
             {!importResult?.success && (
               <Button
                 onClick={handleImport}
-                disabled={!file || isImporting}
+                disabled={!canImport || isImporting}
               >
                 {isImporting ? 'Importando...' : 'Importar Pacientes'}
               </Button>
