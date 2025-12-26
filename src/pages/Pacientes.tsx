@@ -12,10 +12,11 @@ import { PacienteDetalhes } from '@/components/PacienteDetalhes';
 import { AgendamentoForm } from '@/components/forms/AgendamentoForm';
 import { usePacientes, usePacientesStats } from '@/hooks/usePacientes';
 import { usePacientesComAgendamentos } from '@/hooks/usePacientesComAgendamentos';
-import { Users, Plus, Search, MoreVertical, Eye, Edit, Calendar, History, Phone, Mail, MapPin, FileUp } from 'lucide-react';
+import { Users, Plus, Search, MoreVertical, FileText, Edit, Calendar, History, Phone, Mail, MapPin, FileUp } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import { fromLocalDateString } from '@/lib/dateUtils';
 import { ImportPacientesDialog } from '@/components/pacientes/ImportPacientesDialog';
+import { ProntuariosPacienteDialog } from '@/components/pacientes/ProntuariosPacienteDialog';
 
 type Paciente = Tables<'pacientes'>;
 
@@ -31,6 +32,7 @@ export default function Pacientes() {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isAgendamentoOpen, setIsAgendamentoOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [isProntuariosOpen, setIsProntuariosOpen] = useState(false);
 
   // Função para remover acentos para busca mais flexível
   const removeAcentos = (str: string) => {
@@ -303,10 +305,10 @@ export default function Pacientes() {
                       <DropdownMenuContent align="end" className="w-48">
                       <DropdownMenuItem onClick={() => {
                         setSelectedPaciente(paciente);
-                        setIsDetailsOpen(true);
+                        setIsProntuariosOpen(true);
                       }}>
-                        <Eye className="mr-2 h-4 w-4" />
-                        Ver Detalhes
+                        <FileText className="mr-2 h-4 w-4" />
+                        Ver Prontuários
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => {
                         setSelectedPaciente(paciente);
@@ -408,6 +410,16 @@ export default function Pacientes() {
         open={isImportOpen} 
         onOpenChange={setIsImportOpen}
       />
+
+      {/* Dialog de Prontuários do Paciente */}
+      {selectedPaciente && (
+        <ProntuariosPacienteDialog
+          open={isProntuariosOpen}
+          onOpenChange={setIsProntuariosOpen}
+          pacienteId={selectedPaciente.id}
+          pacienteNome={selectedPaciente.nome}
+        />
+      )}
     </div>
   );
 }
