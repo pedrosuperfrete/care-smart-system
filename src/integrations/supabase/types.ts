@@ -265,7 +265,7 @@ export type Database = {
           acao: string
           detalhes: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           modulo: string
           timestamp: string
           user_agent: string | null
@@ -275,7 +275,7 @@ export type Database = {
           acao: string
           detalhes?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           modulo: string
           timestamp?: string
           user_agent?: string | null
@@ -285,7 +285,7 @@ export type Database = {
           acao?: string
           detalhes?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           modulo?: string
           timestamp?: string
           user_agent?: string | null
@@ -1088,25 +1088,22 @@ export type Database = {
       }
     }
     Functions: {
-      can_create_patient: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      can_see_patient_sensitive_data: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      create_user_by_admin: {
-        Args:
-          | {
+      can_create_patient: { Args: never; Returns: boolean }
+      can_see_patient_sensitive_data: { Args: never; Returns: boolean }
+      create_user_by_admin:
+        | {
+            Args: { p_email: string; p_tipo_usuario: string; p_user_id: string }
+            Returns: string
+          }
+        | {
+            Args: {
               p_email: string
               p_nome?: string
               p_tipo_usuario: string
               p_user_id: string
             }
-          | { p_email: string; p_tipo_usuario: string; p_user_id: string }
-        Returns: string
-      }
+            Returns: string
+          }
       create_usuario_clinica_by_admin: {
         Args: {
           p_clinica_id: string
@@ -1116,7 +1113,7 @@ export type Database = {
         Returns: string
       }
       debug_auth_status: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           current_user_id: string
           is_admin_result: boolean
@@ -1126,16 +1123,10 @@ export type Database = {
           user_tipo: string
         }[]
       }
-      debug_can_create_patient: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      debug_can_create_patient_full: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      debug_can_create_patient: { Args: never; Returns: Json }
+      debug_can_create_patient_full: { Args: never; Returns: Json }
       get_clinic_users_safe: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           ativo: boolean
           criado_em: string
@@ -1145,16 +1136,10 @@ export type Database = {
           tipo_usuario: Database["public"]["Enums"]["tipo_usuario"]
         }[]
       }
-      get_current_profissional_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      get_current_user_clinica: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      get_current_profissional_id: { Args: never; Returns: string }
+      get_current_user_clinica: { Args: never; Returns: string }
       get_patients_for_role: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           ativo: boolean
           atualizado_em: string
@@ -1192,7 +1177,7 @@ export type Database = {
         }[]
       }
       get_user_clinicas: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           clinica_id: string
           tipo_papel: string
@@ -1205,34 +1190,16 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_admin_clinica: {
-        Args: { clinica_uuid?: string }
-        Returns: boolean
-      }
-      is_profissional: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_recepcionista: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      normalizar_telefone: {
-        Args: { telefone: string }
-        Returns: string
-      }
+      is_admin: { Args: never; Returns: boolean }
+      is_admin_clinica: { Args: { clinica_uuid?: string }; Returns: boolean }
+      is_profissional: { Args: never; Returns: boolean }
+      is_recepcionista: { Args: never; Returns: boolean }
+      normalizar_telefone: { Args: { telefone: string }; Returns: string }
       update_user_by_admin: {
         Args: { p_email: string; p_tipo_usuario: string; p_user_id: string }
         Returns: undefined
       }
-      user_has_complete_profile: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      user_has_complete_profile: { Args: never; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "profissional" | "recepcionista"
