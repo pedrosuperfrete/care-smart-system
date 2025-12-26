@@ -12,7 +12,7 @@ interface ImportPacientesDialogProps {
 
 export function ImportPacientesDialog({ open, onOpenChange }: ImportPacientesDialogProps) {
   const [file, setFile] = useState<File | null>(null);
-  const { importPacientes, isImporting, importResult } = useImportPacientes();
+  const { importPacientes, isImporting, importResult, resetImportacao } = useImportPacientes();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -28,17 +28,22 @@ export function ImportPacientesDialog({ open, onOpenChange }: ImportPacientesDia
 
   const handleImport = async () => {
     if (!file) return;
-    
+
     await importPacientes(file);
   };
 
-  const handleClose = () => {
-    setFile(null);
-    onOpenChange(false);
+  const handleOpenChange = (nextOpen: boolean) => {
+    // Ao fechar, limpar estado para permitir uma nova importação ao reabrir
+    if (!nextOpen) {
+      setFile(null);
+      resetImportacao();
+    }
+
+    onOpenChange(nextOpen);
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Importar Pacientes</DialogTitle>
@@ -52,20 +57,20 @@ export function ImportPacientesDialog({ open, onOpenChange }: ImportPacientesDia
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              <strong>Formato esperado:</strong> O arquivo deve conter as colunas: 
-              <code className="mx-1 px-2 py-1 bg-muted rounded text-sm">nome</code>,
-              <code className="mx-1 px-2 py-1 bg-muted rounded text-sm">cpf</code>,
+              <strong>Formato esperado:</strong> colunas recomendadas:
+              <code className="mx-1 px-2 py-1 bg-muted rounded text-sm">nome</code> (obrigatório),
+              <code className="mx-1 px-2 py-1 bg-muted rounded text-sm">cpf</code> (opcional),
+              <code className="mx-1 px-2 py-1 bg-muted rounded text-sm">telefone</code> (obrigatório se CPF estiver vazio),
               <code className="mx-1 px-2 py-1 bg-muted rounded text-sm">email</code>,
-              <code className="mx-1 px-2 py-1 bg-muted rounded text-sm">telefone</code>,
-              <code className="mx-1 px-2 py-1 bg-muted rounded text-sm">data_nascimento</code> (formato DD/MM/AAAA),
+              <code className="mx-1 px-2 py-1 bg-muted rounded text-sm">data_nascimento</code> (DD/MM/AAAA),
               <code className="mx-1 px-2 py-1 bg-muted rounded text-sm">cep</code>,
-              <code className="mx-1 px-2 py-1 bg-muted rounded text-sm">endereco</code> (rua, número, complemento),
+              <code className="mx-1 px-2 py-1 bg-muted rounded text-sm">endereco</code>,
               <code className="mx-1 px-2 py-1 bg-muted rounded text-sm">bairro</code>,
               <code className="mx-1 px-2 py-1 bg-muted rounded text-sm">cidade</code>,
               <code className="mx-1 px-2 py-1 bg-muted rounded text-sm">estado</code> (UF),
               <code className="mx-1 px-2 py-1 bg-muted rounded text-sm">origem</code>,
               <code className="mx-1 px-2 py-1 bg-muted rounded text-sm">modalidade_atendimento</code>,
-              <code className="mx-1 px-2 py-1 bg-muted rounded text-sm">observacoes</code>
+              <code className="mx-1 px-2 py-1 bg-muted rounded text-sm">observacoes</code>.
             </AlertDescription>
           </Alert>
 
@@ -150,7 +155,7 @@ export function ImportPacientesDialog({ open, onOpenChange }: ImportPacientesDia
           <div className="flex justify-end space-x-2">
             <Button
               variant="outline"
-              onClick={handleClose}
+              onClick={() => handleOpenChange(false)}
               disabled={isImporting}
             >
               {importResult?.success ? 'Fechar' : 'Cancelar'}

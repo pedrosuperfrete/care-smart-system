@@ -326,9 +326,15 @@ export function useImportPacientes() {
     },
   });
 
+  const resetImportacao = () => {
+    setImportResult(null);
+    mutation.reset();
+  };
+
   return {
     importPacientes: mutation.mutate,
     isImporting: mutation.isPending,
     importResult,
+    resetImportacao,
   };
 }
