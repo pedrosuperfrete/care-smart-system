@@ -1,5 +1,6 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +20,7 @@ import { NovoPagamentoModal } from '@/components/financeiro/NovoPagamentoModal';
 import { DetalhesAgendamentoModal } from '@/components/financeiro/DetalhesAgendamentoModal';
 
 export default function Financeiro() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, loading: authLoading, isRecepcionista } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
@@ -54,6 +56,20 @@ export default function Financeiro() {
   const { data: stats, isLoading: statsLoading } = useFinanceiroStats(startDate, endDate);
   const marcarPagoMutation = useMarcarPago();
   const createPagamentoMutation = useCreatePagamento();
+
+  // Abrir detalhes do pagamento automaticamente se houver agendamento_id na URL
+  useEffect(() => {
+    const agendamentoId = searchParams.get('agendamento');
+    if (agendamentoId && pagamentos.length > 0) {
+      const pagamento = pagamentos.find(p => p.agendamento_id === agendamentoId);
+      if (pagamento) {
+        setDetalhesModal({ open: true, pagamento });
+        // Limpar o parâmetro da URL
+        searchParams.delete('agendamento');
+        setSearchParams(searchParams, { replace: true });
+      }
+    }
+  }, [searchParams, pagamentos, setSearchParams]);
 
   // Verificações de segurança
   if (authLoading) {

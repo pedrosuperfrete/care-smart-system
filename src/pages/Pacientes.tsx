@@ -1,5 +1,6 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +22,7 @@ import { ProntuariosPacienteDialog } from '@/components/pacientes/ProntuariosPac
 type Paciente = Tables<'pacientes'>;
 
 export default function Pacientes() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data: pacientes = [], isLoading } = usePacientes();
   const { data: stats } = usePacientesStats();
   const { data: pacientesComAgendamentos } = usePacientesComAgendamentos();
@@ -33,6 +35,21 @@ export default function Pacientes() {
   const [isAgendamentoOpen, setIsAgendamentoOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isProntuariosOpen, setIsProntuariosOpen] = useState(false);
+
+  // Abrir detalhes automaticamente se houver ID na URL
+  useEffect(() => {
+    const pacienteId = searchParams.get('id');
+    if (pacienteId && pacientes.length > 0) {
+      const paciente = pacientes.find(p => p.id === pacienteId);
+      if (paciente) {
+        setSelectedPaciente(paciente);
+        setIsDetailsOpen(true);
+        // Limpar o parâmetro da URL
+        searchParams.delete('id');
+        setSearchParams(searchParams, { replace: true });
+      }
+    }
+  }, [searchParams, pacientes, setSearchParams]);
 
   // Função para remover acentos para busca mais flexível
   const removeAcentos = (str: string) => {

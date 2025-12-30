@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,6 +41,7 @@ import { BloqueioAgenda } from '@/hooks/useBloqueiosAgenda';
 type Agendamento = Tables<'agendamentos'>;
 
 export default function Agenda() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data: agendamentos = [] } = useAgendamentos();
   const { data: pacientes = [] } = usePacientes();
   const { data: profissionais = [] } = useProfissionais();
@@ -73,7 +75,7 @@ export default function Agenda() {
   });
 
   // Atualizar profissional_id quando currentProfissional muda
-  React.useEffect(() => {
+  useEffect(() => {
     if (currentProfissional?.id) {
       setNewConsulta(prev => ({ 
         ...prev, 
@@ -81,6 +83,20 @@ export default function Agenda() {
       }));
     }
   }, [currentProfissional]);
+
+  // Abrir detalhes do agendamento automaticamente se houver ID na URL
+  useEffect(() => {
+    const agendamentoId = searchParams.get('agendamento');
+    if (agendamentoId && agendamentos.length > 0) {
+      const agendamento = agendamentos.find(a => a.id === agendamentoId);
+      if (agendamento) {
+        setAgendamentoParaEditar(agendamento);
+        // Limpar o parâmetro da URL
+        searchParams.delete('agendamento');
+        setSearchParams(searchParams, { replace: true });
+      }
+    }
+  }, [searchParams, agendamentos, setSearchParams]);
 
   const handleCreateConsulta = async () => {
     try {
