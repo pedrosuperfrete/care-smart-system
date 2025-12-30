@@ -15,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 export default function Auth() {
   const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login');
   const [email, setEmail] = useState('');
+  const [nome, setNome] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [tipoUsuario, setTipoUsuario] = useState<'admin' | 'profissional' | 'recepcionista'>('profissional');
@@ -43,6 +44,17 @@ export default function Auth() {
           toast.success('Email de recuperação enviado! Verifique sua caixa de entrada.');
         }
       } else if (mode === 'signup') {
+        // Validar nome
+        if (!nome.trim()) {
+          toast.error('O nome é obrigatório');
+          return;
+        }
+        
+        if (nome.trim().length < 3) {
+          toast.error('O nome deve ter pelo menos 3 caracteres');
+          return;
+        }
+        
         if (password !== confirmPassword) {
           toast.error('As senhas não coincidem');
           return;
@@ -74,7 +86,7 @@ export default function Auth() {
           return;
         }
         
-        const { error } = await signUp(email, password, tipoUsuario);
+        const { error } = await signUp(email, password, tipoUsuario, nome.trim());
         if (error) {
           toast.error(error);
         } else {
@@ -202,6 +214,28 @@ export default function Auth() {
           
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Nome (apenas no signup) */}
+              {mode === 'signup' && (
+                <div className="space-y-2">
+                  <Label htmlFor="nome" className="text-sm font-medium text-foreground">
+                    Nome Completo
+                  </Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="nome"
+                      type="text"
+                      placeholder="Seu nome completo"
+                      value={nome}
+                      onChange={(e) => setNome(e.target.value)}
+                      className="pl-10 h-12"
+                      required
+                      minLength={3}
+                    />
+                  </div>
+                </div>
+              )}
+
               {/* Email */}
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-sm font-medium text-foreground">
