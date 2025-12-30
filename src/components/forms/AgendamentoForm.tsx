@@ -83,8 +83,9 @@ export function AgendamentoForm({ agendamento, pacienteId, dataHoraInicial, onSu
 
   console.log('Tipos de serviços carregados:', tiposServicos, 'Loading:', loadingTipos);
 
-  // Se o usuário é profissional, usar automaticamente seu ID. Se é recepcionista, mostrar lista
-  const isProfissional = profissional && user;
+  // Se o usuário é profissional E é o único da clínica, usar automaticamente seu ID
+  // Se é secretária OU há múltiplos profissionais, mostrar lista para seleção
+  const isProfissionalUnico = profissional && profissionais.length <= 1;
   
   // Helper para formatar data para o formato local (evita problema de fuso horário com toISOString)
   const formatToLocalDateTime = (date: Date) => {
@@ -120,7 +121,7 @@ export function AgendamentoForm({ agendamento, pacienteId, dataHoraInicial, onSu
 
   const [formData, setFormData] = useState({
     paciente_id: agendamento?.paciente_id || pacienteId || '',
-    profissional_id: agendamento?.profissional_id || (isProfissional ? profissional?.id || '' : ''),
+    profissional_id: agendamento?.profissional_id || (profissional?.id || ''),
     data_inicio: getDataInicioDefault(),
     data_fim: getDataFimDefault(),
     tipo_servico: agendamento?.tipo_servico || '',
@@ -340,7 +341,7 @@ export function AgendamentoForm({ agendamento, pacienteId, dataHoraInicial, onSu
 
         <div className="space-y-2">
           <Label htmlFor="profissional">Profissional *</Label>
-          {isProfissional ? (
+          {isProfissionalUnico ? (
             <Input
               value={profissional?.nome || profissional?.especialidade || user?.email || 'Carregando...'}
               disabled
