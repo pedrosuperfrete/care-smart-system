@@ -819,6 +819,8 @@ export type Database = {
           criado_em: string
           id: string
           nome: string
+          percentual_cobranca_agendamento: number | null
+          percentual_cobranca_falta: number | null
           preco: number | null
           profissional_id: string | null
         }
@@ -829,6 +831,8 @@ export type Database = {
           criado_em?: string
           id?: string
           nome: string
+          percentual_cobranca_agendamento?: number | null
+          percentual_cobranca_falta?: number | null
           preco?: number | null
           profissional_id?: string | null
         }
@@ -839,6 +843,8 @@ export type Database = {
           criado_em?: string
           id?: string
           nome?: string
+          percentual_cobranca_agendamento?: number | null
+          percentual_cobranca_falta?: number | null
           preco?: number | null
           profissional_id?: string | null
         }

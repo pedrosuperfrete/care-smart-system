@@ -10,6 +10,8 @@ export interface TipoServico {
   ativo: boolean;
   clinica_id?: string;
   profissional_id?: string;
+  percentual_cobranca_falta?: number;
+  percentual_cobranca_agendamento?: number;
   criado_em: string;
   atualizado_em: string;
 }
@@ -19,12 +21,16 @@ export interface CreateTipoServicoData {
   preco?: number;
   clinica_id?: string;
   profissional_id?: string;
+  percentual_cobranca_falta?: number;
+  percentual_cobranca_agendamento?: number;
 }
 
 export interface UpdateTipoServicoData {
   nome?: string;
   preco?: number;
   ativo?: boolean;
+  percentual_cobranca_falta?: number | null;
+  percentual_cobranca_agendamento?: number | null;
 }
 
 export function useTiposServicos() {
