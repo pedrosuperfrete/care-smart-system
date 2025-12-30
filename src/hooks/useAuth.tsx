@@ -315,6 +315,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state change:', event, session?.user?.email);
       
+      // Ignorar mudanças de sessão quando estamos criando usuário pela equipe
+      const isCreatingTeamUser = sessionStorage.getItem('creating_team_user') === 'true';
+      if (isCreatingTeamUser) {
+        console.log('Ignorando auth state change - criando usuário pela equipe');
+        return;
+      }
+      
       setUser(session?.user ?? null);
       
       if (session?.user) {
