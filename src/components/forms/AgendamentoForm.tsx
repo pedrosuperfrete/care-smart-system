@@ -86,24 +86,34 @@ export function AgendamentoForm({ agendamento, pacienteId, dataHoraInicial, onSu
   // Se o usuário é profissional, usar automaticamente seu ID. Se é recepcionista, mostrar lista
   const isProfissional = profissional && user;
   
+  // Helper para formatar data para o formato local (evita problema de fuso horário com toISOString)
+  const formatToLocalDateTime = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hour = String(date.getHours()).padStart(2, '0');
+    const minute = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hour}:${minute}`;
+  };
+
   const getDataInicioDefault = () => {
     if (agendamento?.data_inicio) {
-      return new Date(agendamento.data_inicio).toISOString().slice(0, 16);
+      return formatToLocalDateTime(new Date(agendamento.data_inicio));
     }
     if (dataHoraInicial) {
-      return dataHoraInicial.toISOString().slice(0, 16);
+      return formatToLocalDateTime(dataHoraInicial);
     }
     return '';
   };
 
   const getDataFimDefault = () => {
     if (agendamento?.data_fim) {
-      return new Date(agendamento.data_fim).toISOString().slice(0, 16);
+      return formatToLocalDateTime(new Date(agendamento.data_fim));
     }
     if (dataHoraInicial) {
       const dataFim = new Date(dataHoraInicial);
       dataFim.setHours(dataFim.getHours() + 1);
-      return dataFim.toISOString().slice(0, 16);
+      return formatToLocalDateTime(dataFim);
     }
     return '';
   };
