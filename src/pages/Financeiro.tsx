@@ -1,6 +1,6 @@
 
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,9 +21,13 @@ import { DetalhesAgendamentoModal } from '@/components/financeiro/DetalhesAgenda
 
 export default function Financeiro() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { user, loading: authLoading, isRecepcionista } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
+  
+  // Rastrear se veio do dashboard
+  const cameFromDashboard = useRef(false);
   
   // Configurar o mês atual por padrão
   const currentDate = new Date();
@@ -63,6 +67,7 @@ export default function Financeiro() {
     if (agendamentoId && pagamentos.length > 0) {
       const pagamento = pagamentos.find(p => p.agendamento_id === agendamentoId);
       if (pagamento) {
+        cameFromDashboard.current = true;
         setDetalhesModal({ open: true, pagamento });
         // Limpar o parâmetro da URL
         searchParams.delete('agendamento');
@@ -70,6 +75,15 @@ export default function Financeiro() {
       }
     }
   }, [searchParams, pagamentos, setSearchParams]);
+
+  // Função para fechar modal de detalhes
+  const handleCloseDetalhes = () => {
+    setDetalhesModal({ open: false, pagamento: null });
+    if (cameFromDashboard.current) {
+      cameFromDashboard.current = false;
+      navigate('/app/dashboard');
+    }
+  };
 
   // Verificações de segurança
   if (authLoading) {
@@ -466,7 +480,13 @@ export default function Financeiro() {
 
       <DetalhesAgendamentoModal
         open={detalhesModal.open}
-        onOpenChange={(open) => setDetalhesModal({ open, pagamento: open ? detalhesModal.pagamento : null })}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCloseDetalhes();
+          } else {
+            setDetalhesModal({ open, pagamento: detalhesModal.pagamento });
+          }
+        }}
         pagamento={detalhesModal.pagamento}
       />
     </div>
