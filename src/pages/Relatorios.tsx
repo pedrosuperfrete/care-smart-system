@@ -122,15 +122,25 @@ export default function Relatorios() {
             {usarDateRange ? 'Períodos' : 'Data Customizada'}
           </Button>
           
-          <Button variant="outline" onClick={handleExportarCSV}>
-            <Download className="mr-2 h-4 w-4" />
-            Exportar CSV
-          </Button>
+          <div className="relative">
+            <Button variant="outline" disabled className="opacity-60">
+              <Download className="mr-2 h-4 w-4" />
+              Exportar CSV
+            </Button>
+            <span className="absolute -top-2 -right-2 px-1.5 py-0.5 bg-primary/10 text-primary rounded text-[10px] font-medium">
+              Em breve
+            </span>
+          </div>
           
-          <Button variant="outline" onClick={handleExportarPDF}>
-            <FileText className="mr-2 h-4 w-4" />
-            Exportar PDF
-          </Button>
+          <div className="relative">
+            <Button variant="outline" disabled className="opacity-60">
+              <FileText className="mr-2 h-4 w-4" />
+              Exportar PDF
+            </Button>
+            <span className="absolute -top-2 -right-2 px-1.5 py-0.5 bg-primary/10 text-primary rounded text-[10px] font-medium">
+              Em breve
+            </span>
+          </div>
         </div>
       </div>
 
