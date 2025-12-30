@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,6 +42,7 @@ type Agendamento = Tables<'agendamentos'>;
 
 export default function Agenda() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { data: agendamentos = [] } = useAgendamentos();
   const { data: pacientes = [] } = usePacientes();
   const { data: profissionais = [] } = useProfissionais();
@@ -74,6 +75,9 @@ export default function Agenda() {
     observacoes: ''
   });
 
+  // Rastrear se veio do dashboard
+  const cameFromDashboard = useRef(false);
+
   // Atualizar profissional_id quando currentProfissional muda
   useEffect(() => {
     if (currentProfissional?.id) {
@@ -90,6 +94,7 @@ export default function Agenda() {
     if (agendamentoId && agendamentos.length > 0) {
       const agendamento = agendamentos.find(a => a.id === agendamentoId);
       if (agendamento) {
+        cameFromDashboard.current = true;
         setAgendamentoParaEditar(agendamento);
         // Limpar o parâmetro da URL
         searchParams.delete('agendamento');
@@ -97,6 +102,15 @@ export default function Agenda() {
       }
     }
   }, [searchParams, agendamentos, setSearchParams]);
+
+  // Função para fechar dialog de edição
+  const handleCloseEditarAgendamento = () => {
+    setAgendamentoParaEditar(null);
+    if (cameFromDashboard.current) {
+      cameFromDashboard.current = false;
+      navigate('/app/dashboard');
+    }
+  };
 
   const handleCreateConsulta = async () => {
     try {
@@ -643,7 +657,7 @@ export default function Agenda() {
         <EditarAgendamentoDialog
           agendamento={agendamentoParaEditar}
           isOpen={!!agendamentoParaEditar}
-          onClose={() => setAgendamentoParaEditar(null)}
+          onClose={handleCloseEditarAgendamento}
         />
       )}
 

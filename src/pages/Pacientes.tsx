@@ -1,6 +1,6 @@
 
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +23,7 @@ type Paciente = Tables<'pacientes'>;
 
 export default function Pacientes() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { data: pacientes = [], isLoading } = usePacientes();
   const { data: stats } = usePacientesStats();
   const { data: pacientesComAgendamentos } = usePacientesComAgendamentos();
@@ -36,12 +37,16 @@ export default function Pacientes() {
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isProntuariosOpen, setIsProntuariosOpen] = useState(false);
 
+  // Rastrear se veio do dashboard
+  const cameFromDashboard = useRef(false);
+
   // Abrir detalhes automaticamente se houver ID na URL
   useEffect(() => {
     const pacienteId = searchParams.get('id');
     if (pacienteId && pacientes.length > 0) {
       const paciente = pacientes.find(p => p.id === pacienteId);
       if (paciente) {
+        cameFromDashboard.current = true;
         setSelectedPaciente(paciente);
         setIsDetailsOpen(true);
         // Limpar o parâmetro da URL
@@ -50,6 +55,15 @@ export default function Pacientes() {
       }
     }
   }, [searchParams, pacientes, setSearchParams]);
+
+  // Função para fechar sheet de detalhes
+  const handleCloseDetails = (open: boolean) => {
+    setIsDetailsOpen(open);
+    if (!open && cameFromDashboard.current) {
+      cameFromDashboard.current = false;
+      navigate('/app/dashboard');
+    }
+  };
 
   // Função para remover acentos para busca mais flexível
   const removeAcentos = (str: string) => {
@@ -359,7 +373,7 @@ export default function Pacientes() {
       </div>
 
       {/* Sheet de Detalhes do Paciente */}
-      <Sheet open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+      <Sheet open={isDetailsOpen} onOpenChange={handleCloseDetails}>
         <SheetContent className="w-full sm:w-[500px] md:w-[700px] lg:w-[900px] overflow-y-auto">
           <SheetHeader>
             <SheetTitle>Detalhes do Paciente</SheetTitle>
