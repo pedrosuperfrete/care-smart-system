@@ -53,10 +53,13 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
 
   const formatTime = (dateString: string) => {
     if (!dateString) return '';
-    return new Date(dateString).toLocaleTimeString('pt-BR', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    const d = new Date(dateString);
+    const hours = d.getHours().toString().padStart(2, '0');
+    const minutes = d.getMinutes().toString().padStart(2, '0');
+    if (minutes === '00') {
+      return `${hours}h`;
+    }
+    return `${hours}h${minutes}`;
   };
 
   const formatDateTime = (dateString: string) => {

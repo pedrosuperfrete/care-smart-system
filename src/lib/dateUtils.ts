@@ -73,33 +73,57 @@ export function fromDateTimeLocalString(datetimeLocal: string): string {
 }
 
 /**
- * Formata uma data para exibição em horário local
+ * Formata uma data para exibição em horário local no formato brasileiro (14h30)
  * Usado para mostrar horários na interface
  */
 export function formatTimeLocal(date: string | Date): string {
   const d = typeof date === 'string' ? new Date(date) : date;
   
-  return d.toLocaleTimeString('pt-BR', {
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: 'America/Sao_Paulo'
-  });
+  const hours = d.getHours().toString().padStart(2, '0');
+  const minutes = d.getMinutes().toString().padStart(2, '0');
+  
+  // Retorna no formato "14h" ou "14h30"
+  if (minutes === '00') {
+    return `${hours}h`;
+  }
+  return `${hours}h${minutes}`;
 }
 
 /**
- * Formata uma data completa para exibição em horário local
+ * Formata uma data completa para exibição em horário local no formato brasileiro
  */
 export function formatDateTimeLocal(date: string | Date): string {
   const d = typeof date === 'string' ? new Date(date) : date;
   
-  return d.toLocaleString('pt-BR', {
+  const dateFormatted = d.toLocaleDateString('pt-BR', {
     day: '2-digit',
     month: '2-digit', 
     year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
     timeZone: 'America/Sao_Paulo'
   });
+  
+  const hours = d.getHours().toString().padStart(2, '0');
+  const minutes = d.getMinutes().toString().padStart(2, '0');
+  
+  // Retorna no formato "30/12/2025 14h" ou "30/12/2025 14h30"
+  if (minutes === '00') {
+    return `${dateFormatted} ${hours}h`;
+  }
+  return `${dateFormatted} ${hours}h${minutes}`;
+}
+
+/**
+ * Formata hora no formato brasileiro para usar com date-fns format
+ * Exemplo: "14h30" ou "14h"
+ */
+export function formatTimeBrazilian(date: Date): string {
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  
+  if (minutes === '00') {
+    return `${hours}h`;
+  }
+  return `${hours}h${minutes}`;
 }
 
 /**

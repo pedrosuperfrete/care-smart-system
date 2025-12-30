@@ -51,7 +51,11 @@ export function ProntuariosPacienteDialog({
   };
 
   const formatDate = (dateString: string) => {
-    return format(new Date(dateString), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR });
+    const d = new Date(dateString);
+    const hours = d.getHours().toString().padStart(2, '0');
+    const minutes = d.getMinutes().toString().padStart(2, '0');
+    const timeFormatted = minutes === '00' ? `${hours}h` : `${hours}h${minutes}`;
+    return format(d, "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) + ` às ${timeFormatted}`;
   };
 
   // Se estiver visualizando um prontuário, mostrar o componente de visualização

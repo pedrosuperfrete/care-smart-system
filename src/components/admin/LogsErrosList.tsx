@@ -209,7 +209,13 @@ export function LogsErrosList() {
                 <div className="flex items-center gap-4 text-xs text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <Clock className="h-3 w-3" />
-                    {format(new Date(erro.data_ocorrencia), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                    {(() => {
+                      const d = new Date(erro.data_ocorrencia);
+                      const hours = d.getHours().toString().padStart(2, '0');
+                      const minutes = d.getMinutes().toString().padStart(2, '0');
+                      const timeFormatted = minutes === '00' ? `${hours}h` : `${hours}h${minutes}`;
+                      return format(d, "dd/MM/yyyy", { locale: ptBR }) + ` às ${timeFormatted}`;
+                    })()}
                   </div>
                   {erro.user_id && (
                     <div className="flex items-center gap-1">
