@@ -3,8 +3,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Trash2, Edit3 } from 'lucide-react';
+import { Plus, Trash2, Edit3, Info } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   useTiposServicos, 
   useCreateTipoServico, 
@@ -25,9 +26,19 @@ export function GerenciarTiposServicos() {
   // Migrar dados antigos automaticamente
   useMigrarServicos();
   
-  const [novoTipo, setNovoTipo] = useState({ nome: '', preco: '' });
+  const [novoTipo, setNovoTipo] = useState({ 
+    nome: '', 
+    preco: '',
+    percentualFalta: '',
+    percentualAgendamento: ''
+  });
   const [editandoTipo, setEditandoTipo] = useState<TipoServico | null>(null);
-  const [editForm, setEditForm] = useState({ nome: '', preco: '' });
+  const [editForm, setEditForm] = useState({ 
+    nome: '', 
+    preco: '',
+    percentualFalta: '',
+    percentualAgendamento: ''
+  });
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
 
@@ -37,12 +48,14 @@ export function GerenciarTiposServicos() {
     const data = {
       nome: novoTipo.nome.trim(),
       preco: novoTipo.preco ? parseFloat(novoTipo.preco) : undefined,
+      percentual_cobranca_falta: novoTipo.percentualFalta ? parseFloat(novoTipo.percentualFalta) : undefined,
+      percentual_cobranca_agendamento: novoTipo.percentualAgendamento ? parseFloat(novoTipo.percentualAgendamento) : undefined,
       profissional_id: profissional?.id,
       clinica_id: profissional?.clinica_id
     };
     
     await createMutation.mutateAsync(data);
-    setNovoTipo({ nome: '', preco: '' });
+    setNovoTipo({ nome: '', preco: '', percentualFalta: '', percentualAgendamento: '' });
     setShowCreateDialog(false);
   };
 
@@ -50,7 +63,9 @@ export function GerenciarTiposServicos() {
     setEditandoTipo(tipo);
     setEditForm({
       nome: tipo.nome,
-      preco: tipo.preco?.toString() || ''
+      preco: tipo.preco?.toString() || '',
+      percentualFalta: tipo.percentual_cobranca_falta?.toString() || '',
+      percentualAgendamento: tipo.percentual_cobranca_agendamento?.toString() || ''
     });
     setShowEditDialog(true);
   };
@@ -60,7 +75,9 @@ export function GerenciarTiposServicos() {
     
     const data = {
       nome: editForm.nome.trim(),
-      preco: editForm.preco ? parseFloat(editForm.preco) : undefined
+      preco: editForm.preco ? parseFloat(editForm.preco) : undefined,
+      percentual_cobranca_falta: editForm.percentualFalta ? parseFloat(editForm.percentualFalta) : null,
+      percentual_cobranca_agendamento: editForm.percentualAgendamento ? parseFloat(editForm.percentualAgendamento) : null
     };
     
     await updateMutation.mutateAsync({ id: editandoTipo.id, data });
@@ -72,6 +89,11 @@ export function GerenciarTiposServicos() {
     if (confirm('Tem certeza que deseja remover este tipo de serviço?')) {
       await deleteMutation.mutateAsync(id);
     }
+  };
+
+  const formatPercentual = (value: number | undefined | null) => {
+    if (value === null || value === undefined) return null;
+    return `${value}%`;
   };
 
   if (isLoading) return <div>Carregando...</div>;
@@ -94,7 +116,7 @@ export function GerenciarTiposServicos() {
                 Novo Serviço
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>Novo Tipo de Serviço</DialogTitle>
                 <DialogDescription>
@@ -124,8 +146,76 @@ export function GerenciarTiposServicos() {
                     onChange={(e) => setNovoTipo(prev => ({ ...prev, preco: e.target.value }))}
                   />
                 </div>
+
+                <div className="border-t pt-4 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm font-medium">Cobranças (opcional)</h4>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-4 w-4 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          <p>Configure cobranças automáticas baseadas em percentual do valor do serviço.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Label htmlFor="percentualAgendamento">% cobrado no agendamento</Label>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="h-3 w-3 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            <p>Percentual do valor cobrado na hora do agendamento (entrada/sinal).</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <Input
+                      id="percentualAgendamento"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="1"
+                      placeholder="Ex: 30"
+                      value={novoTipo.percentualAgendamento}
+                      onChange={(e) => setNovoTipo(prev => ({ ...prev, percentualAgendamento: e.target.value }))}
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Label htmlFor="percentualFalta">% cobrado em caso de falta</Label>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="h-3 w-3 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            <p>Percentual do valor cobrado quando o paciente falta à consulta confirmada.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <Input
+                      id="percentualFalta"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="1"
+                      placeholder="Ex: 100"
+                      value={novoTipo.percentualFalta}
+                      onChange={(e) => setNovoTipo(prev => ({ ...prev, percentualFalta: e.target.value }))}
+                    />
+                  </div>
+                </div>
                 
-                <div className="flex justify-end space-x-2">
+                <div className="flex justify-end space-x-2 pt-2">
                   <Button 
                     variant="outline" 
                     onClick={() => setShowCreateDialog(false)}
@@ -156,11 +246,21 @@ export function GerenciarTiposServicos() {
               <div key={tipo.id} className="flex items-center justify-between p-3 border rounded-lg">
                 <div className="flex-1">
                   <h4 className="font-medium">{tipo.nome}</h4>
-                  {tipo.preco && (
-                    <p className="text-sm text-muted-foreground">
-                      R$ {tipo.preco.toFixed(2).replace('.', ',')}
-                    </p>
-                  )}
+                  <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
+                    {tipo.preco && (
+                      <span>R$ {tipo.preco.toFixed(2).replace('.', ',')}</span>
+                    )}
+                    {tipo.percentual_cobranca_agendamento && (
+                      <span className="text-primary">
+                        • {formatPercentual(tipo.percentual_cobranca_agendamento)} no agendamento
+                      </span>
+                    )}
+                    {tipo.percentual_cobranca_falta && (
+                      <span className="text-destructive">
+                        • {formatPercentual(tipo.percentual_cobranca_falta)} em falta
+                      </span>
+                    )}
+                  </div>
                 </div>
                 
                 <div className="flex items-center space-x-2">
@@ -188,7 +288,7 @@ export function GerenciarTiposServicos() {
 
       {/* Dialog de Edição */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Editar Tipo de Serviço</DialogTitle>
             <DialogDescription>
@@ -216,8 +316,76 @@ export function GerenciarTiposServicos() {
                 onChange={(e) => setEditForm(prev => ({ ...prev, preco: e.target.value }))}
               />
             </div>
+
+            <div className="border-t pt-4 space-y-4">
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm font-medium">Cobranças (opcional)</h4>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p>Configure cobranças automáticas baseadas em percentual do valor do serviço.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <Label htmlFor="edit-percentualAgendamento">% cobrado no agendamento</Label>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Info className="h-3 w-3 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p>Percentual do valor cobrado na hora do agendamento (entrada/sinal).</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <Input
+                  id="edit-percentualAgendamento"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="1"
+                  placeholder="Ex: 30"
+                  value={editForm.percentualAgendamento}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, percentualAgendamento: e.target.value }))}
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <Label htmlFor="edit-percentualFalta">% cobrado em caso de falta</Label>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Info className="h-3 w-3 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p>Percentual do valor cobrado quando o paciente falta à consulta confirmada.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <Input
+                  id="edit-percentualFalta"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="1"
+                  placeholder="Ex: 100"
+                  value={editForm.percentualFalta}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, percentualFalta: e.target.value }))}
+                />
+              </div>
+            </div>
             
-            <div className="flex justify-end space-x-2">
+            <div className="flex justify-end space-x-2 pt-2">
               <Button 
                 variant="outline" 
                 onClick={() => setShowEditDialog(false)}
