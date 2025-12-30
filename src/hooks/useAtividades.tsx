@@ -107,7 +107,7 @@ export function useAtividadesRecentes(limit = 5) {
             icone: '✅',
             timestamp,
           });
-        } else if (editadoRecentemente && !criadoRecentemente) {
+        } else if (editadoRecentemente && !criadoRecentemente && !(servicosAdicionais && servicosAdicionais.length > 0)) {
           atividades.push({
             id: `agendamento-editado-${agendamento.id}`,
             tipo: 'agendamento',
