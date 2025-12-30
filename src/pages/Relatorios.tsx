@@ -180,7 +180,86 @@ export default function Relatorios() {
         )}
       </div>
 
-      {/* Gráficos */}
+      {/* Gráfico Principal - Receita Mensal */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Receita Mensal</CardTitle>
+          <CardDescription>
+            Evolução financeira do ano
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="h-[350px] flex items-center justify-center">
+              <Skeleton className="h-full w-full" />
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={350}>
+              <LineChart data={receitaPorMes}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="mes" />
+                <YAxis 
+                  tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`}
+                  width={80}
+                />
+                <Tooltip 
+                  formatter={(value: any, name: string) => {
+                    const labels: Record<string, string> = {
+                      recebido: 'Total Recebido',
+                      aReceber: 'A Receber',
+                      aGanhar: 'A Ganhar',
+                      emAtraso: 'Em Atraso'
+                    };
+                    return [`R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, labels[name] || name];
+                  }} 
+                  labelFormatter={(label) => `Mês: ${label}`}
+                />
+                <Legend 
+                  formatter={(value) => {
+                    const labels: Record<string, string> = {
+                      recebido: 'Total Recebido',
+                      aReceber: 'A Receber',
+                      aGanhar: 'A Ganhar',
+                      emAtraso: 'Em Atraso'
+                    };
+                    return labels[value] || value;
+                  }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="recebido" 
+                  stroke="hsl(142, 76%, 36%)" 
+                  name="recebido"
+                  strokeWidth={2}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="aReceber" 
+                  stroke="hsl(38, 92%, 50%)" 
+                  name="aReceber"
+                  strokeWidth={2}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="aGanhar" 
+                  stroke="hsl(221, 83%, 53%)" 
+                  name="aGanhar"
+                  strokeWidth={2}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="emAtraso" 
+                  stroke="hsl(0, 84%, 60%)" 
+                  name="emAtraso"
+                  strokeWidth={2}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Gráficos Secundários */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
@@ -210,83 +289,6 @@ export default function Relatorios() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Receita Mensal</CardTitle>
-            <CardDescription>
-              Evolução financeira do ano
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="h-[300px] flex items-center justify-center">
-                <Skeleton className="h-full w-full" />
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={receitaPorMes}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="mes" />
-                  <YAxis tickFormatter={(value) => `R$ ${value.toLocaleString('pt-BR')}`} />
-                  <Tooltip 
-                    formatter={(value: any, name: string) => {
-                      const labels: Record<string, string> = {
-                        recebido: 'Total Recebido',
-                        aReceber: 'A Receber',
-                        aGanhar: 'A Ganhar',
-                        emAtraso: 'Em Atraso'
-                      };
-                      return [`R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, labels[name] || name];
-                    }} 
-                    labelFormatter={(label) => `Mês: ${label}`}
-                  />
-                  <Legend 
-                    formatter={(value) => {
-                      const labels: Record<string, string> = {
-                        recebido: 'Total Recebido',
-                        aReceber: 'A Receber',
-                        aGanhar: 'A Ganhar',
-                        emAtraso: 'Em Atraso'
-                      };
-                      return labels[value] || value;
-                    }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="recebido" 
-                    stroke="hsl(142, 76%, 36%)" 
-                    name="Total Recebido"
-                    strokeWidth={2}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="aReceber" 
-                    stroke="hsl(38, 92%, 50%)" 
-                    name="A Receber"
-                    strokeWidth={2}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="aGanhar" 
-                    stroke="hsl(221, 83%, 53%)" 
-                    name="A Ganhar"
-                    strokeWidth={2}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="emAtraso" 
-                    stroke="hsl(0, 84%, 60%)" 
-                    name="Em Atraso"
-                    strokeWidth={2}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
             <CardTitle>Novos Pacientes por Mês</CardTitle>
             <CardDescription>
               Pacientes cadastrados no ano
@@ -310,7 +312,9 @@ export default function Relatorios() {
             )}
           </CardContent>
         </Card>
+      </div>
 
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
             <CardTitle>Serviços Realizados</CardTitle>
