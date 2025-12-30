@@ -17,7 +17,7 @@ import { toast } from 'sonner';
 import { NovoPagamentoModal } from '@/components/financeiro/NovoPagamentoModal';
 
 export default function Financeiro() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isRecepcionista } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
   
@@ -161,76 +161,78 @@ export default function Financeiro() {
         onDateChange={handleDateChange}
       />
 
-      {/* Cards de Resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Recebido
-            </CardTitle>
-            <DollarSign className="h-4 w-4 text-success" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-success">
-              R$ {statsLoading ? '...' : statsData.totalRecebido.toFixed(2)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Pagamentos recebidos
-            </p>
-          </CardContent>
-        </Card>
+      {/* Cards de Resumo - Oculto para secretárias */}
+      {!isRecepcionista && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Total Recebido
+              </CardTitle>
+              <DollarSign className="h-4 w-4 text-success" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-success">
+                R$ {statsLoading ? '...' : statsData.totalRecebido.toFixed(2)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Pagamentos recebidos
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              A Receber
-            </CardTitle>
-            <Clock className="h-4 w-4 text-warning" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-warning">
-              R$ {statsLoading ? '...' : statsData.totalPendente.toFixed(2)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Pagamentos confirmados
-            </p>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                A Receber
+              </CardTitle>
+              <Clock className="h-4 w-4 text-warning" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-warning">
+                R$ {statsLoading ? '...' : statsData.totalPendente.toFixed(2)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Pagamentos confirmados
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              A Ganhar
-            </CardTitle>
-            <TrendingUp className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-primary">
-              R$ {statsLoading ? '...' : statsData.receitaMensal.toFixed(2)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Consultas a realizar
-            </p>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                A Ganhar
+              </CardTitle>
+              <TrendingUp className="h-4 w-4 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-primary">
+                R$ {statsLoading ? '...' : statsData.receitaMensal.toFixed(2)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Consultas a realizar
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Em Atraso
-            </CardTitle>
-            <XCircle className="h-4 w-4 text-destructive" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-destructive">
-              R$ {statsLoading ? '...' : statsData.totalVencido.toFixed(2)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Pagamentos vencidos
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Em Atraso
+              </CardTitle>
+              <XCircle className="h-4 w-4 text-destructive" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-destructive">
+                R$ {statsLoading ? '...' : statsData.totalVencido.toFixed(2)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Pagamentos vencidos
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Filtros */}
       <Card>
