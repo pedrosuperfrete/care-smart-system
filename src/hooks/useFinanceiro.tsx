@@ -126,6 +126,7 @@ export function usePagamentos(startDate?: Date, endDate?: Date) {
           agendamentos!fk_pagamento_agendamento (
             id,
             tipo_servico,
+            servicos_adicionais,
             data_inicio,
             status,
             paciente_id,
