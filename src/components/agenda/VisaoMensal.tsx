@@ -119,17 +119,8 @@ export function VisaoMensal({ agendamentos, bloqueios, mesAno, onDiaClick }: Vis
               >
                 <div className="font-medium">{dia.getDate()}</div>
                 <div className="mt-1 space-y-1">
-                  {/* Mostrar bloqueios */}
-                  {getBloqueiosDoDia(dia).slice(0, 1).map((bloqueio) => (
-                    <div 
-                      key={`bloqueio-${bloqueio.id}`} 
-                      className="w-2 h-2 rounded-full bg-orange-500"
-                      title={bloqueio.titulo}
-                    />
-                  ))}
-                  
-                  {/* Mostrar agendamentos */}
-                  {getAgendamentosDoDia(dia).slice(0, 2).map((agendamento, index) => {
+                  {/* Mostrar apenas agendamentos (sem bloqueios) */}
+                  {getAgendamentosDoDia(dia).slice(0, 3).map((agendamento) => {
                     const status = agendamento.status || 'pendente';
                     const statusColor = getStatusColor(status);
                     return (
@@ -140,9 +131,9 @@ export function VisaoMensal({ agendamentos, bloqueios, mesAno, onDiaClick }: Vis
                     );
                   })}
                   
-                  {(getAgendamentosDoDia(dia).length + getBloqueiosDoDia(dia).length) > 2 && (
+                  {getAgendamentosDoDia(dia).length > 3 && (
                     <div className="text-xs text-muted-foreground">
-                      +{(getAgendamentosDoDia(dia).length + getBloqueiosDoDia(dia).length) - 2}
+                      +{getAgendamentosDoDia(dia).length - 3}
                     </div>
                   )}
                 </div>
