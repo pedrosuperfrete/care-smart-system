@@ -162,14 +162,8 @@ export function VisaoSemanalGrid({
     const baseHour = 7; // Início da grade às 7h
     const totalMinutes = (hours - baseHour) * 60 + minutes;
     const posicao = (totalMinutes / 30) * 40; // Cada 30min = 40px
-    console.log('VisaoSemanal - calcularPosicaoTop:', {
-      dataInicio,
-      hours,
-      minutes,
-      totalMinutes,
-      posicao
-    });
-    return posicao;
+    // Limitar posição mínima em 0 para agendamentos antes das 7h
+    return Math.max(0, posicao);
   };
 
   const calcularAltura = (dataInicio: string, dataFim: string) => {

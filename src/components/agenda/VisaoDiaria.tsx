@@ -148,7 +148,9 @@ export function VisaoDiaria({
     const minutes = inicio.getMinutes();
     const baseHour = 7; // Início da grade às 7h
     const totalMinutes = (hours - baseHour) * 60 + minutes;
-    return totalMinutes * 2; // Cada 30min = 60px, então cada minuto = 2px
+    const posicao = totalMinutes * 2; // Cada 30min = 60px, então cada minuto = 2px
+    // Limitar posição mínima em 0 para agendamentos antes das 7h
+    return Math.max(0, posicao);
   };
 
   const calcularAltura = (dataInicio: string, dataFim: string) => {
