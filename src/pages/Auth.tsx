@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Eye, EyeOff, ArrowLeft, Mail, Lock, User, Building, Shield } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft, Mail, Lock, User, Building, Shield, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -259,7 +259,10 @@ export default function Auth() {
                     type="email"
                     placeholder="seu@email.com"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (mode === 'login') setPasswordError('');
+                    }}
                     className="pl-10 h-12"
                     required
                   />
@@ -281,11 +284,13 @@ export default function Auth() {
                       value={password}
                       onChange={(e) => {
                         setPassword(e.target.value);
-                        setPasswordError(''); // Limpar erro ao digitar
+                        setPasswordError('');
                       }}
+                      aria-invalid={!!passwordError}
+                      aria-describedby={passwordError ? 'password-error' : undefined}
                       className={`pl-10 pr-10 h-12 ${passwordError ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                       required
-                      minLength={6}
+                      {...(mode === 'signup' ? { minLength: 8 } : {})}
                     />
                     <button
                       type="button"
@@ -295,8 +300,28 @@ export default function Auth() {
                       {showPassword ? <EyeOff /> : <Eye />}
                     </button>
                   </div>
-                  {passwordError && (
-                    <p className="text-sm text-destructive">{passwordError}</p>
+
+                  {mode === 'login' && passwordError && (
+                    <Alert id="password-error" variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        <div className="flex items-center justify-between gap-3">
+                          <span>{passwordError}</span>
+                          <button
+                            type="button"
+                            className="text-sm font-medium text-primary hover:text-primary/80"
+                            onClick={() => {
+                              setMode('signup');
+                              setPassword('');
+                              setConfirmPassword('');
+                              setPasswordError('');
+                            }}
+                          >
+                            Criar conta
+                          </button>
+                        </div>
+                      </AlertDescription>
+                    </Alert>
                   )}
                 </div>
               )}
