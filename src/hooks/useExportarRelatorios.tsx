@@ -110,17 +110,23 @@ export const useExportarRelatorios = () => {
     return {
       titulo: 'Relatório de Consultas',
       periodo: `${format(dataInicio, 'dd/MM/yyyy')} - ${format(dataFim, 'dd/MM/yyyy')}`,
-      dados: consultas?.map(consulta => ({
-        'Data': format(new Date(consulta.data_inicio), 'dd/MM/yyyy HH:mm'),
-        'Paciente': consulta.pacientes?.nome || 'N/A',
-        'CPF': consulta.pacientes?.cpf || 'N/A',
-        'Telefone': consulta.pacientes?.telefone || 'N/A',
-        'Tipo de Serviço': consulta.tipo_servico,
-        'Status': consulta.status,
-        'Valor': consulta.valor ? `R$ ${formatCurrency(Number(consulta.valor))}` : 'N/A',
-        'Status Pagamento': consulta.pagamentos?.[0]?.status || 'Não informado',
-        'Observações': consulta.observacoes || ''
-      })) || []
+      dados: consultas?.map(consulta => {
+        const d = new Date(consulta.data_inicio);
+        const hours = d.getHours().toString().padStart(2, '0');
+        const minutes = d.getMinutes().toString().padStart(2, '0');
+        const timeFormatted = minutes === '00' ? `${hours}h` : `${hours}h${minutes}`;
+        return {
+          'Data': format(d, 'dd/MM/yyyy') + ` ${timeFormatted}`,
+          'Paciente': consulta.pacientes?.nome || 'N/A',
+          'CPF': consulta.pacientes?.cpf || 'N/A',
+          'Telefone': consulta.pacientes?.telefone || 'N/A',
+          'Tipo de Serviço': consulta.tipo_servico,
+          'Status': consulta.status,
+          'Valor': consulta.valor ? `R$ ${formatCurrency(Number(consulta.valor))}` : 'N/A',
+          'Status Pagamento': consulta.pagamentos?.[0]?.status || 'Não informado',
+          'Observações': consulta.observacoes || ''
+        };
+      }) || []
     };
   };
 

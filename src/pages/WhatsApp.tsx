@@ -212,7 +212,12 @@ const WhatsApp = () => {
   };
 
   const formatMessageTime = (date: Date) => {
-    return format(date, "HH:mm", { locale: ptBR });
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    if (minutes === '00') {
+      return `${hours}h`;
+    }
+    return `${hours}h${minutes}`;
   };
 
   const formatLastMessageTime = (date: Date) => {
@@ -220,7 +225,12 @@ const WhatsApp = () => {
     const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
     
     if (diffInHours < 24) {
-      return format(date, "HH:mm", { locale: ptBR });
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      if (minutes === '00') {
+        return `${hours}h`;
+      }
+      return `${hours}h${minutes}`;
     } else {
       return format(date, "dd/MM", { locale: ptBR });
     }
