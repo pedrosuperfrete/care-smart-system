@@ -112,6 +112,7 @@ export default function Agenda() {
         desmarcada: false,
         google_event_id: null,
         origem: 'web',
+        servicos_adicionais: [],
       });
 
       setIsNewConsultaOpen(false);

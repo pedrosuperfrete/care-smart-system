@@ -29,6 +29,7 @@ export type Database = {
           paciente_id: string
           pagamento_id: string | null
           profissional_id: string
+          servicos_adicionais: Json | null
           status: Database["public"]["Enums"]["status_agendamento"] | null
           tipo_servico: string
           valor: number | null
@@ -47,6 +48,7 @@ export type Database = {
           paciente_id: string
           pagamento_id?: string | null
           profissional_id: string
+          servicos_adicionais?: Json | null
           status?: Database["public"]["Enums"]["status_agendamento"] | null
           tipo_servico: string
           valor?: number | null
@@ -65,6 +67,7 @@ export type Database = {
           paciente_id?: string
           pagamento_id?: string | null
           profissional_id?: string
+          servicos_adicionais?: Json | null
           status?: Database["public"]["Enums"]["status_agendamento"] | null
           tipo_servico?: string
           valor?: number | null

@@ -11,8 +11,14 @@ import { useUpdateAgendamento } from '@/hooks/useAgendamentos';
 import { useTiposServicos } from '@/hooks/useTiposServicos';
 import { toast } from 'sonner';
 import { toDateTimeLocalString, fromDateTimeLocalString } from '@/lib/dateUtils';
+import { Plus, Trash2 } from 'lucide-react';
 
 type Agendamento = Tables<'agendamentos'>;
+
+interface ServicoAdicional {
+  nome: string;
+  valor: number;
+}
 
 interface EditarAgendamentoDialogProps {
   agendamento: Agendamento | null;
@@ -36,6 +42,7 @@ export function EditarAgendamentoDialog({
     valor: '',
     observacoes: ''
   });
+  const [servicosAdicionais, setServicosAdicionais] = useState<ServicoAdicional[]>([]);
 
   useEffect(() => {
     if (agendamento) {
@@ -47,6 +54,10 @@ export function EditarAgendamentoDialog({
         valor: agendamento.valor?.toString() || '',
         observacoes: agendamento.observacoes || ''
       });
+      
+      // Carregar serviços adicionais do agendamento
+      const servicosExistentes = agendamento.servicos_adicionais as unknown as ServicoAdicional[] | null;
+      setServicosAdicionais(Array.isArray(servicosExistentes) ? servicosExistentes : []);
     }
   }, [agendamento]);
 
@@ -60,7 +71,8 @@ export function EditarAgendamentoDialog({
         tipo_servico: formData.tipo_servico,
         profissional_id: formData.profissional_id,
         valor: formData.valor ? parseFloat(formData.valor) : null,
-        observacoes: formData.observacoes || null
+        observacoes: formData.observacoes || null,
+        servicos_adicionais: servicosAdicionais as unknown as any
       };
       
       await updateMutation.mutateAsync({ 
@@ -83,9 +95,40 @@ export function EditarAgendamentoDialog({
     }
   };
 
+  const handleAddServicoAdicional = () => {
+    setServicosAdicionais(prev => [...prev, { nome: '', valor: 0 }]);
+  };
+
+  const handleRemoveServicoAdicional = (index: number) => {
+    setServicosAdicionais(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleServicoAdicionalChange = (index: number, field: 'nome' | 'valor', value: string) => {
+    setServicosAdicionais(prev => {
+      const updated = [...prev];
+      if (field === 'nome') {
+        updated[index].nome = value;
+        // Auto-preencher valor do serviço adicional
+        const tipoServico = tiposServicos.find(tipo => tipo.nome === value);
+        if (tipoServico?.preco) {
+          updated[index].valor = tipoServico.preco;
+        }
+      } else {
+        updated[index].valor = parseFloat(value) || 0;
+      }
+      return updated;
+    });
+  };
+
+  const calcularValorTotal = () => {
+    const valorPrincipal = parseFloat(formData.valor) || 0;
+    const valorAdicionais = servicosAdicionais.reduce((sum, s) => sum + (s.valor || 0), 0);
+    return valorPrincipal + valorAdicionais;
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Editar Agendamento</DialogTitle>
           <DialogDescription>
@@ -118,7 +161,7 @@ export function EditarAgendamentoDialog({
             </div>
 
             <div className="space-y-2">
-              <Label>Tipo de Serviço *</Label>
+              <Label>Tipo de Serviço Principal *</Label>
               <Select value={formData.tipo_servico} onValueChange={handleTipoServicoChange}>
                 <SelectTrigger>
                   <SelectValue />
@@ -152,7 +195,7 @@ export function EditarAgendamentoDialog({
             </div>
 
             <div className="space-y-2">
-              <Label>Valor (R$)</Label>
+              <Label>Valor do Serviço Principal (R$)</Label>
               <Input
                 type="number"
                 step="0.01"
@@ -161,6 +204,69 @@ export function EditarAgendamentoDialog({
                 onChange={(e) => setFormData(prev => ({ ...prev, valor: e.target.value }))}
               />
             </div>
+          </div>
+
+          {/* Serviços Adicionais */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="text-base font-semibold">Serviços Adicionais</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAddServicoAdicional}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Adicionar Serviço
+              </Button>
+            </div>
+
+            {servicosAdicionais.length > 0 && (
+              <div className="space-y-2 p-3 bg-muted/50 rounded-lg">
+                {servicosAdicionais.map((servico, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <Select
+                      value={servico.nome}
+                      onValueChange={(value) => handleServicoAdicionalChange(index, 'nome', value)}
+                    >
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Selecione o serviço" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tiposServicos.map((tipo) => (
+                          <SelectItem key={tipo.id} value={tipo.nome}>
+                            {tipo.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="Valor"
+                      value={servico.valor || ''}
+                      onChange={(e) => handleServicoAdicionalChange(index, 'valor', e.target.value)}
+                      className="w-28"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRemoveServicoAdicional(index)}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {servicosAdicionais.length > 0 && (
+              <div className="text-right text-sm font-medium">
+                Valor Total: <span className="text-primary">R$ {calcularValorTotal().toFixed(2)}</span>
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
