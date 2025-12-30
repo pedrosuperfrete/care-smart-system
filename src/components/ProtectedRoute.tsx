@@ -9,9 +9,19 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
-  const { user, userProfile, loading, needsOnboarding } = useAuth();
+  const { user, userProfile, loading, needsOnboarding, isProfissional, profissional } = useAuth();
 
+  // Aguarda o carregamento inicial
   if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Aguarda o carregamento do profissional se for tipo profissional
+  if (user && userProfile?.tipo_usuario === 'profissional' && profissional === null) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
