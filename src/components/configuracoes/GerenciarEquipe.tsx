@@ -93,6 +93,9 @@ export function GerenciarEquipe() {
     }
 
     try {
+      // Marcar que estamos criando usuário pela equipe (evita redirecionamento)
+      sessionStorage.setItem('creating_team_user', 'true');
+      
       // Primeiro, verificar se o usuário já existe na nossa tabela
       const { data: existingUser } = await supabase
         .from('users')
@@ -122,6 +125,7 @@ export function GerenciarEquipe() {
         });
 
         if (associacaoError) {
+          sessionStorage.removeItem('creating_team_user');
           toast.error('Erro ao associar usuário à clínica: ' + associacaoError.message);
           return;
         }
@@ -138,6 +142,7 @@ export function GerenciarEquipe() {
       // Invalidar queries para atualizar a lista
       queryClient.invalidateQueries({ queryKey: ['usuarios_clinicas'] });
         
+        sessionStorage.removeItem('creating_team_user');
         toast.success('Usuário adicionado à clínica com sucesso!');
         return;
       }
@@ -237,9 +242,13 @@ export function GerenciarEquipe() {
       // Invalidar queries para atualizar a lista
       queryClient.invalidateQueries({ queryKey: ['usuarios_clinicas'] });
       
+      // Remover flag de criação de usuário
+      sessionStorage.removeItem('creating_team_user');
+      
       toast.success('Usuário criado e adicionado à clínica com sucesso!');
     } catch (error) {
       console.error('Erro ao adicionar usuário:', error);
+      sessionStorage.removeItem('creating_team_user');
       toast.error('Erro inesperado ao criar usuário');
     }
   };
