@@ -11,6 +11,11 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, User, Stethoscope, DollarSign, CreditCard, FileText, Phone, Mail, Pencil, Save, X } from "lucide-react";
 import { useUpdatePagamento } from "@/hooks/useFinanceiro";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 interface ServicoAdicional {
   nome: string;
@@ -27,6 +32,7 @@ interface DetalhesAgendamentoModalProps {
 export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: DetalhesAgendamentoModalProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [formaPagamento, setFormaPagamento] = useState<string>('');
+  const [dataVencimento, setDataVencimento] = useState<Date | undefined>(undefined);
   const updatePagamento = useUpdatePagamento();
 
   if (!pagamento) return null;
@@ -97,12 +103,14 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
 
   const handleStartEdit = () => {
     setFormaPagamento(pagamento.forma_pagamento || 'pix');
+    setDataVencimento(pagamento.data_vencimento ? new Date(pagamento.data_vencimento) : undefined);
     setIsEditing(true);
   };
 
   const handleCancelEdit = () => {
     setIsEditing(false);
     setFormaPagamento('');
+    setDataVencimento(undefined);
   };
 
   const handleSave = async () => {
@@ -111,6 +119,7 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
         id: pagamento.id,
         data: {
           forma_pagamento: formaPagamento as any,
+          data_vencimento: dataVencimento?.toISOString() || null,
         },
       });
       setIsEditing(false);
@@ -285,12 +294,36 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
                   <p className="font-medium">{formatDate(pagamento.data_pagamento)}</p>
                 </div>
               )}
-              {pagamento.data_vencimento && (
-                <div>
-                  <p className="text-xs text-muted-foreground">Vencimento</p>
-                  <p className="font-medium">{formatDate(pagamento.data_vencimento)}</p>
-                </div>
-              )}
+              <div>
+                <p className="text-xs text-muted-foreground">Vencimento</p>
+                {isEditing ? (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal mt-1",
+                          !dataVencimento && "text-muted-foreground"
+                        )}
+                      >
+                        <Calendar className="mr-2 h-4 w-4" />
+                        {dataVencimento ? format(dataVencimento, "dd/MM/yyyy", { locale: ptBR }) : "Selecionar data"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={dataVencimento}
+                        onSelect={setDataVencimento}
+                        initialFocus
+                        locale={ptBR}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                ) : (
+                  <p className="font-medium">{pagamento.data_vencimento ? formatDate(pagamento.data_vencimento) : 'Não informado'}</p>
+                )}
+              </div>
             </div>
 
             {isEditing && (
