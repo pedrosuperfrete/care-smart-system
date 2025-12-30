@@ -1,3 +1,6 @@
+@import url("https://fonts.googleapis.com/css2?family=Figtree&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Lora&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -8,7 +11,7 @@
   :root {
     /* Base colors - clean and neutral */
     --background: 0 0% 98%;
-    --foreground: 158 25% 15%;
+    --foreground: 186 89% 11%;
 
     /* Card and popover styling */
     --card: 0 0% 100%;
@@ -19,10 +22,10 @@
 
     /* Primary color - Donee green #032f35 */
     --primary: 186 89% 11%;
-    --primary-foreground: 0 0% 98%;
+    --primary-foreground: 68 25% 94%;
 
     /* Secondary - Donee light #f1f3ec */
-    --secondary: 80 23% 94%;
+    --secondary: 68 25% 94%;
     --secondary-foreground: 186 89% 11%;
 
     /* Muted colors for subtle elements */
@@ -71,6 +74,9 @@
     --shadow-sm: 0 1px 2px 0 hsl(186 89% 11% / 0.05);
     --shadow-md: 0 4px 6px -1px hsl(186 89% 11% / 0.1), 0 2px 4px -1px hsl(186 89% 11% / 0.06);
     --shadow-lg: 0 10px 15px -3px hsl(186 89% 11% / 0.1), 0 4px 6px -2px hsl(186 89% 11% / 0.05);
+    --font-sans: Figtree, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
+    --font-serif: Lora, ui-serif, Georgia, Cambria, Times New Roman, Times, serif;
+    --font-mono: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
   }
 
   .dark {
@@ -130,6 +136,7 @@
     --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.2);
     --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.3), 0 2px 4px -1px hsl(0 0% 0% / 0.2);
     --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.3), 0 4px 6px -2px hsl(0 0% 0% / 0.2);
+    --font-sans: Figtree, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
   }
 }
 
