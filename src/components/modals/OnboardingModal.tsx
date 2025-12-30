@@ -44,7 +44,8 @@ export function OnboardingModal() {
     
     try {
       await updateProfissional({
-        onboarding_completo: true,
+        onboarding_completo: false,
+        onboarding_adiado_em: new Date().toISOString(),
       });
       
       toast.info('Você pode completar seu perfil depois nas configurações!');
@@ -68,10 +69,11 @@ export function OnboardingModal() {
         nome: step1Data.nome,
         mini_bio: step1Data.mini_bio,
         servicos_oferecidos: step1Data.servicos_oferecidos,
-        onboarding_completo: true,
+        onboarding_completo: false,
+        onboarding_adiado_em: new Date().toISOString(),
       });
       
-      toast.success('Você pode completar seu perfil depois na aba WhatsApp das configurações!');
+      toast.info('Você pode completar seu perfil depois nas configurações!');
     } catch (error) {
       toast.error('Erro ao pular etapa. Tente novamente.');
       console.error('Erro ao pular onboarding:', error);

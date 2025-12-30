@@ -2,6 +2,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { NotificacaoErros } from "./layout/NotificacaoErros";
 import { AlertaAssinatura } from "./layout/AlertaAssinatura";
+import { BannerOnboardingPendente } from "./layout/BannerOnboardingPendente";
 import { SeletorClinica } from "./configuracoes/SeletorClinica";
 import { OnboardingModal } from "./modals/OnboardingModal";
 import { ReactNode } from "react";
@@ -48,6 +49,7 @@ export function Layout({ children }: LayoutProps) {
             </header>
           )}
           
+          <BannerOnboardingPendente />
           <main className="flex-1 p-4 lg:p-6 overflow-auto bg-background">
             <AlertaAssinatura />
             {children}
