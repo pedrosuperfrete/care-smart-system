@@ -127,6 +127,7 @@ export function usePagamentos(startDate?: Date, endDate?: Date) {
             id,
             tipo_servico,
             data_inicio,
+            status,
             paciente_id,
             profissional_id,
             pacientes (
