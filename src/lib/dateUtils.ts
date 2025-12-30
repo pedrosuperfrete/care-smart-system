@@ -46,12 +46,28 @@ export function toDateTimeLocalString(date: string | Date): string {
 /**
  * Converte um valor de datetime-local para ISO string mantendo o horário local
  * Usado ao salvar dados do formulário
+ * 
+ * IMPORTANTE: O input datetime-local retorna formato "2025-12-30T15:00"
+ * que é interpretado pelo JavaScript como horário LOCAL.
+ * Porém, toISOString() converte para UTC (subtrai o offset do Brasil -3h).
+ * Para preservar o horário informado, precisamos compensar o offset.
  */
 export function fromDateTimeLocalString(datetimeLocal: string): string {
   if (!datetimeLocal) return '';
   
-  // Criar data tratando como horário local (sem conversão de timezone)
+  // Criar data tratando como horário local
   const date = new Date(datetimeLocal);
+  
+  // Compensar o offset do timezone para que o horário salvo seja o informado
+  // Exemplo: Se o usuário informou 15:00 em São Paulo (UTC-3),
+  // queremos salvar como 15:00:00-03:00 (ou seja, 18:00:00Z)
+  // Mas se usarmos toISOString() direto, ele retornaria 18:00:00Z,
+  // que ao ser exibido no Brasil mostraria 15:00 - correto!
+  // O problema é que estamos salvando a string ISO mas interpretando errado depois.
+  
+  // Na verdade, o comportamento correto é usar toISOString() que salva em UTC
+  // e depois exibir usando toLocaleString() que converte de volta para local.
+  // Vamos manter o comportamento mas garantir que a data seja criada corretamente.
   
   return date.toISOString();
 }

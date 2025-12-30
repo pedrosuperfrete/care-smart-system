@@ -145,19 +145,28 @@ export function AgendamentoForm({ agendamento, pacienteId, dataHoraInicial, onSu
       return;
     }
 
+    // Função auxiliar para converter datetime-local string para ISO com timezone correto
+    const toISOWithTimezone = (datetimeLocal: string): string => {
+      if (!datetimeLocal) return '';
+      // Criar Date object a partir da string local (JavaScript interpreta como horário local)
+      const date = new Date(datetimeLocal);
+      // toISOString() converte para UTC automaticamente, que é o formato correto para timestamp with time zone
+      return date.toISOString();
+    };
+
     // Calcular data_fim se não fornecida (1 hora após início)
-    let dataFim = formData.data_fim;
-    if (!dataFim && formData.data_inicio) {
+    let dataFimISO = formData.data_fim ? toISOWithTimezone(formData.data_fim) : '';
+    if (!dataFimISO && formData.data_inicio) {
       const inicio = new Date(formData.data_inicio);
       inicio.setHours(inicio.getHours() + 1);
-      dataFim = inicio.toISOString();
+      dataFimISO = inicio.toISOString();
     }
 
     const agendamentoData = {
       paciente_id: formData.paciente_id,
       profissional_id: formData.profissional_id,
-      data_inicio: formData.data_inicio,
-      data_fim: dataFim,
+      data_inicio: toISOWithTimezone(formData.data_inicio),
+      data_fim: dataFimISO,
       tipo_servico: formData.tipo_servico,
       valor: formData.valor ? parseFloat(formData.valor) : null,
       observacoes: formData.observacoes || null,
