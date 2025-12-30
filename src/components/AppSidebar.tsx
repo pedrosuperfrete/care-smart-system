@@ -63,14 +63,14 @@ export function AppSidebar() {
       hideFor: ['recepcionista'],
     },
     {
-      title: "Feedback",
-      url: "/app/feedback",
-      icon: MessageCircle,
-    },
-    {
       title: "Configurações",
       url: "/app/configuracoes",
       icon: Settings,
+    },
+    {
+      title: "Feedback",
+      url: "/app/feedback",
+      icon: MessageCircle,
     },
   ];
 
