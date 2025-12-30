@@ -214,11 +214,11 @@ export default function Dashboard() {
                     className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
                     onClick={() => {
                       if (atividade.tipo === 'paciente') {
-                        navigate('/app/pacientes');
+                        navigate(`/app/pacientes?id=${atividade.entityId}`);
                       } else if (atividade.tipo === 'agendamento') {
-                        navigate('/app/agenda');
+                        navigate(`/app/agenda?agendamento=${atividade.entityId}`);
                       } else if (atividade.tipo === 'pagamento') {
-                        navigate('/app/financeiro');
+                        navigate(`/app/financeiro?agendamento=${atividade.entityId}`);
                       }
                     }}
                   >

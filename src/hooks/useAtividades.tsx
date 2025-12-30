@@ -27,6 +27,7 @@ export function useAtividadesRecentes(limit = 5) {
       // Buscar atividades recentes de diferentes tabelas
       const atividades: Array<{
         id: string;
+        entityId: string;
         tipo: 'paciente' | 'agendamento' | 'pagamento';
         descricao: string;
         data: string;
@@ -47,6 +48,7 @@ export function useAtividadesRecentes(limit = 5) {
         const timestamp = new Date(paciente.criado_em).getTime();
         atividades.push({
           id: `paciente-${paciente.id}`,
+          entityId: paciente.id,
           tipo: 'paciente',
           descricao: `Novo paciente cadastrado: ${paciente.nome}`,
           data: tempoDecorrido,
@@ -81,6 +83,7 @@ export function useAtividadesRecentes(limit = 5) {
           const nomesServicos = servicosAdicionais.map(s => s.nome).join(', ');
           atividades.push({
             id: `servico-adicional-${agendamento.id}`,
+            entityId: agendamento.id,
             tipo: 'agendamento',
             descricao: `Serviço adicional: ${nomesServicos} - ${pacienteNome}`,
             data: tempoDecorrido,
@@ -92,6 +95,7 @@ export function useAtividadesRecentes(limit = 5) {
         if (agendamento.desmarcada) {
           atividades.push({
             id: `agendamento-desmarcado-${agendamento.id}`,
+            entityId: agendamento.id,
             tipo: 'agendamento',
             descricao: `Consulta desmarcada: ${pacienteNome}`,
             data: tempoDecorrido,
@@ -101,6 +105,7 @@ export function useAtividadesRecentes(limit = 5) {
         } else if (agendamento.confirmado_pelo_paciente) {
           atividades.push({
             id: `agendamento-confirmado-${agendamento.id}`,
+            entityId: agendamento.id,
             tipo: 'agendamento',
             descricao: `Consulta confirmada: ${pacienteNome}`,
             data: tempoDecorrido,
@@ -110,6 +115,7 @@ export function useAtividadesRecentes(limit = 5) {
         } else if (editadoRecentemente && !criadoRecentemente && !(servicosAdicionais && servicosAdicionais.length > 0)) {
           atividades.push({
             id: `agendamento-editado-${agendamento.id}`,
+            entityId: agendamento.id,
             tipo: 'agendamento',
             descricao: `Consulta editada: ${pacienteNome}`,
             data: tempoDecorrido,
@@ -119,6 +125,7 @@ export function useAtividadesRecentes(limit = 5) {
         } else if (criadoRecentemente) {
           atividades.push({
             id: `agendamento-criado-${agendamento.id}`,
+            entityId: agendamento.id,
             tipo: 'agendamento',
             descricao: `Nova consulta agendada: ${pacienteNome}`,
             data: tempoDecorrido,
@@ -140,7 +147,7 @@ export function useAtividadesRecentes(limit = 5) {
         const { data: pagamentosRecentes } = await supabase
           .from('pagamentos')
           .select(`
-            id, data_pagamento, valor_pago,
+            id, data_pagamento, valor_pago, agendamento_id,
             agendamentos!fk_pagamento_agendamento(
               pacientes(nome)
             )
@@ -161,6 +168,7 @@ export function useAtividadesRecentes(limit = 5) {
             });
             atividades.push({
               id: `pagamento-${pagamento.id}`,
+              entityId: pagamento.agendamento_id,
               tipo: 'pagamento',
               descricao: `Pagamento recebido: ${pacienteNome} - ${valor}`,
               data: tempoDecorrido,
