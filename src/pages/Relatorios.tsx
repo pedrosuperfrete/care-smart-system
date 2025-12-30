@@ -227,8 +227,27 @@ export default function Relatorios() {
                   <XAxis dataKey="mes" />
                   <YAxis tickFormatter={(value) => `R$ ${value.toLocaleString('pt-BR')}`} />
                   <Tooltip 
-                    formatter={(value: any) => [`R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, '']} 
+                    formatter={(value: any, name: string) => {
+                      const labels: Record<string, string> = {
+                        recebido: 'Total Recebido',
+                        aReceber: 'A Receber',
+                        aGanhar: 'A Ganhar',
+                        emAtraso: 'Em Atraso'
+                      };
+                      return [`R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, labels[name] || name];
+                    }} 
                     labelFormatter={(label) => `Mês: ${label}`}
+                  />
+                  <Legend 
+                    formatter={(value) => {
+                      const labels: Record<string, string> = {
+                        recebido: 'Total Recebido',
+                        aReceber: 'A Receber',
+                        aGanhar: 'A Ganhar',
+                        emAtraso: 'Em Atraso'
+                      };
+                      return labels[value] || value;
+                    }}
                   />
                   <Line 
                     type="monotone" 
