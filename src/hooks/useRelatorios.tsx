@@ -669,9 +669,8 @@ export const useRelatorios = (periodo: string = 'mes', dataInicio?: Date, dataFi
 
       const pendentes = agendamentos?.filter(a => a.status === 'pendente' && !a.desmarcada).length || 0;
       const realizadas = agendamentos?.filter(a => a.status === 'realizado').length || 0;
-      const desmarcadas = agendamentos?.filter(a => a.desmarcada === true).length || 0;
-
-      const total = pendentes + realizadas + desmarcadas;
+      const faltas = agendamentos?.filter(a => a.status === 'falta' || a.status === 'faltou').length || 0;
+      const desmarcadas = agendamentos?.filter(a => a.desmarcada === true && a.status !== 'falta' && a.status !== 'faltou').length || 0;
 
       setStatusConsultas([
         {
@@ -683,6 +682,11 @@ export const useRelatorios = (periodo: string = 'mes', dataInicio?: Date, dataFi
           nome: 'Realizadas',
           valor: realizadas,
           cor: 'hsl(var(--success))'
+        },
+        {
+          nome: 'Faltas',
+          valor: faltas,
+          cor: 'hsl(280, 83%, 53%)'
         },
         {
           nome: 'Desmarcadas',
