@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { MessageCircle, Copy, QrCode } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDateTimeLocal } from '@/lib/dateUtils';
+import { formatCurrency } from '@/lib/utils';
 
 interface CobrancaModalProps {
   open: boolean;
@@ -47,7 +48,7 @@ export function CobrancaModal({ open, onOpenChange, pagamento }: CobrancaModalPr
   const handleEnviarWhatsApp = () => {
     const telefone = pagamento.agendamentos?.pacientes?.telefone;
     if (telefone) {
-      const mensagem = `Olá ${pacienteNome}! \n\nVocê tem um pagamento pendente:\n\nServiço: ${tipoServico}\nData: ${dataServico}\nValor: R$ ${valorPendente.toFixed(2)}\n\nPague agora: ${linkPagamento}\n\nObrigado!`;
+      const mensagem = `Olá ${pacienteNome}! \n\nVocê tem um pagamento pendente:\n\nServiço: ${tipoServico}\nData: ${dataServico}\nValor: R$ ${formatCurrency(valorPendente)}\n\nPague agora: ${linkPagamento}\n\nObrigado!`;
       const url = `https://wa.me/55${telefone.replace(/\D/g, '')}?text=${encodeURIComponent(mensagem)}`;
       window.open(url, '_blank');
       console.log('Enviando cobrança por WhatsApp para:', telefone);
@@ -82,7 +83,7 @@ export function CobrancaModal({ open, onOpenChange, pagamento }: CobrancaModalPr
               <strong>Data:</strong> {dataServico}
             </div>
             <div>
-              <strong>Valor a Pagar:</strong> R$ {valorPendente.toFixed(2)}
+              <strong>Valor a Pagar:</strong> R$ {formatCurrency(valorPendente)}
             </div>
           </div>
           

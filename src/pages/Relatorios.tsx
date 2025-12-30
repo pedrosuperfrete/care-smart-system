@@ -12,6 +12,7 @@ import { useExportarRelatorios } from '@/hooks/useExportarRelatorios';
 import { toast } from '@/hooks/use-toast';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { DateRange } from 'react-day-picker';
+import { formatCurrency } from '@/lib/utils';
 
 export default function Relatorios() {
   const [periodo, setPeriodo] = useState('mes');
@@ -209,7 +210,7 @@ export default function Relatorios() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="mes" />
                 <YAxis 
-                  tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`}
+                  tickFormatter={(value) => `R$ ${formatCurrency(value / 1000)}k`}
                   width={80}
                 />
                 <Tooltip 

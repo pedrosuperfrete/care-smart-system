@@ -18,6 +18,7 @@ import { DateFilter } from '@/components/financeiro/DateFilter';
 import { toast } from 'sonner';
 import { NovoPagamentoModal } from '@/components/financeiro/NovoPagamentoModal';
 import { DetalhesAgendamentoModal } from '@/components/financeiro/DetalhesAgendamentoModal';
+import { formatCurrency } from '@/lib/utils';
 
 export default function Financeiro() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -213,7 +214,7 @@ export default function Financeiro() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-success">
-                R$ {statsLoading ? '...' : statsData.totalRecebido.toFixed(2)}
+                R$ {statsLoading ? '...' : formatCurrency(statsData.totalRecebido)}
               </div>
               <p className="text-xs text-muted-foreground">
                 Pagamentos recebidos
@@ -230,7 +231,7 @@ export default function Financeiro() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-warning">
-                R$ {statsLoading ? '...' : statsData.totalPendente.toFixed(2)}
+                R$ {statsLoading ? '...' : formatCurrency(statsData.totalPendente)}
               </div>
               <p className="text-xs text-muted-foreground">
                 Pagamentos confirmados
@@ -247,7 +248,7 @@ export default function Financeiro() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-primary">
-                R$ {statsLoading ? '...' : statsData.receitaMensal.toFixed(2)}
+                R$ {statsLoading ? '...' : formatCurrency(statsData.receitaMensal)}
               </div>
               <p className="text-xs text-muted-foreground">
                 Consultas a realizar
@@ -264,7 +265,7 @@ export default function Financeiro() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-destructive">
-                R$ {statsLoading ? '...' : statsData.totalVencido.toFixed(2)}
+                R$ {statsLoading ? '...' : formatCurrency(statsData.totalVencido)}
               </div>
               <p className="text-xs text-muted-foreground">
                 Pagamentos vencidos
@@ -385,7 +386,7 @@ export default function Financeiro() {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>R$ {valorTotal.toFixed(2)}</TableCell>
+                      <TableCell>R$ {formatCurrency(valorTotal)}</TableCell>
                       <TableCell>{dataCriacao}</TableCell>
                       <TableCell className="capitalize">{formaPagamento}</TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>

@@ -11,6 +11,7 @@ import { useUpdateAgendamento } from '@/hooks/useAgendamentos';
 import { useTiposServicos } from '@/hooks/useTiposServicos';
 import { toast } from 'sonner';
 import { toDateTimeLocalString, fromDateTimeLocalString } from '@/lib/dateUtils';
+import { formatCurrency } from '@/lib/utils';
 import { Plus, Trash2 } from 'lucide-react';
 
 type Agendamento = Tables<'agendamentos'>;
@@ -264,7 +265,7 @@ export function EditarAgendamentoDialog({
 
             {servicosAdicionais.length > 0 && (
               <div className="text-right text-sm font-medium">
-                Valor Total: <span className="text-primary">R$ {calcularValorTotal().toFixed(2)}</span>
+                Valor Total: <span className="text-primary">R$ {formatCurrency(calcularValorTotal())}</span>
               </div>
             )}
           </div>

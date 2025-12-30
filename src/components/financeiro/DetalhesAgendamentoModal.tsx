@@ -15,7 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 
 interface ServicoAdicional {
   nome: string;
@@ -221,14 +221,14 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
             <div className="bg-muted/50 rounded-lg p-4 space-y-2">
               <div className="flex justify-between">
                 <span>{agendamento?.tipo_servico || 'Serviço principal'}</span>
-                <span className="font-medium">R$ {valorServicoPrincipal.toFixed(2)}</span>
+                <span className="font-medium">R$ {formatCurrency(valorServicoPrincipal)}</span>
               </div>
               {Array.isArray(servicosAdicionais) && servicosAdicionais.length > 0 && (
                 <>
                   {servicosAdicionais.map((servico, index) => (
                     <div key={index} className="flex justify-between text-muted-foreground">
                       <span>+ {servico.nome}</span>
-                      <span>R$ {Number(servico.valor ?? servico.preco ?? 0).toFixed(2)}</span>
+                      <span>R$ {formatCurrency(Number(servico.valor ?? servico.preco ?? 0))}</span>
                     </div>
                   ))}
                 </>
@@ -236,7 +236,7 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
               <Separator className="my-2" />
               <div className="flex justify-between font-semibold text-lg">
                 <span>Total</span>
-                <span>R$ {Number(pagamento.valor_total).toFixed(2)}</span>
+                <span>R$ {formatCurrency(Number(pagamento.valor_total))}</span>
               </div>
             </div>
           </div>
@@ -286,7 +286,7 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Valor Pago</p>
-                <p className="font-medium">R$ {Number(pagamento.valor_pago || 0).toFixed(2)}</p>
+                <p className="font-medium">R$ {formatCurrency(Number(pagamento.valor_pago || 0))}</p>
               </div>
               {pagamento.data_pagamento && (
                 <div>
