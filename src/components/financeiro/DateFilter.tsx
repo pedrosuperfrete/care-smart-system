@@ -1,9 +1,12 @@
-
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { CalendarIcon } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 interface DateFilterProps {
   startDate?: Date;
@@ -12,23 +15,17 @@ interface DateFilterProps {
 }
 
 export function DateFilter({ startDate, endDate, onDateChange }: DateFilterProps) {
-  const [localStartDate, setLocalStartDate] = useState(
-    startDate ? startDate.toISOString().split('T')[0] : ''
-  );
-  const [localEndDate, setLocalEndDate] = useState(
-    endDate ? endDate.toISOString().split('T')[0] : ''
-  );
+  const [localStartDate, setLocalStartDate] = useState<Date | undefined>(startDate);
+  const [localEndDate, setLocalEndDate] = useState<Date | undefined>(endDate);
 
   const handleApplyFilter = () => {
-    const start = localStartDate ? new Date(localStartDate) : undefined;
-    const end = localEndDate ? new Date(localEndDate) : undefined;
-    onDateChange(start, end);
-    console.log('Filtro de data aplicado:', { start, end });
+    onDateChange(localStartDate, localEndDate);
+    console.log('Filtro de data aplicado:', { start: localStartDate, end: localEndDate });
   };
 
   const handleClearFilter = () => {
-    setLocalStartDate('');
-    setLocalEndDate('');
+    setLocalStartDate(undefined);
+    setLocalEndDate(undefined);
     onDateChange(undefined, undefined);
     console.log('Filtro de data limpo');
   };
@@ -42,21 +39,55 @@ export function DateFilter({ startDate, endDate, onDateChange }: DateFilterProps
             <span className="text-sm font-medium">Período:</span>
           </div>
           <div className="flex items-center space-x-2">
-            <Input
-              type="date"
-              value={localStartDate}
-              onChange={(e) => setLocalStartDate(e.target.value)}
-              className="w-40"
-              placeholder="Data inicial"
-            />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-40 justify-start text-left font-normal",
+                    !localStartDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {localStartDate ? format(localStartDate, "dd/MM/yyyy") : "Data inicial"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={localStartDate}
+                  onSelect={setLocalStartDate}
+                  initialFocus
+                  locale={ptBR}
+                  className="pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
             <span className="text-gray-500">até</span>
-            <Input
-              type="date"
-              value={localEndDate}
-              onChange={(e) => setLocalEndDate(e.target.value)}
-              className="w-40"
-              placeholder="Data final"
-            />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-40 justify-start text-left font-normal",
+                    !localEndDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {localEndDate ? format(localEndDate, "dd/MM/yyyy") : "Data final"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={localEndDate}
+                  onSelect={setLocalEndDate}
+                  initialFocus
+                  locale={ptBR}
+                  className="pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
           </div>
           <div className="flex space-x-2">
             <Button onClick={handleApplyFilter} size="sm">
