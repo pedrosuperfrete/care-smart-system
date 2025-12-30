@@ -175,7 +175,7 @@ export default function Financeiro() {
               R$ {statsLoading ? '...' : statsData.totalRecebido.toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground">
-              Pagamentos realizados
+              Pagamentos recebidos
             </p>
           </CardContent>
         </Card>
