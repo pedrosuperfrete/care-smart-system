@@ -43,15 +43,27 @@ export default function Configuracoes() {
     setLoading(true);
     try {
       if (profissional) {
+        // IMPORTANTE: a tabela `profissionais` não possui colunas como `cnpj_clinica`/`endereco_clinica`.
+        // Elas pertencem à entidade `clinicas`. Aqui salvamos APENAS os campos do profissional.
         const updateData = {
-          ...profileData,
+          nome: profileData.nome,
+          especialidade: profileData.especialidade,
+          crm_cro: profileData.crm_cro,
+          telefone: profileData.telefone?.trim() ? profileData.telefone.trim() : null,
+          mini_bio: profileData.mini_bio,
+          servicos_oferecidos: profileData.servicos_oferecidos,
+          nome_clinica: profileData.nome_clinica?.trim() ? profileData.nome_clinica.trim() : null,
+          horarios_atendimento: profileData.horarios_atendimento,
+          servicos_precos: profileData.servicos_precos,
+          formas_pagamento: profileData.formas_pagamento,
           planos_saude: profileData.planos_saude,
         };
+
         await updateProfissional(updateData);
       }
       toast.success('Perfil atualizado com sucesso!');
-    } catch (error) {
-      toast.error('Erro ao atualizar perfil');
+    } catch (error: any) {
+      toast.error(error?.message ? `Erro ao atualizar perfil: ${error.message}` : 'Erro ao atualizar perfil');
     } finally {
       setLoading(false);
     }
