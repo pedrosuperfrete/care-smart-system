@@ -66,13 +66,22 @@ export default function Dashboard() {
       onClick: () => navigate('/app/pacientes'),
       color: 'bg-green-500 hover:bg-green-600',
     },
-    {
-      title: 'Relatórios',
-      description: 'Ver relatórios',
-      icon: BarChart3,
-      onClick: () => navigate('/app/relatorios'),
-      color: 'bg-purple-500 hover:bg-purple-600',
-    },
+    // Para secretárias, mostrar Pagamentos em vez de Relatórios
+    isRecepcionista
+      ? {
+          title: 'Pagamentos',
+          description: 'Ver pagamentos',
+          icon: DollarSign,
+          onClick: () => navigate('/app/financeiro'),
+          color: 'bg-purple-500 hover:bg-purple-600',
+        }
+      : {
+          title: 'Relatórios',
+          description: 'Ver relatórios',
+          icon: BarChart3,
+          onClick: () => navigate('/app/relatorios'),
+          color: 'bg-purple-500 hover:bg-purple-600',
+        },
   ];
 
   return (
