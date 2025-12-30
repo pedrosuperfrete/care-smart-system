@@ -8,6 +8,11 @@ import { formatTimeLocal } from "@/lib/dateUtils";
 import { BloqueioAgendaModal } from "./BloqueioAgendaModal";
 import { BloqueioAgenda } from "@/hooks/useBloqueiosAgenda";
 
+interface ServicoAdicional {
+  nome: string;
+  preco: number;
+}
+
 interface Agendamento {
   id: string;
   data_inicio: string;
@@ -15,10 +20,12 @@ interface Agendamento {
   pacientes?: { nome: string };
   profissionais?: { nome: string };
   tipo_servico: string;
+  servicos_adicionais?: any;
   valor?: number;
   observacoes?: string;
   status?: string;
   desmarcada?: boolean;
+  [key: string]: any; // Allow additional properties from Supabase
 }
 
 interface BloqueioVirtual {
@@ -333,7 +340,12 @@ export function VisaoDiaria({
                     
                     {calcularAltura(agendamento.data_inicio, agendamento.data_fim) > 60 && (
                       <div className={`text-xs text-gray-600 space-y-1 ${agendamento.desmarcada ? 'line-through' : ''}`}>
-                        <p className="truncate"><strong>Tipo:</strong> {agendamento.tipo_servico}</p>
+                        <p className="truncate">
+                          <strong>Tipo:</strong> {agendamento.tipo_servico}
+                          {Array.isArray(agendamento.servicos_adicionais) && agendamento.servicos_adicionais.length > 0 && (
+                            <span className="text-muted-foreground"> + {agendamento.servicos_adicionais.map((s: ServicoAdicional) => s.nome).join(', ')}</span>
+                          )}
+                        </p>
                         <p className="truncate"><strong>Profissional:</strong> {agendamento.profissionais?.nome}</p>
                         {agendamento.valor && (
                           <p className="truncate"><strong>Valor:</strong> R$ {agendamento.valor.toFixed(2)}</p>
