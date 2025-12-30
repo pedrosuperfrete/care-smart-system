@@ -44,9 +44,9 @@ export function SeletorClinica() {
               <SelectItem key={clinica.id} value={clinica.id}>
                 <div className="flex items-center justify-between w-full">
                   <span>{clinica.nome}</span>
-                  <Badge variant="outline" className="ml-2 text-xs">
+                <Badge variant="outline" className="ml-2 text-xs">
                     {userRole?.tipo_papel === 'admin_clinica' ? 'Admin' : 
-                     userRole?.tipo_papel === 'profissional' ? 'Profissional' : 'Recepcionista'}
+                     userRole?.tipo_papel === 'profissional' ? 'Profissional' : 'Secretária'}
                   </Badge>
                 </div>
               </SelectItem>
