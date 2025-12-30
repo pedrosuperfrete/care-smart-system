@@ -77,15 +77,15 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
+      <DialogContent className="max-w-lg max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
             Detalhes do Agendamento
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-6 overflow-y-auto flex-1 pr-2">
           {/* Paciente */}
           <div className="space-y-3">
             <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
