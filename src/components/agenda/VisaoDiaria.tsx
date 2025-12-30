@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -58,11 +58,24 @@ export function VisaoDiaria({
   const [bloqueioParaEditar, setBloqueioParaEditar] = useState<BloqueioAgenda | null>(null);
   const [bloqueioParaExcluir, setBloqueioParaExcluir] = useState<BloqueioAgenda | null>(null);
   const [agendamentoParaDesmarcar, setAgendamentoParaDesmarcar] = useState<Agendamento | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Gerar slots de 30 minutos das 7h às 19h
+  // Scroll automático para 8h ao montar o componente
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      const baseHour = 0; // Grade começa à 0h
+      const targetHour = 8; // Scroll para 8h
+      const pixelsPerSlot = 60; // 60px por slot de 30min
+      const slotsPerHour = 2;
+      const scrollPosition = (targetHour - baseHour) * slotsPerHour * pixelsPerSlot;
+      scrollContainerRef.current.scrollTop = scrollPosition;
+    }
+  }, []);
+
+  // Gerar slots de 30 minutos - 24 horas completas
   const generateTimeSlots = () => {
     const slots = [];
-    for (let hour = 7; hour < 19; hour++) {
+    for (let hour = 0; hour < 24; hour++) {
       for (let minute = 0; minute < 60; minute += 30) {
         const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
         slots.push(time);
@@ -146,11 +159,10 @@ export function VisaoDiaria({
     const inicio = new Date(dataInicio);
     const hours = inicio.getHours();
     const minutes = inicio.getMinutes();
-    const baseHour = 7; // Início da grade às 7h
+    const baseHour = 0; // Início da grade às 0h
     const totalMinutes = (hours - baseHour) * 60 + minutes;
     const posicao = totalMinutes * 2; // Cada 30min = 60px, então cada minuto = 2px
-    // Limitar posição mínima em 0 para agendamentos antes das 7h
-    return Math.max(0, posicao);
+    return posicao;
   };
 
   const calcularAltura = (dataInicio: string, dataFim: string) => {
@@ -170,7 +182,12 @@ export function VisaoDiaria({
 
   return (
     <div className="space-y-2">
-      <div className="flex">
+      {/* Container com scroll vertical */}
+      <div 
+        ref={scrollContainerRef}
+        className="max-h-[600px] overflow-y-auto"
+      >
+        <div className="flex">
         {/* Coluna de horários */}
         <div className="w-16 flex-shrink-0">
           {timeSlots.map((time) => (
@@ -379,6 +396,8 @@ export function VisaoDiaria({
               </CardContent>
             </Card>
           ))}
+        </div>
+        {/* Fim scroll container */}
         </div>
       </div>
 
