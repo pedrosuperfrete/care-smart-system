@@ -376,51 +376,54 @@ export function useFinanceiroStats(startDate?: Date, endDate?: Date) {
       const agora = new Date();
 
       let totalRecebido = 0;
-      let totalPendente = 0; // A Receber: pagamentos confirmados (realizado, falta, confirmado com cobrança)
+      let totalPendente = 0; // A Receber: pagamentos que temos certeza que precisamos receber
       let totalVencido = 0;
-      let receitaMensal = 0; // A Ganhar: valor total das consultas pendentes/confirmadas
+
+      // IDs de agendamentos que já tem pagamento associado
+      const agendamentosComPagamento = new Set<string>();
 
       data?.forEach(pagamento => {
         const valorTotal = Number(pagamento.valor_total) || 0;
         const valorPago = Number(pagamento.valor_pago) || 0;
         const dataVencimento = pagamento.data_vencimento ? new Date(pagamento.data_vencimento) : null;
         const statusAgendamento = (pagamento as any).agendamentos?.status;
-        const valorConsulta = Number((pagamento as any).agendamentos?.valor) || 0;
+        const agendamentoId = pagamento.agendamento_id;
+
+        if (agendamentoId) {
+          agendamentosComPagamento.add(agendamentoId);
+        }
 
         // Status dos pagamentos
         if (pagamento.status === 'pago') {
-          // Total Recebido: pagamentos já pagos
           totalRecebido += valorPago > 0 ? valorPago : valorTotal;
         } else if (pagamento.status === 'pendente') {
-          // Verificar se está vencido
           if (dataVencimento && dataVencimento < agora) {
             totalVencido += valorTotal - valorPago;
           } else {
-            // A Receber: pagamentos pendentes de agendamentos realizados, falta ou confirmados
-            // (estes são pagamentos que temos certeza que precisamos receber)
-            if (statusAgendamento === 'realizado' || statusAgendamento === 'falta' || statusAgendamento === 'confirmado') {
+            // A Receber: apenas pagamentos de agendamentos realizados ou falta
+            // (pagamentos confirmados que temos certeza que precisamos receber)
+            if (statusAgendamento === 'realizado' || statusAgendamento === 'falta') {
               totalPendente += valorTotal - valorPago;
             }
-            
-            // A Ganhar: valor total que seria pago se a consulta for realizada
-            // (para agendamentos pendentes que ainda não geraram cobrança certa)
-            if (statusAgendamento === 'pendente' || statusAgendamento === 'confirmado') {
-              receitaMensal += valorConsulta - valorTotal; // Diferença entre valor total da consulta e o que já está sendo cobrado
+            // Pagamentos de agendamento confirmado (taxa de confirmação) também entram em A Receber
+            if (statusAgendamento === 'confirmado') {
+              totalPendente += valorTotal - valorPago;
             }
           }
         }
       });
 
-      // Também buscar agendamentos sem pagamento para calcular "A Ganhar"
-      const { data: agendamentosSemPagamento, error: agendamentosSemPagamentoError } = await supabase
+      // A Ganhar: valor total de agendamentos pendentes ou confirmados (que ainda não foram realizados)
+      // Isso representa o potencial de receita se as consultas forem realizadas
+      const { data: agendamentosFuturos, error: agendamentosFuturosError } = await supabase
         .from('agendamentos')
-        .select('valor, status')
+        .select('valor, status, id')
         .in('id', agendamentoIds)
-        .in('status', ['pendente', 'confirmado'])
-        .is('pagamento_id', null);
+        .in('status', ['pendente', 'confirmado']);
 
-      if (!agendamentosSemPagamentoError && agendamentosSemPagamento) {
-        agendamentosSemPagamento.forEach(ag => {
+      let receitaMensal = 0;
+      if (!agendamentosFuturosError && agendamentosFuturos) {
+        agendamentosFuturos.forEach(ag => {
           const valorAg = Number(ag.valor) || 0;
           receitaMensal += valorAg;
         });
