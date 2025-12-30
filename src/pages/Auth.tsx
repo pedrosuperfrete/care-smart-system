@@ -103,18 +103,21 @@ export default function Auth() {
           console.log('Erro de login:', error);
           const errorLower = error.toLowerCase();
           
-          // Verificar se é erro de email não encontrado
-          if (errorLower.includes('user not found') || errorLower.includes('no user') || errorLower.includes('email not confirmed')) {
+          // Supabase retorna "Invalid login credentials" tanto para email não encontrado quanto senha errada
+          // Por segurança, mostramos erro de senha e mantemos o email
+          if (errorLower.includes('invalid') || error.includes('400') || errorLower.includes('credentials') || errorLower.includes('password')) {
+            setPasswordError('Email ou senha incorretos. Verifique seus dados.');
+          } 
+          // Verificar se é erro específico de email não encontrado
+          else if (errorLower.includes('user not found') || errorLower.includes('no user')) {
             toast.info('Email não cadastrado. Redirecionando para criar conta...');
             setMode('signup');
             setPassword('');
             setConfirmPassword('');
-            // Email é mantido automaticamente pois já está no state
-          } 
-          // Verificar se é erro de credenciais inválidas (senha errada)
-          else if (errorLower.includes('invalid') || error.includes('400') || errorLower.includes('credentials') || errorLower.includes('password')) {
-            setPasswordError('Senha incorreta. Verifique e tente novamente.');
-            // Email é mantido, apenas mostrar erro na senha
+          }
+          // Verificar se email não foi confirmado
+          else if (errorLower.includes('email not confirmed')) {
+            toast.warning('Confirme seu email antes de fazer login. Verifique sua caixa de entrada.');
           } else {
             toast.error(error);
           }
