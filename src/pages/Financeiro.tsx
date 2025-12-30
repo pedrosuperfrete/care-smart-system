@@ -192,7 +192,7 @@ export default function Financeiro() {
               R$ {statsLoading ? '...' : statsData.totalPendente.toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground">
-              Consultas Realizadas
+              Pagamentos confirmados
             </p>
           </CardContent>
         </Card>
