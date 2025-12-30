@@ -212,7 +212,7 @@ export default function Relatorios() {
           <CardHeader>
             <CardTitle>Receita Mensal</CardTitle>
             <CardDescription>
-              Evolução financeira nos últimos 6 meses
+              Evolução financeira do ano
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -225,7 +225,7 @@ export default function Relatorios() {
                 <LineChart data={receitaPorMes}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="mes" />
-                  <YAxis />
+                  <YAxis tickFormatter={(value) => `R$ ${value.toLocaleString('pt-BR')}`} />
                   <Tooltip 
                     formatter={(value: any) => [`R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, '']} 
                     labelFormatter={(label) => `Mês: ${label}`}
@@ -270,7 +270,7 @@ export default function Relatorios() {
           <CardHeader>
             <CardTitle>Novos Pacientes por Mês</CardTitle>
             <CardDescription>
-              Pacientes cadastrados nos últimos 6 meses
+              Pacientes cadastrados no ano
             </CardDescription>
           </CardHeader>
           <CardContent>
