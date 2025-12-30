@@ -295,17 +295,42 @@ export default function Financeiro() {
                 {filteredPagamentos.map((pagamento) => {
                   const pacienteNome = pagamento?.agendamentos?.pacientes?.nome || 'Nome não disponível';
                   const tipoServico = pagamento?.agendamentos?.tipo_servico || 'Serviço não especificado';
+                  const statusAgendamento = pagamento?.agendamentos?.status;
                   const valorTotal = Number(pagamento?.valor_total) || 0;
                   const dataCriacao = pagamento?.criado_em ? new Date(pagamento.criado_em).toLocaleDateString('pt-BR') : 'Data não disponível';
                   const formaPagamento = pagamento?.forma_pagamento || 'Não especificada';
                   const status = pagamento?.status || 'pendente';
+
+                  const getStatusAgendamentoLabel = (statusAg: string | null | undefined) => {
+                    switch (statusAg) {
+                      case 'realizado': return 'Realizada';
+                      case 'confirmado': return 'Confirmada';
+                      case 'falta': return 'Falta';
+                      default: return null;
+                    }
+                  };
+
+                  const statusAgendamentoLabel = getStatusAgendamentoLabel(statusAgendamento);
 
                   return (
                     <TableRow key={pagamento?.id}>
                       <TableCell className="font-medium">
                         {pacienteNome}
                       </TableCell>
-                      <TableCell>{tipoServico}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span>{tipoServico}</span>
+                          {statusAgendamentoLabel && (
+                            <span className={`text-xs ${
+                              statusAgendamento === 'realizado' ? 'text-success' : 
+                              statusAgendamento === 'falta' ? 'text-destructive' : 
+                              'text-muted-foreground'
+                            }`}>
+                              ({statusAgendamentoLabel})
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>R$ {valorTotal.toFixed(2)}</TableCell>
                       <TableCell>{dataCriacao}</TableCell>
                       <TableCell className="capitalize">{formaPagamento}</TableCell>
