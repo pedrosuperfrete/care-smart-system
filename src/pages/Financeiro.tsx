@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { DollarSign, TrendingUp, Calendar, Search, CheckCircle, Clock, XCircle, Receipt, CreditCard, MessageSquare } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { DollarSign, TrendingUp, Calendar, Search, CheckCircle, Clock, XCircle, Receipt, CreditCard, MessageSquare, FileText } from 'lucide-react';
 import { usePagamentos, useFinanceiroStats, useMarcarPago } from '@/hooks/useFinanceiro';
 import { useCreatePagamento } from '@/hooks/useCreatePagamento';
 import { useAuth } from '@/hooks/useAuth';
@@ -360,25 +361,45 @@ export default function Financeiro() {
                           )}
                           
                           {status === 'pago' && (
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => handleOpenRecibo(pagamento)}
-                            >
-                              <Receipt className="h-4 w-4 mr-1" />
-                              Recibo
-                            </Button>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    disabled
+                                    className="opacity-60"
+                                  >
+                                    <FileText className="h-4 w-4 mr-1" />
+                                    Enviar NF
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Em breve</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           )}
                           
                           {(status === 'pendente' || status === 'vencido') && (
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => handleOpenCobranca(pagamento)}
-                            >
-                              <CreditCard className="h-4 w-4 mr-1" />
-                              Cobrar
-                            </Button>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    disabled
+                                    className="opacity-60"
+                                  >
+                                    <CreditCard className="h-4 w-4 mr-1" />
+                                    Cobrar
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Em breve</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           )}
                         </div>
                       </TableCell>
