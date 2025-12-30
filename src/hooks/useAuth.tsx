@@ -408,8 +408,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   // Verifica se o profissional precisa completar o onboarding
   // Não mostra o modal se o onboarding foi adiado (onboarding_adiado_em preenchido)
+  // IMPORTANTE: Só considera needsOnboarding após o profissional ter sido carregado
   const onboardingAdiado = profissional?.onboarding_adiado_em != null;
-  const needsOnboarding = isProfissional && (!profissional || !profissional?.onboarding_completo) && !onboardingAdiado;
+  const profissionalCarregado = isProfissional ? profissional !== null : true;
+  const needsOnboarding = isProfissional && profissionalCarregado && !profissional?.onboarding_completo && !onboardingAdiado;
 
   return (
     <AuthContext.Provider value={{
