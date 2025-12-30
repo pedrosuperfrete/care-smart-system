@@ -59,7 +59,7 @@ export function useAtividadesRecentes(limit = 5) {
       const { data: agendamentosRecentes } = await supabase
         .from('agendamentos')
         .select(`
-          id, confirmado_pelo_paciente, atualizado_em, criado_em, desmarcada, status,
+          id, confirmado_pelo_paciente, atualizado_em, criado_em, desmarcada, status, servicos_adicionais,
           pacientes(nome)
         `)
         .eq('profissional_id', profissionalId)
@@ -74,6 +74,20 @@ export function useAtividadesRecentes(limit = 5) {
         // Verificar se foi criado recentemente (menos de 2 horas)
         const criadoRecentemente = new Date().getTime() - new Date(agendamento.criado_em).getTime() < 2 * 60 * 60 * 1000;
         const editadoRecentemente = agendamento.criado_em !== agendamento.atualizado_em;
+        
+        // Verificar serviços adicionais
+        const servicosAdicionais = agendamento.servicos_adicionais as Array<{ nome: string; valor: number }> | null;
+        if (servicosAdicionais && servicosAdicionais.length > 0) {
+          const nomesServicos = servicosAdicionais.map(s => s.nome).join(', ');
+          atividades.push({
+            id: `servico-adicional-${agendamento.id}`,
+            tipo: 'agendamento',
+            descricao: `Serviço adicional: ${nomesServicos} - ${pacienteNome}`,
+            data: tempoDecorrido,
+            icone: '➕',
+            timestamp,
+          });
+        }
         
         if (agendamento.desmarcada) {
           atividades.push({
