@@ -309,6 +309,7 @@ export function VisaoDiaria({
                 height: `${calcularAltura(agendamento.data_inicio, agendamento.data_fim)}px`,
                 minHeight: '40px'
               }}
+              onClick={() => onEditarAgendamento(agendamento)}
             >
               <CardContent className="p-2 h-full">
                 <div className="flex justify-between items-start h-full">
@@ -344,17 +345,6 @@ export function VisaoDiaria({
                   <div className="flex flex-col space-y-1 ml-2 flex-shrink-0">
                     {!agendamento.desmarcada && (
                       <>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="h-6 w-6 p-0"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onEditarAgendamento(agendamento);
-                          }}
-                        >
-                          <Edit className="h-3 w-3" />
-                        </Button>
                         {agendamento.status === 'pendente' && (
                           <Button 
                             size="sm"
