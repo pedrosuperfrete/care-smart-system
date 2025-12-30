@@ -294,9 +294,9 @@ export default function Relatorios() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Tipos de Consulta</CardTitle>
+            <CardTitle>Serviços Realizados</CardTitle>
             <CardDescription>
-              Distribuição por tipo de atendimento
+              Distribuição por tipo de serviço
             </CardDescription>
           </CardHeader>
           <CardContent>
