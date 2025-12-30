@@ -517,7 +517,17 @@ export default function Relatorios() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex items-center justify-center">
+            <div className="text-center space-y-2">
+              <span className="px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-medium">
+                Em breve
+              </span>
+              <p className="text-muted-foreground text-sm">
+                Funcionalidade em desenvolvimento
+              </p>
+            </div>
+          </div>
           <CardHeader>
             <CardTitle>Relatórios Detalhados</CardTitle>
             <CardDescription>
@@ -527,7 +537,7 @@ export default function Relatorios() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Tipo de Relatório</label>
-              <Select value={tipoRelatorio} onValueChange={setTipoRelatorio}>
+              <Select value={tipoRelatorio} onValueChange={setTipoRelatorio} disabled>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -542,7 +552,7 @@ export default function Relatorios() {
             
             <div className="space-y-2">
               <label className="text-sm font-medium">Período</label>
-              <Select value={periodoPersonalizado} onValueChange={setPeriodoPersonalizado}>
+              <Select value={periodoPersonalizado} onValueChange={setPeriodoPersonalizado} disabled>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o período" />
                 </SelectTrigger>
@@ -554,7 +564,7 @@ export default function Relatorios() {
               </Select>
             </div>
             
-            <Button className="w-full" onClick={handleGerarRelatorio}>
+            <Button className="w-full" disabled>
               <FileText className="mr-2 h-4 w-4" />
               Gerar Relatório
             </Button>
