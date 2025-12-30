@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Plus, Clock, User, Filter, ChevronLeft, ChevronRight, Edit, Trash2 } from 'lucide-react';
-import { useAgendamentos, useCreateAgendamento, useConfirmarAgendamento, useDesmarcarAgendamento, useMarcarRealizado } from '@/hooks/useAgendamentos';
+import { useAgendamentos, useCreateAgendamento, useConfirmarAgendamento, useDesmarcarAgendamento, useMarcarRealizado, useMarcarFalta } from '@/hooks/useAgendamentos';
 import { useTiposServicos } from '@/hooks/useTiposServicos';
 import { usePacientes } from '@/hooks/usePacientes';
 import { useProfissionais } from '@/hooks/useProfissionais';
@@ -49,6 +49,7 @@ export default function Agenda() {
   const confirmarAgendamento = useConfirmarAgendamento();
   const desmarcarAgendamento = useDesmarcarAgendamento();
   const marcarRealizado = useMarcarRealizado();
+  const marcarFalta = useMarcarFalta();
   const { data: tiposServicos = [], isLoading: loadingTipos } = useTiposServicos();
   const { profissional: currentProfissional, isAdmin, isRecepcionista } = useAuth();
   const { getBloqueiosVirtuais, getBloqueiosVirtuaisSemana, hasHorariosConfigurados } = useHorariosAtendimento();
@@ -143,6 +144,10 @@ export default function Agenda() {
     await marcarRealizado.mutateAsync(id);
   };
 
+  const handleMarcarFalta = async (id: string) => {
+    await marcarFalta.mutateAsync(id);
+  };
+
   const handleTipoServicoChange = (value: string) => {
     setNewConsulta(prev => ({ ...prev, tipo_servico: value }));
     
@@ -212,7 +217,7 @@ export default function Agenda() {
       pendente: 'bg-yellow-100 text-yellow-800',
       confirmado: 'bg-primary/10 text-primary',
       realizado: 'bg-success/10 text-success',
-      faltou: 'bg-destructive/10 text-destructive'
+      falta: 'bg-destructive/10 text-destructive'
     };
     return colors[status as keyof typeof colors] || colors.pendente;
   };
@@ -222,7 +227,7 @@ export default function Agenda() {
       pendente: 'Pendente',
       confirmado: 'Confirmado',
       realizado: 'Realizado',
-      faltou: 'Faltou'
+      falta: 'Falta'
     };
     return texts[status as keyof typeof texts] || 'Pendente';
   };
@@ -396,6 +401,7 @@ export default function Agenda() {
             onConfirmarAgendamento={handleConfirmar}
             onDesmarcarAgendamento={handleDesmarcar}
             onMarcarRealizadoAgendamento={handleMarcarRealizado}
+            onMarcarFaltaAgendamento={handleMarcarFalta}
             onExcluirBloqueio={handleExcluirBloqueio}
             onNovaConsulta={(dataHora: Date) => {
               setDataHoraSelecionada(dataHora);
@@ -581,6 +587,7 @@ export default function Agenda() {
             onConfirmarAgendamento={handleConfirmar}
             onDesmarcarAgendamento={handleDesmarcar}
             onMarcarRealizadoAgendamento={handleMarcarRealizado}
+            onMarcarFaltaAgendamento={handleMarcarFalta}
             onExcluirBloqueio={handleExcluirBloqueio}
             onNovaConsulta={(dataHora: Date) => {
               setDataHoraSelecionada(dataHora);
@@ -596,6 +603,7 @@ export default function Agenda() {
             onConfirmarAgendamento={handleConfirmar}
             onDesmarcarAgendamento={handleDesmarcar}
             onMarcarRealizado={handleMarcarRealizado}
+            onMarcarFalta={handleMarcarFalta}
             onExcluirBloqueio={handleExcluirBloqueio}
           />
         )
