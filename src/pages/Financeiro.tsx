@@ -16,6 +16,7 @@ import { CobrancaModal } from '@/components/financeiro/CobrancaModal';
 import { DateFilter } from '@/components/financeiro/DateFilter';
 import { toast } from 'sonner';
 import { NovoPagamentoModal } from '@/components/financeiro/NovoPagamentoModal';
+import { DetalhesAgendamentoModal } from '@/components/financeiro/DetalhesAgendamentoModal';
 
 export default function Financeiro() {
   const { user, loading: authLoading, isRecepcionista } = useAuth();
@@ -40,6 +41,10 @@ export default function Financeiro() {
     pagamento: null
   });
   const [novoPagamentoModal, setNovoPagamentoModal] = useState(false);
+  const [detalhesModal, setDetalhesModal] = useState<{ open: boolean; pagamento: any }>({
+    open: false,
+    pagamento: null
+  });
 
   console.log('User carregado:', user);
   console.log('Status do loading:', authLoading);
@@ -140,6 +145,10 @@ export default function Financeiro() {
   const handleDateChange = (start?: Date, end?: Date) => {
     setStartDate(start);
     setEndDate(end);
+  };
+
+  const handleOpenDetalhes = (pagamento: any) => {
+    setDetalhesModal({ open: true, pagamento });
   };
 
   const statsData = stats || { totalRecebido: 0, totalPendente: 0, totalVencido: 0, receitaMensal: 0 };
@@ -317,7 +326,11 @@ export default function Financeiro() {
                   const statusAgendamentoLabel = getStatusAgendamentoLabel(statusAgendamento);
 
                   return (
-                    <TableRow key={pagamento?.id}>
+                    <TableRow 
+                      key={pagamento?.id} 
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => handleOpenDetalhes(pagamento)}
+                    >
                       <TableCell className="font-medium">
                         {pacienteNome}
                       </TableCell>
@@ -343,7 +356,7 @@ export default function Financeiro() {
                       <TableCell>R$ {valorTotal.toFixed(2)}</TableCell>
                       <TableCell>{dataCriacao}</TableCell>
                       <TableCell className="capitalize">{formaPagamento}</TableCell>
-                      <TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
                         {getStatusBadge(status)}
                       </TableCell>
                       <TableCell>
@@ -433,6 +446,12 @@ export default function Financeiro() {
         open={novoPagamentoModal}
         onOpenChange={setNovoPagamentoModal}
         onSave={handleCreatePagamento}
+      />
+
+      <DetalhesAgendamentoModal
+        open={detalhesModal.open}
+        onOpenChange={(open) => setDetalhesModal({ open, pagamento: open ? detalhesModal.pagamento : null })}
+        pagamento={detalhesModal.pagamento}
       />
     </div>
   );
