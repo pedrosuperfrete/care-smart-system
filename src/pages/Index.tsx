@@ -68,52 +68,51 @@ const Index = () => {
   }];
   return <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
+      <header className="sticky top-0 z-50 bg-[#022f35] border-b border-[#022f35]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-3">
               <img src="/lovable-uploads/df33c00a-881c-4c3a-8f60-77fcd8835e1b.png" alt="Donee" className="h-8" />
             </div>
             <nav className="hidden md:flex items-center space-x-8">
-              <a href="#recursos" className="text-muted-foreground hover:text-foreground transition-colors">Recursos</a>
-              <a href="#beneficios" className="text-muted-foreground hover:text-foreground transition-colors">Benefícios</a>
-              <a href="#depoimentos" className="text-muted-foreground hover:text-foreground transition-colors">Depoimentos</a>
-              <a href="#contato" className="text-muted-foreground hover:text-foreground transition-colors">Contato</a>
+              <a href="#recursos" className="text-[#f2f3eb]/70 hover:text-[#f2f3eb] transition-colors">Recursos</a>
+              <a href="#beneficios" className="text-[#f2f3eb]/70 hover:text-[#f2f3eb] transition-colors">Benefícios</a>
+              <a href="#depoimentos" className="text-[#f2f3eb]/70 hover:text-[#f2f3eb] transition-colors">Depoimentos</a>
+              <a href="#contato" className="text-[#f2f3eb]/70 hover:text-[#f2f3eb] transition-colors">Contato</a>
             </nav>
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" onClick={handleLogin}>Entrar</Button>
-              <Button onClick={handleLogin}>Começar grátis</Button>
+              <Button variant="ghost" className="text-[#f2f3eb] hover:bg-[#f2f3eb]/10" onClick={handleLogin}>Entrar</Button>
+              <Button className="bg-[#f2f3eb] text-[#022f35] hover:bg-[#f2f3eb]/90" onClick={handleLogin}>Começar grátis</Button>
             </div>
           </div>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="relative py-24 px-4 sm:px-6 lg:px-8 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-secondary/10"></div>
+      <section className="relative py-24 px-4 sm:px-6 lg:px-8 overflow-hidden bg-[#022f35]">
         <div className="relative max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h1 className="mb-6 leading-tight">
-              <span className="block font-chocolate font-bold text-[36px] md:text-[48px] text-foreground">
+              <span className="block font-chocolate font-bold text-[36px] md:text-[48px] text-[#f2f3eb]">
                 Cuidar de pessoas é sua missão.
               </span>
-              <span className="block font-fors font-normal text-[28px] md:text-[36px] text-foreground">
+              <span className="block font-fors font-normal text-[28px] md:text-[36px] text-[#f2f3eb]">
                 Cuidar da burocracia é a nossa.
               </span>
             </h1>
-            <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto">
+            <p className="text-xl md:text-2xl text-[#f2f3eb]/70 mb-8 max-w-3xl mx-auto">
               Sistema completo para clínicas e consultórios que querem crescer, 
               automatizar processos e focar no que realmente importa: cuidar dos pacientes.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="text-lg px-8 py-4" onClick={handleLogin}>
+              <Button size="lg" className="text-lg px-8 py-4 bg-[#f2f3eb] text-[#022f35] hover:bg-[#f2f3eb]/90" onClick={handleLogin}>
                 Começar teste grátis
               </Button>
-              <Button variant="outline" size="lg" className="text-lg px-8 py-4">
+              <Button variant="outline" size="lg" className="text-lg px-8 py-4 border-[#f2f3eb] text-[#f2f3eb] hover:bg-[#f2f3eb]/10">
                 Ver demonstração
               </Button>
             </div>
-            <p className="text-sm text-muted-foreground mt-4">
+            <p className="text-sm text-[#f2f3eb]/70 mt-4">
               ✓ 14 dias grátis • ✓ Sem cartão de crédito • ✓ Cancele quando quiser
             </p>
           </div>
