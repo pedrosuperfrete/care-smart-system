@@ -403,7 +403,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isProfissional = userProfile?.tipo_usuario === 'profissional';
   const isRecepcionista = userProfile?.tipo_usuario === 'recepcionista';
   const isAdminClinica = clinicasUsuario.some(c => c.tipo_papel === 'admin_clinica');
-  const needsOnboarding = isProfissional && (!profissional || !profissional?.onboarding_completo);
+  
+  // Verifica se o profissional precisa completar o onboarding
+  // Não mostra o modal se o onboarding foi adiado (onboarding_adiado_em preenchido)
+  const onboardingAdiado = profissional?.onboarding_adiado_em != null;
+  const needsOnboarding = isProfissional && (!profissional || !profissional?.onboarding_completo) && !onboardingAdiado;
 
   return (
     <AuthContext.Provider value={{

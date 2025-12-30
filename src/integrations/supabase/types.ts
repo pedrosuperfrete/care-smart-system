@@ -641,6 +641,7 @@ export type Database = {
           mini_bio: string | null
           nome: string
           nome_clinica: string | null
+          onboarding_adiado_em: string | null
           onboarding_completo: boolean | null
           planos_saude: Json | null
           servicos_oferecidos: Json | null
@@ -668,6 +669,7 @@ export type Database = {
           mini_bio?: string | null
           nome: string
           nome_clinica?: string | null
+          onboarding_adiado_em?: string | null
           onboarding_completo?: boolean | null
           planos_saude?: Json | null
           servicos_oferecidos?: Json | null
@@ -695,6 +697,7 @@ export type Database = {
           mini_bio?: string | null
           nome?: string
           nome_clinica?: string | null
+          onboarding_adiado_em?: string | null
           onboarding_completo?: boolean | null
           planos_saude?: Json | null
           servicos_oferecidos?: Json | null
