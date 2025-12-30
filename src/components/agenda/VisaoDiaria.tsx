@@ -10,7 +10,8 @@ import { BloqueioAgenda } from "@/hooks/useBloqueiosAgenda";
 
 interface ServicoAdicional {
   nome: string;
-  preco: number;
+  valor?: number;
+  preco?: number;
 }
 
 interface Agendamento {
@@ -350,9 +351,13 @@ export function VisaoDiaria({
                         {agendamento.valor && (
                           <p className="truncate">
                             <strong>Valor:</strong> R$ {(
-                              (agendamento.valor || 0) + 
-                              (Array.isArray(agendamento.servicos_adicionais) 
-                                ? agendamento.servicos_adicionais.reduce((acc: number, s: ServicoAdicional) => acc + (s.preco || 0), 0) 
+                              (agendamento.valor || 0) +
+                              (Array.isArray(agendamento.servicos_adicionais)
+                                ? agendamento.servicos_adicionais.reduce(
+                                    (acc: number, s: ServicoAdicional) =>
+                                      acc + Number(s.valor ?? s.preco ?? 0),
+                                    0
+                                  )
                                 : 0)
                             ).toFixed(2)}
                           </p>
