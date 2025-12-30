@@ -95,7 +95,6 @@ const Index = () => {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-3">
               <img src="/lovable-uploads/df33c00a-881c-4c3a-8f60-77fcd8835e1b.png" alt="Donee" className="h-8" />
-              <span className="text-xl font-bold text-foreground">Donee</span>
             </div>
             <nav className="hidden md:flex items-center space-x-8">
               <a href="#recursos" className="text-muted-foreground hover:text-foreground transition-colors">Recursos</a>
