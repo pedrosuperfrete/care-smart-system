@@ -497,7 +497,7 @@ export default function Relatorios() {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ nome, valor }) => `${nome}: ${valor}`}
+                    label={({ nome, percent }) => `${nome} ${(percent * 100).toFixed(0)}%`}
                     outerRadius={80}
                     fill="hsl(var(--primary))"
                     dataKey="valor"
@@ -507,7 +507,6 @@ export default function Relatorios() {
                     ))}
                   </Pie>
                   <Tooltip />
-                  <Legend />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
