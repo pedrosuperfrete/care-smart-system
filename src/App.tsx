@@ -11,7 +11,7 @@ import { ErrorBoundary } from "./components/error/ErrorBoundary";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
-import Onboarding from "./pages/Onboarding";
+
 import Pacientes from "./pages/Pacientes";
 import Agenda from "./pages/Agenda";
 import WhatsApp from "./pages/WhatsApp";
@@ -27,7 +27,7 @@ import PagamentoSucesso from "./pages/PagamentoSucesso";
 const queryClient = new QueryClient();
 
 function AppRoutes() {
-  const { user, loading, needsOnboarding } = useAuth();
+  const { user, loading } = useAuth();
 
   if (loading) {
     return (
@@ -56,12 +56,11 @@ function AppRoutes() {
       
       <Route path="/app/onboarding" element={
         !user ? <Navigate to="/app/auth" replace /> : 
-        needsOnboarding ? <Onboarding /> : <Navigate to="/app/dashboard" replace />
+        <Navigate to="/app/dashboard" replace />
       } />
       
       <Route path="/app/dashboard" element={
         !user ? <Navigate to="/app/auth" replace /> :
-        needsOnboarding ? <Navigate to="/app/onboarding" replace /> :
         <ProtectedRoute>
           <Layout><Dashboard /></Layout>
         </ProtectedRoute>
@@ -69,7 +68,6 @@ function AppRoutes() {
       
       <Route path="/app/pacientes" element={
         !user ? <Navigate to="/app/auth" replace /> :
-        needsOnboarding ? <Navigate to="/app/onboarding" replace /> :
         <ProtectedRoute allowedRoles={['admin', 'profissional', 'recepcionista']}>
           <Layout><Pacientes /></Layout>
         </ProtectedRoute>
@@ -77,7 +75,6 @@ function AppRoutes() {
       
       <Route path="/app/agenda" element={
         !user ? <Navigate to="/app/auth" replace /> :
-        needsOnboarding ? <Navigate to="/app/onboarding" replace /> :
         <ProtectedRoute>
           <Layout><Agenda /></Layout>
         </ProtectedRoute>
@@ -85,7 +82,6 @@ function AppRoutes() {
 
       <Route path="/app/whatsapp" element={
         !user ? <Navigate to="/app/auth" replace /> :
-        needsOnboarding ? <Navigate to="/app/onboarding" replace /> :
         <ProtectedRoute>
           <Layout><WhatsApp /></Layout>
         </ProtectedRoute>
@@ -93,7 +89,6 @@ function AppRoutes() {
       
       <Route path="/app/prontuarios" element={
         !user ? <Navigate to="/app/auth" replace /> :
-        needsOnboarding ? <Navigate to="/app/onboarding" replace /> :
         <ProtectedRoute allowedRoles={['admin', 'profissional']}>
           <Layout><Prontuarios /></Layout>
         </ProtectedRoute>
@@ -101,7 +96,6 @@ function AppRoutes() {
       
       <Route path="/app/financeiro" element={
         !user ? <Navigate to="/app/auth" replace /> :
-        needsOnboarding ? <Navigate to="/app/onboarding" replace /> :
         <ProtectedRoute allowedRoles={['admin', 'profissional', 'recepcionista']}>
           <Layout><Financeiro /></Layout>
         </ProtectedRoute>
@@ -109,7 +103,6 @@ function AppRoutes() {
       
       <Route path="/app/relatorios" element={
         !user ? <Navigate to="/app/auth" replace /> :
-        needsOnboarding ? <Navigate to="/app/onboarding" replace /> :
         <ProtectedRoute>
           <Layout><Relatorios /></Layout>
         </ProtectedRoute>
@@ -117,7 +110,6 @@ function AppRoutes() {
       
       <Route path="/app/configuracoes" element={
         !user ? <Navigate to="/app/auth" replace /> :
-        needsOnboarding ? <Navigate to="/app/onboarding" replace /> :
         <ProtectedRoute>
           <Layout><Configuracoes /></Layout>
         </ProtectedRoute>
@@ -125,7 +117,6 @@ function AppRoutes() {
       
       <Route path="/app/erros-sistema" element={
         !user ? <Navigate to="/app/auth" replace /> :
-        needsOnboarding ? <Navigate to="/app/onboarding" replace /> :
         <ProtectedRoute allowedRoles={['admin', 'profissional']}>
           <Layout><ErrosSistema /></Layout>
         </ProtectedRoute>
@@ -133,7 +124,6 @@ function AppRoutes() {
       
       <Route path="/app/feedback" element={
         !user ? <Navigate to="/app/auth" replace /> :
-        needsOnboarding ? <Navigate to="/app/onboarding" replace /> :
         <ProtectedRoute>
           <Layout><Feedback /></Layout>
         </ProtectedRoute>

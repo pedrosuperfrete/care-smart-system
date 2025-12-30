@@ -3,6 +3,7 @@ import { AppSidebar } from "./AppSidebar";
 import { NotificacaoErros } from "./layout/NotificacaoErros";
 import { AlertaAssinatura } from "./layout/AlertaAssinatura";
 import { SeletorClinica } from "./configuracoes/SeletorClinica";
+import { OnboardingModal } from "./modals/OnboardingModal";
 import { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { Menu } from "lucide-react";
@@ -52,6 +53,9 @@ export function Layout({ children }: LayoutProps) {
             {children}
           </main>
         </div>
+        
+        {/* Onboarding Modal - aparece sobre o dashboard */}
+        <OnboardingModal />
       </div>
     </SidebarProvider>
   );
