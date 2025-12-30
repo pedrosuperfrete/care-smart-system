@@ -154,10 +154,12 @@ export default function Configuracoes() {
               Sistema
             </TabsTrigger>
           )}
-          <TabsTrigger value="assinatura">
-            <Crown className="mr-2 h-4 w-4" />
-            Assinatura
-          </TabsTrigger>
+          {!isRecepcionista && (
+            <TabsTrigger value="assinatura">
+              <Crown className="mr-2 h-4 w-4" />
+              Assinatura
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* Aba Perfil */}
@@ -225,10 +227,12 @@ export default function Configuracoes() {
           </TabsContent>
         )}
 
-        {/* Aba Assinatura */}
-        <TabsContent value="assinatura">
-          <AssinaturaStatus />
-        </TabsContent>
+        {/* Aba Assinatura (não para recepcionistas) */}
+        {!isRecepcionista && (
+          <TabsContent value="assinatura">
+            <AssinaturaStatus />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
