@@ -21,9 +21,19 @@ interface Agendamento {
   desmarcada?: boolean;
 }
 
+interface BloqueioVirtual {
+  id: string;
+  data_inicio: string;
+  data_fim: string;
+  titulo: string;
+  descricao?: string;
+  virtual?: boolean;
+}
+
 interface VisaoSemanalGridProps {
   agendamentos: Agendamento[];
   bloqueios: BloqueioAgenda[];
+  bloqueiosVirtuais?: BloqueioVirtual[];
   semanaInicio: Date;
   onEditarAgendamento: (agendamento: Agendamento) => void;
   onConfirmarAgendamento: (id: string) => void;
@@ -36,6 +46,7 @@ interface VisaoSemanalGridProps {
 export function VisaoSemanalGrid({
   agendamentos,
   bloqueios,
+  bloqueiosVirtuais = [],
   semanaInicio,
   onEditarAgendamento,
   onConfirmarAgendamento,
@@ -232,6 +243,24 @@ export function VisaoSemanalGrid({
                   >
                     <Plus className="h-3 w-3" />
                   </Button>
+                </div>
+              ))}
+              
+              {/* Bloqueios virtuais (fora do expediente) */}
+              {bloqueiosVirtuais.filter(bl => isSameDay(new Date(bl.data_inicio), dia)).map((bloqueio) => (
+                <div
+                  key={`virtual-${bloqueio.id}`}
+                  className="absolute left-0 right-0 bg-gray-100 border border-gray-200 z-5 pointer-events-none"
+                  style={{
+                    top: `${calcularPosicaoTop(bloqueio.data_inicio)}px`,
+                    height: `${Math.max(calcularAltura(bloqueio.data_inicio, bloqueio.data_fim), 20)}px`
+                  }}
+                >
+                  <div className="h-full flex items-center justify-center">
+                    <span className="text-[9px] text-gray-400 font-medium truncate px-1">
+                      {bloqueio.titulo}
+                    </span>
+                  </div>
                 </div>
               ))}
               

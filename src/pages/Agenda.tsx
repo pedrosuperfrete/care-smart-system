@@ -12,6 +12,7 @@ import { useTiposServicos } from '@/hooks/useTiposServicos';
 import { usePacientes } from '@/hooks/usePacientes';
 import { useProfissionais } from '@/hooks/useProfissionais';
 import { useBloqueiosAgenda, useDeleteBloqueio } from '@/hooks/useBloqueiosAgenda';
+import { useHorariosAtendimento } from '@/hooks/useHorariosAtendimento';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { toDateTimeLocalString, fromDateTimeLocalString, formatTimeLocal, isSameDayLocal } from '@/lib/dateUtils';
@@ -50,6 +51,7 @@ export default function Agenda() {
   const marcarRealizado = useMarcarRealizado();
   const { data: tiposServicos = [], isLoading: loadingTipos } = useTiposServicos();
   const { profissional: currentProfissional, isAdmin, isRecepcionista } = useAuth();
+  const { getBloqueiosVirtuais, getBloqueiosVirtuaisSemana, hasHorariosConfigurados } = useHorariosAtendimento();
 
   const [viewMode, setViewMode] = useState<'dia' | 'semana' | 'mes'>('dia');
   const [useGridView, setUseGridView] = useState(true); // Nova opção para grade de horários
@@ -388,6 +390,7 @@ export default function Agenda() {
               const bloqueioDate = new Date(bloqueio.data_inicio);
               return isSameDayLocal(bloqueioDate, selectedDate);
             })}
+            bloqueiosVirtuais={getBloqueiosVirtuais(selectedDate)}
             selectedDate={selectedDate}
             onEditarAgendamento={handleEditarAgendamento}
             onConfirmarAgendamento={handleConfirmar}
@@ -572,6 +575,7 @@ export default function Agenda() {
           <VisaoSemanalGrid
             agendamentos={getWeekAgendamentos()}
             bloqueios={bloqueios}
+            bloqueiosVirtuais={getBloqueiosVirtuaisSemana(getStartOfWeek())}
             semanaInicio={getStartOfWeek()}
             onEditarAgendamento={handleEditarAgendamento}
             onConfirmarAgendamento={handleConfirmar}
