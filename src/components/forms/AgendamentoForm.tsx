@@ -136,11 +136,12 @@ export function AgendamentoForm({ agendamento, pacienteId, dataHoraInicial, onSu
     console.log('Profissional disponível:', profissional);
     console.log('Lista de profissionais:', profissionais);
     
-    if (!formData.paciente_id || !formData.profissional_id || !formData.data_inicio) {
+    if (!formData.paciente_id || !formData.profissional_id || !formData.data_inicio || !formData.tipo_servico) {
       console.error('Dados obrigatórios ausentes:', {
         paciente_id: formData.paciente_id,
         profissional_id: formData.profissional_id,
-        data_inicio: formData.data_inicio
+        data_inicio: formData.data_inicio,
+        tipo_servico: formData.tipo_servico
       });
       return;
     }
@@ -386,7 +387,7 @@ export function AgendamentoForm({ agendamento, pacienteId, dataHoraInicial, onSu
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="tipo_servico">Tipo de Serviço</Label>
+          <Label htmlFor="tipo_servico">Tipo de Serviço *</Label>
           <Select 
             value={formData.tipo_servico} 
             onValueChange={(value) => {
