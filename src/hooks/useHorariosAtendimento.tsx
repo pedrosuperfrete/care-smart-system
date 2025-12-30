@@ -103,8 +103,8 @@ export function useHorariosAtendimento() {
     if (!horarioDia?.ativo) {
       bloqueios.push({
         id: `virtual-${dateStr}-closed`,
-        data_inicio: `${dateStr}T07:00:00`,
-        data_fim: `${dateStr}T19:00:00`,
+        data_inicio: `${dateStr}T00:00:00`,
+        data_fim: `${dateStr}T23:59:00`,
         titulo: 'Dia fechado',
         descricao: 'Não há atendimento neste dia',
         virtual: true,
@@ -112,12 +112,12 @@ export function useHorariosAtendimento() {
       return bloqueios;
     }
 
-    // Bloquear horários antes do início do expediente (das 7h até o início)
+    // Bloquear horários antes do início do expediente (da 0h até o início)
     const [inicioHours, inicioMinutes] = horarioDia.inicio.split(':').map(Number);
-    if (inicioHours > 7 || (inicioHours === 7 && inicioMinutes > 0)) {
+    if (inicioHours > 0 || inicioMinutes > 0) {
       bloqueios.push({
         id: `virtual-${dateStr}-before`,
-        data_inicio: `${dateStr}T07:00:00`,
+        data_inicio: `${dateStr}T00:00:00`,
         data_fim: `${dateStr}T${horarioDia.inicio}:00`,
         titulo: 'Fora do expediente',
         descricao: 'Horário antes do início do atendimento',
@@ -125,13 +125,13 @@ export function useHorariosAtendimento() {
       });
     }
 
-    // Bloquear horários após o fim do expediente (do fim até 19h)
+    // Bloquear horários após o fim do expediente (do fim até 23:59)
     const [fimHours, fimMinutes] = horarioDia.fim.split(':').map(Number);
-    if (fimHours < 19) {
+    if (fimHours < 24) {
       bloqueios.push({
         id: `virtual-${dateStr}-after`,
         data_inicio: `${dateStr}T${horarioDia.fim}:00`,
-        data_fim: `${dateStr}T19:00:00`,
+        data_fim: `${dateStr}T23:59:00`,
         titulo: 'Fora do expediente',
         descricao: 'Horário após o fim do atendimento',
         virtual: true,
