@@ -63,12 +63,6 @@ export function AppSidebar() {
       hideFor: ['recepcionista'],
     },
     {
-      title: "Erros do Sistema",
-      url: "/app/erros-sistema",
-      icon: AlertTriangle,
-      hideFor: ['recepcionista'],
-    },
-    {
       title: "Feedback",
       url: "/app/feedback",
       icon: MessageCircle,
