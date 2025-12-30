@@ -6,23 +6,18 @@ export function useAtividadesRecentes(limit = 5) {
   return useQuery({
     queryKey: ['atividades-recentes', limit],
     queryFn: async () => {
-      // Buscar profissional atual
+      // Buscar profissional atual (pode ser null para secretárias)
       const { data: profissionalId } = await supabase.rpc('get_current_profissional_id');
       
-      if (!profissionalId) {
+      // Buscar clínica do usuário atual (funciona para todos os papéis)
+      const { data: clinicaId } = await supabase.rpc('get_current_user_clinica');
+      
+      if (!clinicaId) {
         return [];
       }
-
-      // Buscar clínica do profissional
-      const { data: profissional } = await supabase
-        .from('profissionais')
-        .select('clinica_id')
-        .eq('id', profissionalId)
-        .single();
-
-      if (!profissional?.clinica_id) {
-        return [];
-      }
+      
+      // Se for profissional, usa o ID dele; se for secretária, busca por clínica
+      const filterByProfissional = !!profissionalId;
 
       // Buscar atividades recentes de diferentes tabelas
       const atividades: Array<{
@@ -39,7 +34,7 @@ export function useAtividadesRecentes(limit = 5) {
       const { data: pacientesRecentes } = await supabase
         .from('pacientes')
         .select('id, nome, criado_em')
-        .eq('clinica_id', profissional.clinica_id)
+        .eq('clinica_id', clinicaId)
         .order('criado_em', { ascending: false })
         .limit(3);
 
@@ -57,18 +52,28 @@ export function useAtividadesRecentes(limit = 5) {
         });
       });
 
-      // Agendamentos recentes do profissional (criados, editados, confirmados, desmarcados)
-      const { data: agendamentosRecentes } = await supabase
+      // Agendamentos recentes (por profissional ou por clínica para secretárias)
+      let agendamentosQuery = supabase
         .from('agendamentos')
         .select(`
           id, confirmado_pelo_paciente, atualizado_em, criado_em, desmarcada, status, servicos_adicionais,
-          pacientes(nome)
+          pacientes(nome, clinica_id)
         `)
-        .eq('profissional_id', profissionalId)
         .order('atualizado_em', { ascending: false })
         .limit(5);
+      
+      if (filterByProfissional) {
+        agendamentosQuery = agendamentosQuery.eq('profissional_id', profissionalId);
+      }
+      
+      const { data: agendamentosRecentes } = await agendamentosQuery;
+      
+      // Filtrar por clínica para secretárias
+      const agendamentosFiltrados = filterByProfissional 
+        ? agendamentosRecentes 
+        : agendamentosRecentes?.filter((a: any) => a.pacientes?.clinica_id === clinicaId);
 
-      agendamentosRecentes?.forEach(agendamento => {
+      agendamentosFiltrados?.forEach(agendamento => {
         const tempoDecorrido = getTempoDecorrido(agendamento.atualizado_em);
         const timestamp = new Date(agendamento.atualizado_em).getTime();
         const pacienteNome = (agendamento as any).pacientes?.nome;
@@ -135,14 +140,34 @@ export function useAtividadesRecentes(limit = 5) {
         }
       });
 
-      // Pagamentos recentes do profissional
-      const { data: agendamentosProfissional } = await supabase
-        .from('agendamentos')
-        .select('id')
-        .eq('profissional_id', profissionalId);
+      // Pagamentos recentes (por profissional ou por clínica para secretárias)
+      let agendamentosParaPagamentos: { id: string }[] = [];
+      
+      if (filterByProfissional) {
+        const { data } = await supabase
+          .from('agendamentos')
+          .select('id')
+          .eq('profissional_id', profissionalId);
+        agendamentosParaPagamentos = data || [];
+      } else {
+        // Para secretárias, buscar agendamentos da clínica
+        const { data: pacientesDaClinica } = await supabase
+          .from('pacientes')
+          .select('id')
+          .eq('clinica_id', clinicaId);
+        
+        if (pacientesDaClinica && pacientesDaClinica.length > 0) {
+          const pacienteIds = pacientesDaClinica.map(p => p.id);
+          const { data } = await supabase
+            .from('agendamentos')
+            .select('id')
+            .in('paciente_id', pacienteIds);
+          agendamentosParaPagamentos = data || [];
+        }
+      }
 
-      if (agendamentosProfissional && agendamentosProfissional.length > 0) {
-        const agendamentoIds = agendamentosProfissional.map(a => a.id);
+      if (agendamentosParaPagamentos.length > 0) {
+        const agendamentoIds = agendamentosParaPagamentos.map(a => a.id);
         
         const { data: pagamentosRecentes } = await supabase
           .from('pagamentos')
