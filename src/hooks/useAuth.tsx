@@ -191,13 +191,146 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Função para criar perfil de usuário via OAuth (Google)
+  const createOAuthUserProfile = async (authUser: User) => {
+    const errorLogger = createErrorLogger();
+    
+    try {
+      // Verificar se o usuário já existe na tabela users
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', authUser.id)
+        .maybeSingle();
+
+      if (existingUser) {
+        // Usuário já existe, apenas carregar perfil
+        return;
+      }
+
+      console.log('Criando perfil para usuário OAuth:', authUser.email);
+
+      // Extrair nome do usuário dos metadados do Google
+      const nome = authUser.user_metadata?.full_name || 
+                   authUser.user_metadata?.name || 
+                   authUser.email?.split('@')[0] || '';
+
+      // Criar clínica temporária para o profissional
+      const { data: clinicaTemp, error: clinicaError } = await supabase
+        .from('clinicas')
+        .insert({
+          nome: 'Clínica Temporária',
+          cnpj: `temp-${authUser.id.substring(0, 8)}`,
+          endereco: 'Aguardando definição no onboarding',
+        })
+        .select()
+        .single();
+
+      if (clinicaError) {
+        console.error('Erro ao criar clínica temporária:', clinicaError);
+        await errorLogger.logSupabaseError('createOAuthUserProfile_clinica', clinicaError, { userId: authUser.id });
+        return;
+      }
+
+      const clinicaId = clinicaTemp.id;
+
+      // Criar perfil na tabela users
+      const { error: userError } = await supabase
+        .from('users')
+        .insert({
+          id: authUser.id,
+          email: authUser.email!,
+          nome: nome,
+          senha_hash: 'oauth_managed',
+          tipo_usuario: 'profissional',
+        });
+
+      if (userError) {
+        console.error('Erro ao criar perfil do usuário OAuth:', userError);
+        await errorLogger.logSupabaseError('createOAuthUserProfile_user', userError, { userId: authUser.id });
+        return;
+      }
+
+      // Criar associação usuário-clínica
+      const { error: associacaoError } = await supabase
+        .from('usuarios_clinicas')
+        .insert({
+          usuario_id: authUser.id,
+          clinica_id: clinicaId,
+          tipo_papel: 'profissional',
+        });
+
+      if (associacaoError) {
+        console.error('Erro ao associar usuário OAuth à clínica:', associacaoError);
+        await errorLogger.logSupabaseError('createOAuthUserProfile_assoc', associacaoError, { userId: authUser.id });
+      }
+
+      // Obter o refresh token do provider (Google)
+      // O provider_refresh_token está disponível nos identities do usuário
+      let googleRefreshToken: string | null = null;
+      
+      // Tentar obter o refresh token da sessão
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData?.session?.provider_refresh_token) {
+        googleRefreshToken = sessionData.session.provider_refresh_token;
+        console.log('Google refresh token obtido da sessão');
+      }
+
+      // Criar registro na tabela profissionais com google_refresh_token já configurado
+      const { error: profError } = await supabase
+        .from('profissionais')
+        .insert({
+          user_id: authUser.id,
+          clinica_id: clinicaId,
+          nome: nome,
+          especialidade: '',
+          crm_cro: '',
+          onboarding_completo: false,
+          google_refresh_token: googleRefreshToken, // Já configura a integração com Google Calendar
+        });
+
+      if (profError) {
+        console.error('Erro ao criar perfil profissional OAuth:', profError);
+        await errorLogger.logSupabaseError('createOAuthUserProfile_prof', profError, { userId: authUser.id });
+        return;
+      }
+
+      console.log('Perfil OAuth criado com sucesso! Google Calendar:', googleRefreshToken ? 'conectado' : 'não conectado');
+      
+      if (googleRefreshToken) {
+        toast.success('Conta criada com sucesso! Google Calendar já está conectado.');
+      } else {
+        toast.success('Conta criada com sucesso!');
+      }
+      
+    } catch (error: any) {
+      console.error('Erro ao criar perfil OAuth:', error);
+      await errorLogger.logSupabaseError('createOAuthUserProfile_catch', error, { userId: authUser.id });
+    }
+  };
+
   useEffect(() => {
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state change:', event, session?.user?.email);
+      
       setUser(session?.user ?? null);
+      
       if (session?.user) {
-        fetchUserProfile(session.user.id);
+        // Verificar se é login via OAuth (Google)
+        const isOAuthLogin = session.user.app_metadata?.provider === 'google' || 
+                             session.user.identities?.some(i => i.provider === 'google');
+        
+        if (isOAuthLogin && (event === 'SIGNED_IN' || event === 'USER_UPDATED')) {
+          // Criar perfil se não existir e salvar refresh token
+          await createOAuthUserProfile(session.user);
+        }
+        
+        // Usar setTimeout para evitar deadlock
+        setTimeout(() => {
+          fetchUserProfile(session.user.id);
+        }, 0);
       } else {
         setUserProfile(null);
         setProfissional(null);
