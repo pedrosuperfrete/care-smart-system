@@ -209,12 +209,25 @@ export default function Dashboard() {
             ) : (
               <div className="space-y-3">
                 {atividadesRecentes.map((atividade) => (
-                  <div key={atividade.id} className="flex items-center space-x-3 p-3 border rounded-lg">
+                  <div 
+                    key={atividade.id} 
+                    className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => {
+                      if (atividade.tipo === 'paciente') {
+                        navigate('/app/pacientes');
+                      } else if (atividade.tipo === 'agendamento') {
+                        navigate('/app/agenda');
+                      } else if (atividade.tipo === 'pagamento') {
+                        navigate('/app/financeiro');
+                      }
+                    }}
+                  >
                     <div className="text-lg">{atividade.icone}</div>
                     <div className="flex-1">
                       <div className="text-sm">{atividade.descricao}</div>
                       <div className="text-xs text-gray-500">{atividade.data}</div>
                     </div>
+                    <Clock className="h-4 w-4 text-muted-foreground" />
                   </div>
                 ))}
               </div>
