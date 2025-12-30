@@ -19,7 +19,8 @@ export function useUsuariosClinicas(clinicaId?: string) {
           *,
           users (id, email, tipo_usuario, nome)
         `)
-        .eq('clinica_id', clinicaId);
+        .eq('clinica_id', clinicaId)
+        .eq('ativo', true);
 
       if (error) {
         console.error('Error fetching usuarios clinicas:', error);
