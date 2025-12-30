@@ -93,9 +93,12 @@ const Index = () => {
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-secondary/10"></div>
         <div className="relative max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-foreground mb-6 leading-tight">Cuidar de pessoas é sua missão.
-médica chegou<span className="block bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                médica chegou
+            <h1 className="mb-6 leading-tight">
+              <span className="block font-chocolate font-bold text-[36px] md:text-[48px] text-foreground">
+                Cuidar de pessoas é sua missão.
+              </span>
+              <span className="block font-fors font-normal text-[28px] md:text-[36px] text-foreground">
+                Cuidar da burocracia é a nossa.
               </span>
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto">
