@@ -366,6 +366,39 @@ export function useMarcarRealizado() {
   });
 }
 
+export function useMarcarFalta() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data, error } = await supabase
+        .from('agendamentos')
+        .update({ status: 'falta' })
+        .eq('id', id)
+        .select(`
+          *,
+          pacientes(id, nome, telefone, email),
+          profissionais(id, nome, especialidade)
+        `)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agendamentos'] });
+      queryClient.invalidateQueries({ queryKey: ['agendamentos-hoje'] });
+      queryClient.invalidateQueries({ queryKey: ['proximos-agendamentos'] });
+      queryClient.invalidateQueries({ queryKey: ['agendamentos-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['atividades-recentes'] });
+      toast.success('Paciente marcado como falta.');
+    },
+    onError: (error: any) => {
+      toast.error('Erro ao marcar falta: ' + error.message);
+    },
+  });
+}
+
 export function useAgendamentosStats() {
   return useQuery({
     queryKey: ['agendamentos-stats'],

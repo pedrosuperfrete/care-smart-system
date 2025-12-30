@@ -42,7 +42,7 @@ export function HistoricoAtendimentos({ agendamentos }: HistoricoAtendimentosPro
       case 'realizado': return 'Realizado';
       case 'confirmado': return 'Confirmado';
       case 'pendente': return 'Pendente';
-      case 'faltou': return 'Faltou';
+      case 'falta': return 'Falta';
       default: return 'Pendente';
     }
   };
@@ -53,7 +53,7 @@ export function HistoricoAtendimentos({ agendamentos }: HistoricoAtendimentosPro
       case 'realizado': return 'bg-success text-success-foreground';
       case 'confirmado': return 'bg-primary text-primary-foreground';
       case 'pendente': return 'bg-warning text-warning-foreground';
-      case 'faltou': return 'bg-destructive text-destructive-foreground';
+      case 'falta': return 'bg-destructive text-destructive-foreground';
       default: return 'bg-muted text-muted-foreground';
     }
   };

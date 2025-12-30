@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tables } from "@/integrations/supabase/types";
 import { formatTimeLocal, isSameDayLocal } from "@/lib/dateUtils";
-import { CheckCircle, XCircle, Eye, Edit, Trash2 } from "lucide-react";
+import { CheckCircle, XCircle, Eye, Edit, Trash2, UserX } from "lucide-react";
 import { BloqueioAgenda } from "@/hooks/useBloqueiosAgenda";
 import { useState } from "react";
 import { BloqueioAgendaModal } from "./BloqueioAgendaModal";
@@ -31,6 +31,7 @@ interface VisaoSemanalProps {
   onConfirmarAgendamento: (id: string) => void;
   onDesmarcarAgendamento: (id: string) => void;
   onMarcarRealizado: (id: string) => void;
+  onMarcarFalta: (id: string) => void;
   onEditarBloqueio?: (bloqueio: BloqueioAgenda) => void;
   onExcluirBloqueio?: (id: string) => void;
 }
@@ -43,6 +44,7 @@ export function VisaoSemanal({
   onConfirmarAgendamento, 
   onDesmarcarAgendamento, 
   onMarcarRealizado,
+  onMarcarFalta,
   onEditarBloqueio,
   onExcluirBloqueio
 }: VisaoSemanalProps) {
@@ -95,7 +97,8 @@ export function VisaoSemanal({
       case 'confirmado': return 'bg-primary text-primary-foreground';
       case 'pendente': return 'bg-warning';
       case 'realizado': return 'bg-success';
-      default: return 'bg-destructive';
+      case 'falta': return 'bg-destructive';
+      default: return 'bg-muted';
     }
   };
 
@@ -104,6 +107,7 @@ export function VisaoSemanal({
       case 'confirmado': return 'Confirmado';
       case 'pendente': return 'Pendente';
       case 'realizado': return 'Realizado';
+      case 'falta': return 'Falta';
       default: return 'Cancelado';
     }
   };
@@ -195,13 +199,25 @@ export function VisaoSemanal({
                         )}
                         
                         {agendamento.status === 'confirmado' && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => onMarcarRealizado(agendamento.id)}
-                          >
-                            <CheckCircle className="h-3 w-3" />
-                          </Button>
+                          <>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => onMarcarRealizado(agendamento.id)}
+                              title="Marcar como realizado"
+                            >
+                              <CheckCircle className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => onMarcarFalta(agendamento.id)}
+                              title="Marcar como falta"
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <UserX className="h-3 w-3" />
+                            </Button>
+                          </>
                         )}
                       </div>
                     )}

@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Edit, Trash2, CheckCircle, XCircle, Calendar, Clock, User, Plus } from "lucide-react";
+import { Edit, Trash2, CheckCircle, XCircle, Calendar, Clock, User, Plus, UserX } from "lucide-react";
 import { formatTimeLocal } from "@/lib/dateUtils";
 import { BloqueioAgendaModal } from "./BloqueioAgendaModal";
 import { BloqueioAgenda } from "@/hooks/useBloqueiosAgenda";
@@ -39,6 +39,7 @@ interface VisaoDiariaProps {
   onConfirmarAgendamento: (id: string) => void;
   onDesmarcarAgendamento: (id: string) => void;
   onMarcarRealizadoAgendamento: (id: string) => void;
+  onMarcarFaltaAgendamento: (id: string) => void;
   onExcluirBloqueio: (id: string) => void;
   onNovaConsulta: (dataHora: Date) => void;
 }
@@ -52,6 +53,7 @@ export function VisaoDiaria({
   onConfirmarAgendamento,
   onDesmarcarAgendamento,
   onMarcarRealizadoAgendamento,
+  onMarcarFaltaAgendamento,
   onExcluirBloqueio,
   onNovaConsulta
 }: VisaoDiariaProps) {
@@ -91,7 +93,8 @@ export function VisaoDiaria({
       case 'confirmado': return 'bg-primary text-primary-foreground';
       case 'pendente': return 'bg-warning text-warning-foreground';
       case 'realizado': return 'bg-success text-success-foreground';
-      default: return 'bg-destructive text-destructive-foreground';
+      case 'falta': return 'bg-destructive text-destructive-foreground';
+      default: return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -100,6 +103,7 @@ export function VisaoDiaria({
       case 'confirmado': return 'Confirmado';
       case 'pendente': return 'Pendente';
       case 'realizado': return 'Realizado';
+      case 'falta': return 'Falta';
       default: return 'Cancelado';
     }
   };
@@ -377,17 +381,32 @@ export function VisaoDiaria({
                           </Button>
                         )}
                         {agendamento.status === 'confirmado' && (
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            className="h-6 px-2 text-xs"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onMarcarRealizadoAgendamento(agendamento.id);
-                            }}
-                          >
-                            ✓
-                          </Button>
+                          <>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              className="h-6 px-2 text-xs"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onMarcarRealizadoAgendamento(agendamento.id);
+                              }}
+                              title="Marcar como realizado"
+                            >
+                              ✓
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onMarcarFaltaAgendamento(agendamento.id);
+                              }}
+                              title="Marcar como falta"
+                            >
+                              <UserX className="h-3 w-3" />
+                            </Button>
+                          </>
                         )}
                       </>
                     )}

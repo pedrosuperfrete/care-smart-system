@@ -1207,7 +1207,12 @@ export type Database = {
     Enums: {
       app_role: "admin" | "profissional" | "recepcionista"
       forma_pagamento: "pix" | "cartao" | "dinheiro" | "link"
-      status_agendamento: "pendente" | "confirmado" | "realizado" | "faltou"
+      status_agendamento:
+        | "pendente"
+        | "confirmado"
+        | "realizado"
+        | "faltou"
+        | "falta"
       status_emissao_nf: "emitida" | "pendente" | "erro"
       status_pagamento: "pendente" | "pago" | "vencido" | "estornado"
       tipo_paciente: "novo" | "recorrente" | "antigo"
@@ -1341,7 +1346,13 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "profissional", "recepcionista"],
       forma_pagamento: ["pix", "cartao", "dinheiro", "link"],
-      status_agendamento: ["pendente", "confirmado", "realizado", "faltou"],
+      status_agendamento: [
+        "pendente",
+        "confirmado",
+        "realizado",
+        "faltou",
+        "falta",
+      ],
       status_emissao_nf: ["emitida", "pendente", "erro"],
       status_pagamento: ["pendente", "pago", "vencido", "estornado"],
       tipo_paciente: ["novo", "recorrente", "antigo"],
