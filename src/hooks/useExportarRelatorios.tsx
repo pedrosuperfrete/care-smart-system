@@ -3,6 +3,7 @@ import { useAuth } from './useAuth';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from '@/hooks/use-toast';
+import { formatCurrency } from '@/lib/utils';
 
 interface DadosRelatorio {
   tipo: string;
@@ -116,7 +117,7 @@ export const useExportarRelatorios = () => {
         'Telefone': consulta.pacientes?.telefone || 'N/A',
         'Tipo de Serviço': consulta.tipo_servico,
         'Status': consulta.status,
-        'Valor': consulta.valor ? `R$ ${Number(consulta.valor).toFixed(2)}` : 'N/A',
+        'Valor': consulta.valor ? `R$ ${formatCurrency(Number(consulta.valor))}` : 'N/A',
         'Status Pagamento': consulta.pagamentos?.[0]?.status || 'Não informado',
         'Observações': consulta.observacoes || ''
       })) || []
@@ -210,16 +211,16 @@ export const useExportarRelatorios = () => {
       titulo: 'Relatório Financeiro',
       periodo: `${format(dataInicio, 'dd/MM/yyyy')} - ${format(dataFim, 'dd/MM/yyyy')}`,
       resumo: {
-        'Total Recebido': `R$ ${totalRecebido.toFixed(2)}`,
-        'Total Pendente': `R$ ${totalPendente.toFixed(2)}`,
-        'Total Geral': `R$ ${(totalRecebido + totalPendente).toFixed(2)}`
+        'Total Recebido': `R$ ${formatCurrency(totalRecebido)}`,
+        'Total Pendente': `R$ ${formatCurrency(totalPendente)}`,
+        'Total Geral': `R$ ${formatCurrency(totalRecebido + totalPendente)}`
       },
       dados: pagamentos?.map(pagamento => ({
         'Data Consulta': format(new Date((pagamento as any).agendamentos.data_inicio), 'dd/MM/yyyy'),
         'Paciente': (pagamento as any).agendamentos.pacientes?.nome || 'N/A',
         'Serviço': (pagamento as any).agendamentos.tipo_servico,
-        'Valor Total': `R$ ${Number(pagamento.valor_total).toFixed(2)}`,
-        'Valor Pago': `R$ ${Number(pagamento.valor_pago).toFixed(2)}`,
+        'Valor Total': `R$ ${formatCurrency(Number(pagamento.valor_total))}`,
+        'Valor Pago': `R$ ${formatCurrency(Number(pagamento.valor_pago))}`,
         'Forma Pagamento': pagamento.forma_pagamento,
         'Status': pagamento.status,
         'Data Pagamento': pagamento.data_pagamento ? 

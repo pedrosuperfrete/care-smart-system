@@ -15,6 +15,7 @@ import {
 } from '@/hooks/useTiposServicos';
 import { useAuth } from '@/hooks/useAuth';
 import { useMigrarServicos } from '@/hooks/useMigrarServicos';
+import { formatCurrency } from '@/lib/utils';
 
 export function GerenciarTiposServicos() {
   const { data: tiposServicos = [], isLoading } = useTiposServicos();
@@ -248,7 +249,7 @@ export function GerenciarTiposServicos() {
                   <h4 className="font-medium">{tipo.nome}</h4>
                   <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
                     {tipo.preco && (
-                      <span>R$ {tipo.preco.toFixed(2).replace('.', ',')}</span>
+                      <span>R$ {formatCurrency(tipo.preco)}</span>
                     )}
                     {tipo.percentual_cobranca_agendamento && (
                       <span className="text-primary">

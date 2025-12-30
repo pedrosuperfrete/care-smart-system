@@ -17,6 +17,7 @@ import { useHorariosAtendimento } from '@/hooks/useHorariosAtendimento';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { toDateTimeLocalString, fromDateTimeLocalString, formatTimeLocal, isSameDayLocal } from '@/lib/dateUtils';
+import { formatCurrency } from '@/lib/utils';
 import { VisaoSemanal } from '@/components/agenda/VisaoSemanal';
 import { VisaoDiaria } from '@/components/agenda/VisaoDiaria';
 import { VisaoSemanalGrid } from '@/components/agenda/VisaoSemanalGrid';
@@ -552,7 +553,7 @@ export default function Agenda() {
                              <p><strong>Tipo:</strong> {agendamento.tipo_servico}</p>
                              <p><strong>Profissional:</strong> {(agendamento as any).profissionais?.nome}</p>
                              {agendamento.valor && (
-                               <p><strong>Valor:</strong> R$ {agendamento.valor.toFixed(2)}</p>
+                               <p><strong>Valor:</strong> R$ {formatCurrency(agendamento.valor)}</p>
                              )}
                              {agendamento.observacoes && (
                                <p><strong>Obs:</strong> {agendamento.observacoes}</p>

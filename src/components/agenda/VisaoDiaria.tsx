@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Edit, Trash2, CheckCircle, XCircle, Calendar, Clock, User, Plus, UserX } from "lucide-react";
 import { formatTimeLocal } from "@/lib/dateUtils";
+import { formatCurrency } from "@/lib/utils";
 import { BloqueioAgendaModal } from "./BloqueioAgendaModal";
 import { BloqueioAgenda } from "@/hooks/useBloqueiosAgenda";
 
@@ -350,7 +351,7 @@ export function VisaoDiaria({
                         <p className="truncate"><strong>Profissional:</strong> {agendamento.profissionais?.nome}</p>
                         {agendamento.valor && (
                           <p className="truncate">
-                            <strong>Valor:</strong> R$ {(
+                            <strong>Valor:</strong> R$ {formatCurrency(
                               (agendamento.valor || 0) +
                               (Array.isArray(agendamento.servicos_adicionais)
                                 ? agendamento.servicos_adicionais.reduce(
@@ -359,7 +360,7 @@ export function VisaoDiaria({
                                     0
                                   )
                                 : 0)
-                            ).toFixed(2)}
+                            )}
                           </p>
                         )}
                       </div>

@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from '@/components/ui/button';
 import { Printer, Mail, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatCurrency } from '@/lib/utils';
 
 interface ReciboModalProps {
   open: boolean;
@@ -53,7 +54,7 @@ export function ReciboModal({ open, onOpenChange, pagamento }: ReciboModalProps)
   const handleEnviarWhatsApp = () => {
     const telefone = pagamento.agendamentos?.pacientes?.telefone;
     if (telefone) {
-      const mensagem = `Olá ${pacienteNome}! Seu recibo de pagamento:\n\nServiço: ${tipoServico}\nValor: R$ ${valorPago.toFixed(2)}\nData: ${dataPagamento}\n\nObrigado!`;
+      const mensagem = `Olá ${pacienteNome}! Seu recibo de pagamento:\n\nServiço: ${tipoServico}\nValor: R$ ${formatCurrency(valorPago)}\nData: ${dataPagamento}\n\nObrigado!`;
       const url = `https://wa.me/55${telefone.replace(/\D/g, '')}?text=${encodeURIComponent(mensagem)}`;
       window.open(url, '_blank');
       console.log('Enviando recibo por WhatsApp para:', telefone);
@@ -80,7 +81,7 @@ export function ReciboModal({ open, onOpenChange, pagamento }: ReciboModalProps)
               <strong>Serviço:</strong> {tipoServico}
             </div>
             <div>
-              <strong>Valor Pago:</strong> R$ {valorPago.toFixed(2)}
+              <strong>Valor Pago:</strong> R$ {formatCurrency(valorPago)}
             </div>
             <div>
               <strong>Data do Pagamento:</strong> {dataPagamento}
