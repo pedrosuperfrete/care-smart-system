@@ -348,7 +348,14 @@ export function VisaoDiaria({
                         </p>
                         <p className="truncate"><strong>Profissional:</strong> {agendamento.profissionais?.nome}</p>
                         {agendamento.valor && (
-                          <p className="truncate"><strong>Valor:</strong> R$ {agendamento.valor.toFixed(2)}</p>
+                          <p className="truncate">
+                            <strong>Valor:</strong> R$ {(
+                              (agendamento.valor || 0) + 
+                              (Array.isArray(agendamento.servicos_adicionais) 
+                                ? agendamento.servicos_adicionais.reduce((acc: number, s: ServicoAdicional) => acc + (s.preco || 0), 0) 
+                                : 0)
+                            ).toFixed(2)}
+                          </p>
                         )}
                       </div>
                     )}
