@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -6,7 +7,10 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Calendar, Clock, User, Stethoscope, DollarSign, CreditCard, FileText, Phone, Mail } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar, User, Stethoscope, DollarSign, CreditCard, FileText, Phone, Mail, Pencil, Save, X } from "lucide-react";
+import { useUpdatePagamento } from "@/hooks/useFinanceiro";
 
 interface ServicoAdicional {
   nome: string;
@@ -21,6 +25,10 @@ interface DetalhesAgendamentoModalProps {
 }
 
 export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: DetalhesAgendamentoModalProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [formaPagamento, setFormaPagamento] = useState<string>('');
+  const updatePagamento = useUpdatePagamento();
+
   if (!pagamento) return null;
 
   const agendamento = pagamento.agendamentos;
@@ -69,11 +77,45 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
     return statusMap[status] || { label: status, variant: 'secondary' };
   };
 
+  const getFormaPagamentoLabel = (forma: string) => {
+    const formas: Record<string, string> = {
+      pix: 'PIX',
+      cartao: 'Cartão',
+      dinheiro: 'Dinheiro',
+      link: 'Link de Pagamento',
+    };
+    return formas[forma] || forma;
+  };
+
   const valorServicoPrincipal = Number(pagamento.valor_total) - (
     Array.isArray(servicosAdicionais)
       ? servicosAdicionais.reduce((acc, s) => acc + Number(s.valor ?? s.preco ?? 0), 0)
       : 0
   );
+
+  const handleStartEdit = () => {
+    setFormaPagamento(pagamento.forma_pagamento || 'pix');
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setFormaPagamento('');
+  };
+
+  const handleSave = async () => {
+    try {
+      await updatePagamento.mutateAsync({
+        id: pagamento.id,
+        data: {
+          forma_pagamento: formaPagamento as any,
+        },
+      });
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Erro ao atualizar pagamento:', error);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -192,14 +234,37 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
 
           {/* Pagamento */}
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
-              <CreditCard className="h-4 w-4" />
-              Pagamento
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                <CreditCard className="h-4 w-4" />
+                Pagamento
+              </h3>
+              {!isEditing && pagamento.status !== 'pago' && (
+                <Button variant="ghost" size="sm" onClick={handleStartEdit}>
+                  <Pencil className="h-4 w-4 mr-1" />
+                  Editar
+                </Button>
+              )}
+            </div>
+            
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-xs text-muted-foreground">Forma de Pagamento</p>
-                <p className="font-medium capitalize">{pagamento.forma_pagamento || 'Não informado'}</p>
+                {isEditing ? (
+                  <Select value={formaPagamento} onValueChange={setFormaPagamento}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pix">PIX</SelectItem>
+                      <SelectItem value="cartao">Cartão</SelectItem>
+                      <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                      <SelectItem value="link">Link de Pagamento</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <p className="font-medium">{getFormaPagamentoLabel(pagamento.forma_pagamento)}</p>
+                )}
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Status</p>
@@ -224,6 +289,19 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
                 </div>
               )}
             </div>
+
+            {isEditing && (
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" size="sm" onClick={handleCancelEdit}>
+                  <X className="h-4 w-4 mr-1" />
+                  Cancelar
+                </Button>
+                <Button size="sm" onClick={handleSave} disabled={updatePagamento.isPending}>
+                  <Save className="h-4 w-4 mr-1" />
+                  {updatePagamento.isPending ? 'Salvando...' : 'Salvar'}
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </DialogContent>
