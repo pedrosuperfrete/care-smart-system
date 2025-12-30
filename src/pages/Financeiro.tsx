@@ -364,15 +364,17 @@ export default function Financeiro() {
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline"
-                                    disabled
-                                    className="opacity-60"
-                                  >
-                                    <FileText className="h-4 w-4 mr-1" />
-                                    Enviar NF
-                                  </Button>
+                                  <span className="inline-block">
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline"
+                                      disabled
+                                      className="opacity-60 pointer-events-none"
+                                    >
+                                      <FileText className="h-4 w-4 mr-1" />
+                                      Enviar NF
+                                    </Button>
+                                  </span>
                                 </TooltipTrigger>
                                 <TooltipContent>
                                   <p>Em breve</p>
@@ -385,15 +387,17 @@ export default function Financeiro() {
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline"
-                                    disabled
-                                    className="opacity-60"
-                                  >
-                                    <CreditCard className="h-4 w-4 mr-1" />
-                                    Cobrar
-                                  </Button>
+                                  <span className="inline-block">
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline"
+                                      disabled
+                                      className="opacity-60 pointer-events-none"
+                                    >
+                                      <CreditCard className="h-4 w-4 mr-1" />
+                                      Cobrar
+                                    </Button>
+                                  </span>
                                 </TooltipTrigger>
                                 <TooltipContent>
                                   <p>Em breve</p>
