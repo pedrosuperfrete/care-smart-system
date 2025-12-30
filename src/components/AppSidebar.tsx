@@ -60,6 +60,7 @@ export function AppSidebar() {
       title: "Relatórios",
       url: "/app/relatorios",
       icon: Clock,
+      hideFor: ['recepcionista'],
     },
     {
       title: "Erros do Sistema",
