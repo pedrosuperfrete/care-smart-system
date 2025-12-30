@@ -369,7 +369,9 @@ export default function Financeiro() {
                           <span>
                             {tipoServico}
                             {Array.isArray(servicosAdicionais) && servicosAdicionais.length > 0 && (
-                              <span className="text-muted-foreground"> + {servicosAdicionais.map((s: any) => s.nome).join(', ')}</span>
+                              <span className="text-muted-foreground">
+                                {' '}+ {servicosAdicionais.length} {servicosAdicionais.length === 1 ? 'adicional' : 'adicionais'}
+                              </span>
                             )}
                           </span>
                           {statusAgendamentoLabel && (
