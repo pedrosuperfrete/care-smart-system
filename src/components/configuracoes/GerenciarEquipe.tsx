@@ -328,7 +328,7 @@ export function GerenciarEquipe() {
     switch (tipo) {
       case 'admin_clinica': return 'Admin da Clínica';
       case 'profissional': return 'Profissional';
-      case 'recepcionista': return 'Recepcionista';
+      case 'recepcionista': return 'Secretária';
       default: return tipo;
     }
   };
@@ -434,7 +434,7 @@ export function GerenciarEquipe() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="recepcionista">Recepcionista</SelectItem>
+                      <SelectItem value="recepcionista">Secretária</SelectItem>
                       <SelectItem value="profissional">Profissional</SelectItem>
                       <SelectItem value="admin_clinica">Admin da Clínica</SelectItem>
                     </SelectContent>
@@ -494,7 +494,7 @@ export function GerenciarEquipe() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="recepcionista">Recepcionista</SelectItem>
+                    <SelectItem value="recepcionista">Secretária</SelectItem>
                     <SelectItem value="profissional">Profissional</SelectItem>
                     <SelectItem value="admin_clinica">Admin da Clínica</SelectItem>
                   </SelectContent>
