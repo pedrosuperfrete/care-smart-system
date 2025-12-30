@@ -83,9 +83,9 @@ export function AppSidebar() {
     // Se for recepcionista, sempre mostrar informações do recepcionista, não do profissional
     if (userProfile?.tipo_usuario === 'recepcionista') {
       return {
-        name: userProfile?.email?.split('@')[0] || 'Recepcionista',
-        role: 'Recepcionista',
-        initials: (userProfile?.email?.split('@')[0] || 'R').substring(0, 2).toUpperCase()
+        name: userProfile?.nome || userProfile?.email?.split('@')[0] || 'Secretária',
+        role: 'Secretária',
+        initials: (userProfile?.nome || userProfile?.email?.split('@')[0] || 'S').substring(0, 2).toUpperCase()
       };
     }
     
