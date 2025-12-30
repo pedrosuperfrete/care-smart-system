@@ -81,6 +81,8 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
     const formas: Record<string, string> = {
       pix: 'PIX',
       cartao: 'Cartão',
+      cartao_credito: 'Cartão de Crédito',
+      cartao_debito: 'Cartão de Débito',
       dinheiro: 'Dinheiro',
       link: 'Link de Pagamento',
     };
@@ -257,7 +259,8 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="pix">PIX</SelectItem>
-                      <SelectItem value="cartao">Cartão</SelectItem>
+                      <SelectItem value="cartao_credito">Cartão de Crédito</SelectItem>
+                      <SelectItem value="cartao_debito">Cartão de Débito</SelectItem>
                       <SelectItem value="dinheiro">Dinheiro</SelectItem>
                       <SelectItem value="link">Link de Pagamento</SelectItem>
                     </SelectContent>

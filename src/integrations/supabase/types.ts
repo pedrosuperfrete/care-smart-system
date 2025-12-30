@@ -1215,7 +1215,13 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "profissional" | "recepcionista"
-      forma_pagamento: "pix" | "cartao" | "dinheiro" | "link"
+      forma_pagamento:
+        | "pix"
+        | "cartao"
+        | "dinheiro"
+        | "link"
+        | "cartao_credito"
+        | "cartao_debito"
       status_agendamento:
         | "pendente"
         | "confirmado"
@@ -1354,7 +1360,14 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "profissional", "recepcionista"],
-      forma_pagamento: ["pix", "cartao", "dinheiro", "link"],
+      forma_pagamento: [
+        "pix",
+        "cartao",
+        "dinheiro",
+        "link",
+        "cartao_credito",
+        "cartao_debito",
+      ],
       status_agendamento: [
         "pendente",
         "confirmado",

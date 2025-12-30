@@ -7,7 +7,7 @@ interface CreatePagamentoData {
   paciente_id: string;
   servico_prestado: string;
   valor_total: number;
-  forma_pagamento: 'dinheiro' | 'cartao' | 'pix' | 'link';
+  forma_pagamento: 'dinheiro' | 'cartao_credito' | 'cartao_debito' | 'pix' | 'link';
   status: 'pendente' | 'pago' | 'vencido';
   data_vencimento?: Date;
   data_pagamento?: Date;

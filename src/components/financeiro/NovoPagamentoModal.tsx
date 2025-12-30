@@ -21,7 +21,7 @@ const formSchema = z.object({
   paciente_id: z.string().min(1, 'Paciente é obrigatório'),
   servico_prestado: z.string().min(1, 'Serviço prestado é obrigatório'),
   valor_total: z.number().min(0.01, 'Valor total deve ser maior que zero'),
-  forma_pagamento: z.enum(['dinheiro', 'cartao', 'pix', 'link']),
+  forma_pagamento: z.enum(['dinheiro', 'cartao_credito', 'cartao_debito', 'pix', 'link']),
   status: z.enum(['pendente', 'pago', 'vencido']),
   data_vencimento: z.date().optional(),
   data_pagamento: z.date().optional(),
@@ -184,7 +184,8 @@ export function NovoPagamentoModal({ open, onOpenChange, onSave }: NovoPagamento
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="dinheiro">Dinheiro</SelectItem>
-                        <SelectItem value="cartao">Cartão</SelectItem>
+                        <SelectItem value="cartao_credito">Cartão de Crédito</SelectItem>
+                        <SelectItem value="cartao_debito">Cartão de Débito</SelectItem>
                         <SelectItem value="pix">PIX</SelectItem>
                         <SelectItem value="link">Link de Pagamento</SelectItem>
                       </SelectContent>
