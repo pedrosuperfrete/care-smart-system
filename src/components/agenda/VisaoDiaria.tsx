@@ -21,9 +21,19 @@ interface Agendamento {
   desmarcada?: boolean;
 }
 
+interface BloqueioVirtual {
+  id: string;
+  data_inicio: string;
+  data_fim: string;
+  titulo: string;
+  descricao?: string;
+  virtual?: boolean;
+}
+
 interface VisaoDiariaProps {
   agendamentos: Agendamento[];
   bloqueios: BloqueioAgenda[];
+  bloqueiosVirtuais?: BloqueioVirtual[];
   selectedDate: Date;
   onEditarAgendamento: (agendamento: Agendamento) => void;
   onConfirmarAgendamento: (id: string) => void;
@@ -36,6 +46,7 @@ interface VisaoDiariaProps {
 export function VisaoDiaria({
   agendamentos,
   bloqueios,
+  bloqueiosVirtuais = [],
   selectedDate,
   onEditarAgendamento,
   onConfirmarAgendamento,
@@ -183,6 +194,25 @@ export function VisaoDiaria({
                 <Plus className="h-4 w-4 mr-2" />
                 Horário disponível - Clique para agendar
               </Button>
+            </div>
+          ))}
+          
+          {/* Bloqueios virtuais (horários fora do expediente) */}
+          {bloqueiosVirtuais.map((bloqueio) => (
+            <div
+              key={`virtual-${bloqueio.id}`}
+              className="absolute left-0 right-2 bg-gray-100 border border-gray-200 z-5 pointer-events-none"
+              style={{
+                top: `${calcularPosicaoTop(bloqueio.data_inicio)}px`,
+                height: `${calcularAltura(bloqueio.data_inicio, bloqueio.data_fim)}px`,
+                minHeight: '20px'
+              }}
+            >
+              <div className="p-2 h-full flex items-center justify-center">
+                <span className="text-xs text-gray-500 font-medium">
+                  {bloqueio.titulo}
+                </span>
+              </div>
             </div>
           ))}
           
