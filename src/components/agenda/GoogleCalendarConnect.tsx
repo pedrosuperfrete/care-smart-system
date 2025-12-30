@@ -128,65 +128,40 @@ export function GoogleCalendarConnect() {
     }
   };
 
+  // Temporariamente desabilitado - Em breve
+  const comingSoon = true;
+
   return (
-    <Card className="w-full">
+    <Card className="w-full opacity-75">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Calendar className="h-5 w-5 text-primary" />
+            <Calendar className="h-5 w-5 text-muted-foreground" />
             <CardTitle className="text-lg">Google Calendar</CardTitle>
           </div>
-          <Badge variant={isConnected ? "default" : "secondary"} className="flex items-center space-x-1">
-            {isConnected ? (
-              <>
-                <CheckCircle className="h-3 w-3" />
-                <span>Conectado</span>
-              </>
-            ) : (
-              <>
-                <AlertCircle className="h-3 w-3" />
-                <span>Desconectado</span>
-              </>
-            )}
+          <Badge variant="outline" className="flex items-center space-x-1 bg-amber-100 text-amber-700 border-amber-300">
+            <span>Em breve</span>
           </Badge>
         </div>
         <CardDescription>
-          {isConnected 
-            ? 'Seus agendamentos são sincronizados automaticamente com o Google Calendar'
-            : 'Conecte sua conta do Google para sincronizar automaticamente os agendamentos'
-          }
+          Em breve você poderá sincronizar automaticamente seus agendamentos com o Google Calendar
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2 text-sm text-muted-foreground">
             <Link className="h-4 w-4" />
-            <span>
-              {isConnected 
-                ? 'Sincronização ativa' 
-                : 'Clique para conectar sua conta Google'
-              }
-            </span>
+            <span>Funcionalidade em desenvolvimento</span>
           </div>
           
-          {isConnected ? (
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={handleDisconnectGoogle}
-              disabled={isLoading}
-            >
-              {isLoading ? 'Desconectando...' : 'Desconectar'}
-            </Button>
-          ) : (
-            <Button 
-              onClick={handleConnectGoogle}
-              disabled={isLoading}
-              size="sm"
-            >
-              {isLoading ? 'Conectando...' : 'Conectar Google'}
-            </Button>
-          )}
+          <Button 
+            variant="outline"
+            size="sm"
+            disabled
+            className="opacity-50 cursor-not-allowed"
+          >
+            Conectar Google
+          </Button>
         </div>
       </CardContent>
     </Card>
