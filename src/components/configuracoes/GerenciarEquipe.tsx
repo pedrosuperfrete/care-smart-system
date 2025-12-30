@@ -87,8 +87,8 @@ export function GerenciarEquipe() {
       return;
     }
 
-    if (novoUsuario.senha.length < 6) {
-      toast.error('A senha deve ter pelo menos 6 caracteres');
+    if (novoUsuario.senha.length < 8) {
+      toast.error('A senha deve ter pelo menos 8 caracteres');
       return;
     }
 
@@ -158,6 +158,8 @@ export function GerenciarEquipe() {
         console.error('Erro de autenticação:', authError);
         if (authError.message.includes('User already registered')) {
           toast.error('E-mail já cadastrado no sistema. Use uma opção diferente.');
+        } else if (authError.message.includes('Password should be at least')) {
+          toast.error('A senha deve ter pelo menos 8 caracteres');
         } else {
           toast.error('Erro ao criar usuário: ' + authError.message);
         }
@@ -407,7 +409,7 @@ export function GerenciarEquipe() {
                   <Input
                     id="senha"
                     type="password"
-                    placeholder="Mínimo 6 caracteres"
+                    placeholder="Mínimo 8 caracteres"
                     value={novoUsuario.senha}
                     onChange={(e) => setNovoUsuario({ ...novoUsuario, senha: e.target.value })}
                   />
