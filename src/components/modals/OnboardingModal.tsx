@@ -1,0 +1,260 @@
+import { useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { OnboardingStep1 } from '@/components/onboarding/OnboardingStep1';
+import { OnboardingStep2 } from '@/components/onboarding/OnboardingStep2';
+import { supabase } from '@/integrations/supabase/client';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+
+export function OnboardingModal() {
+  const { user, profissional, updateProfissional, needsOnboarding } = useAuth();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
+
+  const [step1Data, setStep1Data] = useState({
+    nome: profissional?.nome || '',
+    mini_bio: profissional?.mini_bio || '',
+    servicos_oferecidos: (profissional?.servicos_oferecidos as string[]) || [],
+  });
+
+  const [step2Data, setStep2Data] = useState({
+    nome_clinica: profissional?.nome_clinica || '',
+    cnpj_clinica: '',
+    endereco_clinica: '',
+    horarios_atendimento: profissional?.horarios_atendimento || {},
+    servicos_precos: (profissional?.servicos_precos as Array<{nome: string, preco: string}>) || [],
+    formas_pagamento: (profissional?.formas_pagamento as string[]) || [],
+    planos_saude: (profissional?.planos_saude as string[]) || [],
+  });
+
+  const handleStep1Next = () => {
+    setCurrentStep(2);
+  };
+
+  const handleSkipStep1 = async () => {
+    setLoading(true);
+    
+    try {
+      await updateProfissional({
+        onboarding_completo: true,
+      });
+      
+      toast.info('Você pode completar seu perfil depois nas configurações!');
+    } catch (error) {
+      console.error('Erro ao pular onboarding:', error);
+      toast.error('Erro ao pular. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStep2Back = () => {
+    setCurrentStep(1);
+  };
+
+  const handleSkipStep2 = async () => {
+    setLoading(true);
+    
+    try {
+      await updateProfissional({
+        nome: step1Data.nome,
+        mini_bio: step1Data.mini_bio,
+        servicos_oferecidos: step1Data.servicos_oferecidos,
+        onboarding_completo: true,
+      });
+      
+      toast.success('Você pode completar seu perfil depois na aba WhatsApp das configurações!');
+    } catch (error) {
+      toast.error('Erro ao pular etapa. Tente novamente.');
+      console.error('Erro ao pular onboarding:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFinalSubmit = async () => {
+    setLoading(true);
+    
+    console.log('=== INÍCIO DO ONBOARDING SUBMIT ===');
+    console.log('Step1Data:', step1Data);
+    console.log('Step2Data:', step2Data);
+    console.log('Profissional atual:', profissional);
+
+    try {
+      let clinicaId = profissional?.clinica_id;
+      console.log('ClinicaId encontrada:', clinicaId);
+
+      if (!step2Data.nome_clinica || !step2Data.cnpj_clinica) {
+        console.error('Dados obrigatórios da clínica não preenchidos:', {
+          nome: step2Data.nome_clinica,
+          cnpj: step2Data.cnpj_clinica
+        });
+        toast.error('Por favor, preencha o nome e CNPJ da clínica');
+        return;
+      }
+
+      const { data: cnpjExistente } = await supabase
+        .from('clinicas')
+        .select('id, cnpj')
+        .eq('cnpj', step2Data.cnpj_clinica)
+        .neq('id', clinicaId || 'none');
+
+      if (cnpjExistente && cnpjExistente.length > 0) {
+        console.error('CNPJ já existe em outra clínica:', cnpjExistente);
+        toast.error('Este CNPJ já está cadastrado em outra clínica. Use um CNPJ diferente.');
+        return;
+      }
+
+      if (clinicaId) {
+        console.log('Atualizando clínica existente com ID:', clinicaId);
+
+        const { data: updateResult, error: clinicaError } = await supabase
+          .from('clinicas')
+          .update({
+            nome: step2Data.nome_clinica,
+            cnpj: step2Data.cnpj_clinica,
+            endereco: step2Data.endereco_clinica || null,
+          })
+          .eq('id', clinicaId)
+          .select();
+
+        if (clinicaError) {
+          console.error('Erro ao atualizar clínica:', clinicaError);
+          toast.error('Erro ao atualizar clínica: ' + clinicaError.message);
+          return;
+        }
+
+        if (!updateResult || updateResult.length === 0) {
+          console.error('Nenhuma linha foi atualizada na clínica');
+          toast.error('Erro: não foi possível atualizar a clínica - verifique permissões');
+          return;
+        }
+
+        console.log('Clínica atualizada com sucesso!');
+      } else {
+        console.log('Criando nova clínica...');
+        const { data: clinicaData, error: clinicaError } = await supabase
+          .from('clinicas')
+          .insert({
+            nome: step2Data.nome_clinica,
+            cnpj: step2Data.cnpj_clinica,
+            endereco: step2Data.endereco_clinica || null,
+          })
+          .select()
+          .single();
+
+        if (clinicaError) {
+          console.error('Erro ao criar clínica:', clinicaError);
+          toast.error('Erro ao criar clínica: ' + clinicaError.message);
+          return;
+        }
+
+        clinicaId = clinicaData.id;
+        console.log('Nova clínica criada com ID:', clinicaId);
+
+        const { error: associacaoError } = await supabase
+          .from('usuarios_clinicas')
+          .update({
+            clinica_id: clinicaId,
+            tipo_papel: 'profissional'
+          })
+          .eq('usuario_id', user?.id);
+
+        if (associacaoError) {
+          console.error('Erro ao atualizar associação:', associacaoError);
+          toast.error('Erro ao associar usuário à clínica: ' + associacaoError.message);
+          return;
+        }
+      }
+
+      if (step2Data.servicos_precos && step2Data.servicos_precos.length > 0) {
+        console.log('Criando tipos de serviço:', step2Data.servicos_precos);
+        
+        const tiposServicosData = step2Data.servicos_precos.map(servico => ({
+          nome: servico.nome,
+          preco: parseFloat(servico.preco) || 0,
+          clinica_id: clinicaId,
+          profissional_id: profissional?.id,
+          ativo: true
+        }));
+
+        const { error: servicosError } = await supabase
+          .from('tipos_servicos')
+          .insert(tiposServicosData);
+
+        if (servicosError) {
+          console.error('Erro ao criar tipos de serviço:', servicosError);
+          toast.error('Erro ao salvar tipos de serviço: ' + servicosError.message);
+        } else {
+          console.log('Tipos de serviço criados com sucesso!');
+        }
+      }
+
+      const completeData = {
+        nome: step1Data.nome,
+        mini_bio: step1Data.mini_bio,
+        servicos_oferecidos: step1Data.servicos_oferecidos,
+        nome_clinica: step2Data.nome_clinica,
+        clinica_id: clinicaId,
+        horarios_atendimento: step2Data.horarios_atendimento,
+        servicos_precos: step2Data.servicos_precos,
+        formas_pagamento: step2Data.formas_pagamento,
+        planos_saude: step2Data.planos_saude,
+        onboarding_completo: true,
+      };
+
+      await updateProfissional(completeData);
+      toast.success('Sua clínica foi configurada com sucesso!');
+    } catch (error) {
+      toast.error('Erro ao criar clínica. Tente novamente.');
+      console.error('Erro no onboarding:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!needsOnboarding) return null;
+
+  return (
+    <Dialog open={needsOnboarding} onOpenChange={() => {}}>
+      <DialogContent 
+        className="max-w-2xl max-h-[90vh] overflow-y-auto"
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
+        <DialogHeader className="sr-only">
+          <DialogTitle>Complete seu cadastro</DialogTitle>
+          <DialogDescription>
+            Preencha as informações para configurar sua clínica
+          </DialogDescription>
+        </DialogHeader>
+        
+        {currentStep === 1 ? (
+          <OnboardingStep1
+            data={step1Data}
+            onDataChange={setStep1Data}
+            onNext={handleStep1Next}
+            onSkip={handleSkipStep1}
+          />
+        ) : (
+          <OnboardingStep2
+            data={step2Data}
+            onDataChange={setStep2Data}
+            onSubmit={handleFinalSubmit}
+            onBack={handleStep2Back}
+            onSkip={handleSkipStep2}
+            loading={loading}
+          />
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
