@@ -55,6 +55,12 @@ export interface ModalidadeAtendimento {
   cor: string;
 }
 
+export interface PagamentoPorForma {
+  nome: string;
+  valor: number;
+  cor: string;
+}
+
 export const useRelatorios = (periodo: string = 'mes', dataInicio?: Date, dataFim?: Date) => {
   const { user, userProfile } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -68,6 +74,7 @@ export const useRelatorios = (periodo: string = 'mes', dataInicio?: Date, dataFi
   const [statusPagamentos, setStatusPagamentos] = useState<StatusPagamento[]>([]);
   const [origensPacientes, setOrigensPacientes] = useState<OrigemPaciente[]>([]);
   const [modalidadesAtendimento, setModalidadesAtendimento] = useState<ModalidadeAtendimento[]>([]);
+  const [pagamentosPorForma, setPagamentosPorForma] = useState<PagamentoPorForma[]>([]);
 
   const getDateRange = (periodo: string) => {
     // Se datas customizadas foram fornecidas, usar elas
@@ -954,6 +961,112 @@ export const useRelatorios = (periodo: string = 'mes', dataInicio?: Date, dataFi
     }
   };
 
+  const buscarPagamentosPorForma = async () => {
+    if (!user || !userProfile) return;
+
+    try {
+      const { inicio, fim } = getDateRange(periodo);
+      let profissionalIds: string[] = [];
+
+      if (userProfile.tipo_usuario === 'profissional') {
+        const { data: profissional } = await supabase
+          .from('profissionais')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('ativo', true)
+          .maybeSingle();
+
+        if (!profissional) return;
+        profissionalIds = [profissional.id];
+      } else if (userProfile.tipo_usuario === 'recepcionista') {
+        const { data: clinicasUsuario } = await supabase.rpc('get_user_clinicas');
+        if (!clinicasUsuario || clinicasUsuario.length === 0) return;
+
+        const clinicaId = clinicasUsuario[0].clinica_id;
+        const { data: profissionais } = await supabase
+          .from('profissionais')
+          .select('id')
+          .eq('clinica_id', clinicaId)
+          .eq('ativo', true);
+
+        if (!profissionais || profissionais.length === 0) return;
+        profissionalIds = profissionais.map(p => p.id);
+      } else if (userProfile.tipo_usuario === 'admin') {
+        const { data: profissionais } = await supabase
+          .from('profissionais')
+          .select('id')
+          .eq('ativo', true);
+
+        if (!profissionais || profissionais.length === 0) return;
+        profissionalIds = profissionais.map(p => p.id);
+      }
+
+      if (profissionalIds.length === 0) return;
+
+      // Buscar agendamentos do período
+      const { data: agendamentos } = await supabase
+        .from('agendamentos')
+        .select('id')
+        .in('profissional_id', profissionalIds)
+        .gte('data_inicio', inicio.toISOString())
+        .lte('data_inicio', fim.toISOString());
+
+      if (!agendamentos || agendamentos.length === 0) {
+        setPagamentosPorForma([]);
+        return;
+      }
+
+      const agendamentoIds = agendamentos.map(a => a.id);
+
+      // Buscar pagamentos pagos desses agendamentos
+      const { data: pagamentos } = await supabase
+        .from('pagamentos')
+        .select('forma_pagamento')
+        .in('agendamento_id', agendamentoIds)
+        .eq('status', 'pago');
+
+      if (!pagamentos || pagamentos.length === 0) {
+        setPagamentosPorForma([]);
+        return;
+      }
+
+      // Contar por forma de pagamento
+      const contagem = pagamentos.reduce((acc: Record<string, number>, p) => {
+        const forma = p.forma_pagamento || 'Não informado';
+        acc[forma] = (acc[forma] || 0) + 1;
+        return acc;
+      }, {});
+
+      const formasLabels: Record<string, string> = {
+        pix: 'PIX',
+        cartao: 'Cartão',
+        cartao_credito: 'Cartão de Crédito',
+        cartao_debito: 'Cartão de Débito',
+        dinheiro: 'Dinheiro',
+        link: 'Link de Pagamento'
+      };
+
+      const cores = [
+        'hsl(var(--primary))',
+        'hsl(142, 76%, 36%)',
+        'hsl(38, 92%, 50%)',
+        'hsl(221, 83%, 53%)',
+        'hsl(280, 65%, 60%)',
+        'hsl(0, 84%, 60%)'
+      ];
+
+      const dados = Object.entries(contagem).map(([forma, valor], index) => ({
+        nome: formasLabels[forma] || forma,
+        valor,
+        cor: cores[index % cores.length]
+      }));
+
+      setPagamentosPorForma(dados);
+    } catch (err) {
+      console.error('Erro ao buscar pagamentos por forma:', err);
+    }
+  };
+
   useEffect(() => {
     const carregarDados = async () => {
       setLoading(true);
@@ -968,7 +1081,8 @@ export const useRelatorios = (periodo: string = 'mes', dataInicio?: Date, dataFi
         buscarStatusConsultas(),
         buscarStatusPagamentos(),
         buscarOrigensPacientes(),
-        buscarModalidadesAtendimento()
+        buscarModalidadesAtendimento(),
+        buscarPagamentosPorForma()
       ]);
 
       setLoading(false);
@@ -990,6 +1104,7 @@ export const useRelatorios = (periodo: string = 'mes', dataInicio?: Date, dataFi
     statusConsultas,
     statusPagamentos,
     origensPacientes,
-    modalidadesAtendimento
+    modalidadesAtendimento,
+    pagamentosPorForma
   };
 };

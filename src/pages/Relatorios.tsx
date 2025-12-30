@@ -31,7 +31,8 @@ export default function Relatorios() {
     statusConsultas,
     statusPagamentos,
     origensPacientes,
-    modalidadesAtendimento
+    modalidadesAtendimento,
+    pagamentosPorForma
   } = useRelatorios(
     usarDateRange ? 'custom' : periodo,
     dateRange?.from,
@@ -476,6 +477,47 @@ export default function Relatorios() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Pagamentos por Forma de Pagamento</CardTitle>
+            <CardDescription>
+              Quantidade de pagamentos recebidos por modalidade
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="h-[300px] flex items-center justify-center">
+                <Skeleton className="h-full w-full" />
+              </div>
+            ) : pagamentosPorForma.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={pagamentosPorForma}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ nome, valor }) => `${nome}: ${valor}`}
+                    outerRadius={80}
+                    fill="hsl(var(--primary))"
+                    dataKey="valor"
+                  >
+                    {pagamentosPorForma.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.cor} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                <p>Nenhum pagamento no período selecionado</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>Relatórios Detalhados</CardTitle>
