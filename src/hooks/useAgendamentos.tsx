@@ -177,14 +177,22 @@ export function useCreateAgendamento() {
       
       if (error) throw error;
 
-      // Criar evento no Google Calendar
+      // Criar evento no Google Calendar apenas se o profissional tiver a integração configurada
       try {
-        await supabase.functions.invoke('google-calendar', {
-          body: {
-            action: 'create',
-            agendamentoId: data.id,
-          },
-        });
+        const { data: profissional } = await supabase
+          .from('profissionais')
+          .select('google_refresh_token')
+          .eq('id', agendamento.profissional_id)
+          .single();
+        
+        if (profissional?.google_refresh_token) {
+          await supabase.functions.invoke('google-calendar', {
+            body: {
+              action: 'create',
+              agendamentoId: data.id,
+            },
+          });
+        }
       } catch (calendarError) {
         console.warn('Erro ao criar evento no Google Calendar:', calendarError);
       }
@@ -224,14 +232,22 @@ export function useUpdateAgendamento() {
       
       if (error) throw error;
 
-      // Atualizar evento no Google Calendar
+      // Atualizar evento no Google Calendar apenas se o profissional tiver a integração configurada
       try {
-        await supabase.functions.invoke('google-calendar', {
-          body: {
-            action: 'update',
-            agendamentoId: id,
-          },
-        });
+        const { data: profissional } = await supabase
+          .from('profissionais')
+          .select('google_refresh_token')
+          .eq('id', updated.profissional_id)
+          .single();
+        
+        if (profissional?.google_refresh_token) {
+          await supabase.functions.invoke('google-calendar', {
+            body: {
+              action: 'update',
+              agendamentoId: id,
+            },
+          });
+        }
       } catch (calendarError) {
         console.warn('Erro ao atualizar evento no Google Calendar:', calendarError);
       }
