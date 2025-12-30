@@ -30,9 +30,10 @@ export default function Auth() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // Redirecionar se já estiver logado
+  // Redirecionar se já estiver logado (exceto quando criando usuário pela equipe)
   useEffect(() => {
-    if (user) {
+    const isCreatingTeamUser = sessionStorage.getItem('creating_team_user') === 'true';
+    if (user && !isCreatingTeamUser) {
       navigate('/app/dashboard');
     }
   }, [user, navigate]);
