@@ -23,6 +23,7 @@ export default function Auth() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
   
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
@@ -96,17 +97,24 @@ export default function Auth() {
           }, 1500);
         }
       } else {
+        setPasswordError(''); // Limpar erro anterior
         const { error } = await signIn(email, password);
         if (error) {
           console.log('Erro de login:', error);
-          // Se for erro de credenciais inválidas, redirecionar para cadastro
-          if (error.toLowerCase().includes('invalid') || error.includes('400') || error.includes('credentials')) {
-            console.log('Redirecionando para cadastro...');
-            toast.error('Email ou senha incorretos. Redirecionando para cadastro...');
-            // Forçar atualização do estado
+          const errorLower = error.toLowerCase();
+          
+          // Verificar se é erro de email não encontrado
+          if (errorLower.includes('user not found') || errorLower.includes('no user') || errorLower.includes('email not confirmed')) {
+            toast.info('Email não cadastrado. Redirecionando para criar conta...');
             setMode('signup');
-            setPassword(''); // Limpar senha
-            setConfirmPassword(''); // Limpar confirmação
+            setPassword('');
+            setConfirmPassword('');
+            // Email é mantido automaticamente pois já está no state
+          } 
+          // Verificar se é erro de credenciais inválidas (senha errada)
+          else if (errorLower.includes('invalid') || error.includes('400') || errorLower.includes('credentials') || errorLower.includes('password')) {
+            setPasswordError('Senha incorreta. Verifique e tente novamente.');
+            // Email é mantido, apenas mostrar erro na senha
           } else {
             toast.error(error);
           }
@@ -268,8 +276,11 @@ export default function Auth() {
                       type={showPassword ? "text" : "password"}
                       placeholder="••••••••"
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="pl-10 pr-10 h-12"
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        setPasswordError(''); // Limpar erro ao digitar
+                      }}
+                      className={`pl-10 pr-10 h-12 ${passwordError ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                       required
                       minLength={6}
                     />
@@ -281,6 +292,9 @@ export default function Auth() {
                       {showPassword ? <EyeOff /> : <Eye />}
                     </button>
                   </div>
+                  {passwordError && (
+                    <p className="text-sm text-destructive">{passwordError}</p>
+                  )}
                 </div>
               )}
 
