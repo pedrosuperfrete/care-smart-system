@@ -297,6 +297,7 @@ export default function Financeiro() {
                 {filteredPagamentos.map((pagamento) => {
                   const pacienteNome = pagamento?.agendamentos?.pacientes?.nome || 'Nome não disponível';
                   const tipoServico = pagamento?.agendamentos?.tipo_servico || 'Serviço não especificado';
+                  const servicosAdicionais = pagamento?.agendamentos?.servicos_adicionais as any[] | null;
                   const statusAgendamento = pagamento?.agendamentos?.status;
                   const valorTotal = Number(pagamento?.valor_total) || 0;
                   const dataCriacao = pagamento?.criado_em ? new Date(pagamento.criado_em).toLocaleDateString('pt-BR') : 'Data não disponível';
@@ -321,7 +322,12 @@ export default function Financeiro() {
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col">
-                          <span>{tipoServico}</span>
+                          <span>
+                            {tipoServico}
+                            {Array.isArray(servicosAdicionais) && servicosAdicionais.length > 0 && (
+                              <span className="text-muted-foreground"> + {servicosAdicionais.map((s: any) => s.nome).join(', ')}</span>
+                            )}
+                          </span>
                           {statusAgendamentoLabel && (
                             <span className={`text-xs ${
                               statusAgendamento === 'realizado' ? 'text-success' : 
