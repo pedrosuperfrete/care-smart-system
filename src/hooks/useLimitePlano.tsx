@@ -7,10 +7,13 @@ export interface LimitePlano {
   tipo_plano: string | null;
   total_profissionais: number;
   total_secretarias: number;
+  total_pacientes: number;
   max_profissionais: number;
   max_secretarias: number;
+  max_pacientes: number;
   pode_adicionar_profissional: boolean;
   pode_adicionar_secretaria: boolean;
+  pode_adicionar_paciente: boolean;
   profissionais_adicionais_permitidos: number;
 }
 
@@ -49,4 +52,19 @@ export function usePodeAdicionarMembro(tipoPapel: 'profissional' | 'recepcionist
     : limites.pode_adicionar_secretaria;
 
   return { podeAdicionar, isLoading: false, limites };
+}
+
+export function usePodeAdicionarPaciente() {
+  const { data: limites, isLoading, refetch } = useLimitePlano();
+
+  if (isLoading || !limites) {
+    return { podeAdicionar: true, isLoading: true, limites: null, refetch };
+  }
+
+  return { 
+    podeAdicionar: limites.pode_adicionar_paciente, 
+    isLoading: false, 
+    limites,
+    refetch
+  };
 }
