@@ -505,8 +505,6 @@ export function VisaoSemanalGrid({
                   );
                 });
               })()}
-                </div>
-              ))}
             </div>
           ))}
         </div>
