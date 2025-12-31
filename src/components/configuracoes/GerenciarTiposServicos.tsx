@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Plus, Trash2, Edit3, Info } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   useTiposServicos, 
   useCreateTipoServico, 
@@ -15,6 +16,7 @@ import {
 } from '@/hooks/useTiposServicos';
 import { useAuth } from '@/hooks/useAuth';
 import { useMigrarServicos } from '@/hooks/useMigrarServicos';
+import { useProfissionais } from '@/hooks/useProfissionais';
 import { formatCurrency } from '@/lib/utils';
 
 export function GerenciarTiposServicos() {
@@ -22,16 +24,22 @@ export function GerenciarTiposServicos() {
   const createMutation = useCreateTipoServico();
   const updateMutation = useUpdateTipoServico();
   const deleteMutation = useDeleteTipoServico();
-  const { profissional } = useAuth();
+  const { profissional, isRecepcionista, isAdmin, clinicaAtual } = useAuth();
+  const { data: profissionais = [] } = useProfissionais();
   
   // Migrar dados antigos automaticamente
   useMigrarServicos();
+  
+  // Secretárias e admins podem escolher o profissional
+  const podeEscolherProfissional = isRecepcionista || isAdmin;
+  const deveMostrarSelectProfissional = podeEscolherProfissional && profissionais.length > 0;
   
   const [novoTipo, setNovoTipo] = useState({ 
     nome: '', 
     preco: '',
     percentualFalta: '',
-    percentualAgendamento: ''
+    percentualAgendamento: '',
+    profissionalId: ''
   });
   const [editandoTipo, setEditandoTipo] = useState<TipoServico | null>(null);
   const [editForm, setEditForm] = useState({ 
@@ -46,17 +54,32 @@ export function GerenciarTiposServicos() {
   const handleCriarTipo = async () => {
     if (!novoTipo.nome.trim()) return;
     
+    // Se pode escolher profissional, usa o selecionado; senão, usa o próprio profissional
+    const profissionalIdFinal = podeEscolherProfissional 
+      ? novoTipo.profissionalId || undefined
+      : profissional?.id;
+    
+    // Buscar a clinica_id do profissional selecionado ou usar a clínica atual
+    let clinicaIdFinal: string | null | undefined = clinicaAtual || profissional?.clinica_id;
+    
+    if (profissionalIdFinal && profissionais.length > 0) {
+      const profissionalSelecionado = profissionais.find(p => p.id === profissionalIdFinal);
+      if (profissionalSelecionado?.clinica_id) {
+        clinicaIdFinal = profissionalSelecionado.clinica_id;
+      }
+    }
+    
     const data = {
       nome: novoTipo.nome.trim(),
       preco: novoTipo.preco ? parseFloat(novoTipo.preco) : undefined,
       percentual_cobranca_falta: novoTipo.percentualFalta ? parseFloat(novoTipo.percentualFalta) : undefined,
       percentual_cobranca_agendamento: novoTipo.percentualAgendamento ? parseFloat(novoTipo.percentualAgendamento) : undefined,
-      profissional_id: profissional?.id,
-      clinica_id: profissional?.clinica_id
+      profissional_id: profissionalIdFinal,
+      clinica_id: clinicaIdFinal
     };
     
     await createMutation.mutateAsync(data);
-    setNovoTipo({ nome: '', preco: '', percentualFalta: '', percentualAgendamento: '' });
+    setNovoTipo({ nome: '', preco: '', percentualFalta: '', percentualAgendamento: '', profissionalId: '' });
     setShowCreateDialog(false);
   };
 
@@ -126,6 +149,27 @@ export function GerenciarTiposServicos() {
               </DialogHeader>
               
               <div className="space-y-4">
+                {deveMostrarSelectProfissional && (
+                  <div>
+                    <Label htmlFor="profissional">Profissional *</Label>
+                    <Select
+                      value={novoTipo.profissionalId}
+                      onValueChange={(value) => setNovoTipo(prev => ({ ...prev, profissionalId: value }))}
+                    >
+                      <SelectTrigger id="profissional">
+                        <SelectValue placeholder="Selecione o profissional" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {profissionais.map((prof) => (
+                          <SelectItem key={prof.id} value={prof.id}>
+                            {prof.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                
                 <div>
                   <Label htmlFor="nome">Nome do Serviço *</Label>
                   <Input
@@ -225,7 +269,7 @@ export function GerenciarTiposServicos() {
                   </Button>
                   <Button 
                     onClick={handleCriarTipo}
-                    disabled={!novoTipo.nome.trim() || createMutation.isPending}
+                    disabled={!novoTipo.nome.trim() || createMutation.isPending || (deveMostrarSelectProfissional && !novoTipo.profissionalId)}
                   >
                     {createMutation.isPending ? 'Criando...' : 'Criar'}
                   </Button>
