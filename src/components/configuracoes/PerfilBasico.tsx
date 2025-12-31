@@ -87,6 +87,24 @@ export function PerfilBasico({ userProfile, profissional, profileData, setProfil
                   placeholder="Seu telefone"
                 />
               </div>
+
+              <div className="space-y-2">
+                <Label>Chave PIX</Label>
+                <Input 
+                  value={profileData.pix_chave || ''}
+                  onChange={(e) => setProfileData({ ...profileData, pix_chave: e.target.value })}
+                  placeholder="Chave PIX para recebimentos"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Conta Bancária</Label>
+                <Input 
+                  value={profileData.conta_bancaria || ''}
+                  onChange={(e) => setProfileData({ ...profileData, conta_bancaria: e.target.value })}
+                  placeholder="Dados da conta bancária"
+                />
+              </div>
             </>
           )}
         </div>

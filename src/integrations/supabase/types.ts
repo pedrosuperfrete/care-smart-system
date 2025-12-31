@@ -633,6 +633,7 @@ export type Database = {
           ativo: boolean
           atualizado_em: string
           clinica_id: string | null
+          conta_bancaria: string | null
           criado_em: string
           crm_cro: string
           data_vencimento_assinatura: string | null
@@ -646,6 +647,7 @@ export type Database = {
           nome_clinica: string | null
           onboarding_adiado_em: string | null
           onboarding_completo: boolean | null
+          pix_chave: string | null
           planos_saude: Json | null
           servicos_oferecidos: Json | null
           servicos_precos: Json | null
@@ -661,6 +663,7 @@ export type Database = {
           ativo?: boolean
           atualizado_em?: string
           clinica_id?: string | null
+          conta_bancaria?: string | null
           criado_em?: string
           crm_cro: string
           data_vencimento_assinatura?: string | null
@@ -674,6 +677,7 @@ export type Database = {
           nome_clinica?: string | null
           onboarding_adiado_em?: string | null
           onboarding_completo?: boolean | null
+          pix_chave?: string | null
           planos_saude?: Json | null
           servicos_oferecidos?: Json | null
           servicos_precos?: Json | null
@@ -689,6 +693,7 @@ export type Database = {
           ativo?: boolean
           atualizado_em?: string
           clinica_id?: string | null
+          conta_bancaria?: string | null
           criado_em?: string
           crm_cro?: string
           data_vencimento_assinatura?: string | null
@@ -702,6 +707,7 @@ export type Database = {
           nome_clinica?: string | null
           onboarding_adiado_em?: string | null
           onboarding_completo?: boolean | null
+          pix_chave?: string | null
           planos_saude?: Json | null
           servicos_oferecidos?: Json | null
           servicos_precos?: Json | null

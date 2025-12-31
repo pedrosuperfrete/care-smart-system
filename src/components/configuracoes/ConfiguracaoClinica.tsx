@@ -16,9 +16,7 @@ export function ConfiguracaoClinica() {
   const [formData, setFormData] = useState({
     nome: '',
     cnpj: '',
-    endereco: '',
-    pix_chave: '',
-    conta_bancaria: ''
+    endereco: ''
   });
 
   useEffect(() => {
@@ -27,16 +25,12 @@ export function ConfiguracaoClinica() {
       console.log('Carregando dados da clínica:', {
         nome: clinica.nome,
         cnpj: clinica.cnpj,
-        endereco: clinica.endereco,
-        pix_chave: clinica.pix_chave,
-        conta_bancaria: clinica.conta_bancaria
+        endereco: clinica.endereco
       });
       setFormData({
         nome: clinica.nome || '',
         cnpj: clinica.cnpj || '',
-        endereco: clinica.endereco || '',
-        pix_chave: clinica.pix_chave || '',
-        conta_bancaria: clinica.conta_bancaria || ''
+        endereco: clinica.endereco || ''
       });
     }
   }, [clinica]);
@@ -51,9 +45,7 @@ export function ConfiguracaoClinica() {
         .update({
           nome: formData.nome,
           cnpj: formData.cnpj,
-          endereco: formData.endereco || null,
-          pix_chave: formData.pix_chave || null,
-          conta_bancaria: formData.conta_bancaria || null
+          endereco: formData.endereco || null
         })
         .eq('id', clinica.id);
 
@@ -102,24 +94,6 @@ export function ConfiguracaoClinica() {
               placeholder="Endereço completo da clínica" 
               value={formData.endereco}
               onChange={(e) => setFormData({...formData, endereco: e.target.value})}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Chave PIX</Label>
-            <Input 
-              placeholder="Chave PIX para recebimentos" 
-              value={formData.pix_chave}
-              onChange={(e) => setFormData({...formData, pix_chave: e.target.value})}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Conta Bancária</Label>
-            <Input 
-              placeholder="Dados da conta bancária" 
-              value={formData.conta_bancaria}
-              onChange={(e) => setFormData({...formData, conta_bancaria: e.target.value})}
             />
           </div>
         </div>
