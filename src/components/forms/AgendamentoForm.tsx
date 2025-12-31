@@ -227,30 +227,39 @@ export function AgendamentoForm({ agendamento, pacienteId, dataHoraInicial, onSu
   };
 
   const handleChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+      ...(field === 'profissional_id' ? { tipo_servico: '', valor: '' } : {}),
+    }));
+
     // Auto-preencher valor quando tipo de serviço é selecionado
     if (field === 'tipo_servico') {
-      const tipoServico = tiposServicos.find(tipo => tipo.nome === value);
+      const profId = formData.profissional_id;
+      const tipoServico = tiposServicos.find(
+        (tipo) =>
+          tipo.nome === value &&
+          (!profId ? !tipo.profissional_id : !tipo.profissional_id || tipo.profissional_id === profId)
+      );
       if (tipoServico?.preco) {
-        setFormData(prev => ({ ...prev, valor: tipoServico.preco!.toString() }));
+        setFormData((prev) => ({ ...prev, valor: tipoServico.preco!.toString() }));
       }
     }
-    
+
     // Auto-preencher hora fim (1 hora depois) quando hora início é alterada
     if (field === 'data_inicio' && value) {
       const dataInicio = new Date(value);
       const dataFim = new Date(dataInicio);
       dataFim.setHours(dataFim.getHours() + 1);
-      
+
       const year = dataFim.getFullYear();
       const month = String(dataFim.getMonth() + 1).padStart(2, '0');
       const day = String(dataFim.getDate()).padStart(2, '0');
       const hour = String(dataFim.getHours()).padStart(2, '0');
       const minute = String(dataFim.getMinutes()).padStart(2, '0');
       const dataHoraFim = `${year}-${month}-${day}T${hour}:${minute}`;
-      
-      setFormData(prev => ({ ...prev, data_fim: dataHoraFim }));
+
+      setFormData((prev) => ({ ...prev, data_fim: dataHoraFim }));
     }
   };
 
@@ -309,7 +318,7 @@ export function AgendamentoForm({ agendamento, pacienteId, dataHoraInicial, onSu
         nome: data.nome,
         preco: data.preco ? parseFloat(data.preco) : undefined,
         clinica_id: clinicaAtual,
-        profissional_id: profissional?.id,
+        profissional_id: podeEscolherProfissional ? (formData.profissional_id || undefined) : profissional?.id,
       };
 
       const novoTipoServico = await createTipoServico.mutateAsync(tipoServicoData);
@@ -449,14 +458,30 @@ export function AgendamentoForm({ agendamento, pacienteId, dataHoraInicial, onSu
               </SelectItem>
               {loadingTipos ? (
                 <div className="p-2 text-sm text-muted-foreground">Carregando tipos de serviço...</div>
-              ) : tiposServicos.length === 0 ? (
-                <div className="p-2 text-sm text-muted-foreground">Nenhum tipo de serviço cadastrado</div>
               ) : (
-                tiposServicos.map((tipo) => (
-                  <SelectItem key={tipo.id} value={tipo.nome}>
-                    {tipo.nome}
-                  </SelectItem>
-                ))
+                (() => {
+                  const profId = formData.profissional_id;
+                  const list = tiposServicos.filter((tipo) => {
+                    // Até selecionar um profissional, mostrar apenas serviços "da clínica" (profissional_id null)
+                    if (!profId) return !tipo.profissional_id;
+                    // Com profissional selecionado, mostrar serviços da clínica + do profissional
+                    return !tipo.profissional_id || tipo.profissional_id === profId;
+                  });
+
+                  if (list.length === 0) {
+                    return (
+                      <div className="p-2 text-sm text-muted-foreground">
+                        Nenhum tipo de serviço para este profissional
+                      </div>
+                    );
+                  }
+
+                  return list.map((tipo) => (
+                    <SelectItem key={tipo.id} value={tipo.nome}>
+                      {tipo.nome}
+                    </SelectItem>
+                  ));
+                })()
               )}
             </SelectContent>
           </Select>
