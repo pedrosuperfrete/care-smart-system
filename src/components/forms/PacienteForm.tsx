@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,12 +7,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { EnhancedDatePicker } from '@/components/ui/enhanced-date-picker';
 import { useCreatePaciente, useUpdatePaciente } from '@/hooks/usePacientes';
 import { useAuth } from '@/hooks/useAuth';
+import { usePodeAdicionarPaciente } from '@/hooks/useLimitePlano';
+import { useCreateCheckout } from '@/hooks/useAssinatura';
 import { Tables } from '@/integrations/supabase/types';
 import { toLocalDateString, fromLocalDateString } from '@/lib/dateUtils';
+import { AlertTriangle, Crown } from 'lucide-react';
 
 type Paciente = Tables<'pacientes'>;
 
@@ -91,8 +94,13 @@ export function PacienteForm({ paciente, onSuccess, viewMode = false }: Paciente
   const { clinicaAtual } = useAuth();
   const createPaciente = useCreatePaciente();
   const updatePaciente = useUpdatePaciente();
+  const createCheckout = useCreateCheckout();
+  const { podeAdicionar: podeAdicionarPaciente, isLoading: isLoadingLimites, limites } = usePodeAdicionarPaciente();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(!viewMode);
+  
+  // Se é novo paciente (não é edição) e não pode adicionar, bloquear
+  const bloqueadoPorLimite = !paciente && !podeAdicionarPaciente && !isLoadingLimites;
   
   // Formata telefone inicial se houver
   const formatarTelefoneInicial = (telefone: string | null) => {
@@ -217,6 +225,30 @@ export function PacienteForm({ paciente, onSuccess, viewMode = false }: Paciente
   return (
     <Card>
       <CardContent className="pt-6">
+        {/* Alerta de limite de pacientes atingido */}
+        {bloqueadoPorLimite && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Limite de pacientes atingido</AlertTitle>
+            <AlertDescription className="flex flex-col gap-2">
+              <span>
+                Você atingiu o limite de {limites?.max_pacientes || 1} paciente{(limites?.max_pacientes || 1) > 1 ? 's' : ''} do plano gratuito. 
+                Assine para cadastrar pacientes ilimitados.
+              </span>
+              <Button 
+                type="button"
+                size="sm" 
+                className="w-fit"
+                onClick={() => createCheckout.mutate('solo')}
+                disabled={createCheckout.isPending}
+              >
+                <Crown className="h-4 w-4 mr-2" />
+                {createCheckout.isPending ? 'Carregando...' : 'Assinar agora - R$399/mês'}
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+        
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
           {/* Linha 1: Nome, CPF, Data de Nascimento */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -486,7 +518,7 @@ export function PacienteForm({ paciente, onSuccess, viewMode = false }: Paciente
             ) : (
               <Button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || bloqueadoPorLimite}
                 className="min-w-[120px]"
               >
                 {isSubmitting ? 'Salvando...' : paciente ? 'Atualizar' : 'Criar'}
