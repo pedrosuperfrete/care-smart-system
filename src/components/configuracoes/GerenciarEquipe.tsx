@@ -9,9 +9,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { UserPlus, UserMinus, Edit, Trash } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { UserPlus, UserMinus, Edit, Trash, Crown, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUsuariosClinicas, useCreateUsuarioClinica, useRemoveUsuarioClinica, useUpdateUsuarioClinica } from '@/hooks/useUsuariosClinicas';
+import { useLimitePlano } from '@/hooks/useLimitePlano';
+import { useCreateCheckout } from '@/hooks/useAssinatura';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -45,9 +48,23 @@ export function GerenciarEquipe() {
   
 
   const { data: usuarios = [], isLoading } = useUsuariosClinicas(clinicaAtual || undefined);
+  const { data: limitePlano, isLoading: loadingLimites } = useLimitePlano();
+  const createCheckout = useCreateCheckout();
   const createUsuarioClinica = useCreateUsuarioClinica();
   const removeUsuarioClinica = useRemoveUsuarioClinica();
   const updateUsuarioClinica = useUpdateUsuarioClinica();
+
+  // Verificar se pode adicionar baseado no tipo selecionado
+  const podeAdicionarTipoSelecionado = useMemo(() => {
+    if (!limitePlano) return false;
+    if (novoUsuario.tipo_papel === 'profissional' || novoUsuario.tipo_papel === 'admin_clinica') {
+      return limitePlano.pode_adicionar_profissional;
+    }
+    if (novoUsuario.tipo_papel === 'recepcionista') {
+      return limitePlano.pode_adicionar_secretaria;
+    }
+    return false;
+  }, [limitePlano, novoUsuario.tipo_papel]);
 
   // Usar useMemo para evitar loop infinito de atualizações
   const usuariosDetalhes = useMemo(() => {
@@ -61,6 +78,13 @@ export function GerenciarEquipe() {
 
 
   const handleAdicionarUsuario = async () => {
+    // Validar limite do plano antes de tudo
+    if (!podeAdicionarTipoSelecionado) {
+      const tipoLabel = novoUsuario.tipo_papel === 'recepcionista' ? 'secretárias' : 'profissionais';
+      toast.error(`Limite de ${tipoLabel} atingido. Faça upgrade do seu plano.`);
+      return;
+    }
+
     // Buscar a clínica real do profissional atual (não a temporária)
     const { data: profissionalData } = await supabase
       .from('profissionais')
@@ -371,6 +395,11 @@ export function GerenciarEquipe() {
           <CardTitle>Gerenciar Equipe</CardTitle>
           <CardDescription>
             {(isAdminClinica || isProfissional) ? 'Gerencie os usuários da clínica' : 'Visualize a equipe da clínica'}
+            {limitePlano && (
+              <span className="block text-xs mt-1">
+                {limitePlano.total_profissionais}/{limitePlano.max_profissionais} profissionais • {limitePlano.total_secretarias}/{limitePlano.max_secretarias} secretárias
+              </span>
+            )}
           </CardDescription>
         </div>
         
@@ -453,6 +482,36 @@ export function GerenciarEquipe() {
                 </div>
               </div>
               
+              {/* Alerta de limite atingido */}
+              {!podeAdicionarTipoSelecionado && limitePlano && (
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription className="flex flex-col gap-2">
+                    <span>
+                      {novoUsuario.tipo_papel === 'recepcionista' 
+                        ? `Limite de secretárias atingido (${limitePlano.total_secretarias}/${limitePlano.max_secretarias}).`
+                        : `Limite de profissionais atingido (${limitePlano.total_profissionais}/${limitePlano.max_profissionais}).`
+                      }
+                    </span>
+                    <span className="text-xs">
+                      {limitePlano.assinatura_ativa 
+                        ? 'Faça upgrade do seu plano para adicionar mais membros.'
+                        : 'Ative sua assinatura para adicionar mais membros à equipe.'
+                      }
+                    </span>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="mt-1 w-fit"
+                      onClick={() => createCheckout.mutate(undefined)}
+                    >
+                      <Crown className="mr-2 h-4 w-4" />
+                      {limitePlano.assinatura_ativa ? 'Fazer Upgrade' : 'Ativar Assinatura'}
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              )}
+              
               <DialogFooter>
                 <Button 
                   onClick={handleAdicionarUsuario}
@@ -461,7 +520,8 @@ export function GerenciarEquipe() {
                     !novoUsuario.nome || 
                     !novoUsuario.email || 
                     !novoUsuario.senha || 
-                    !novoUsuario.confirmarSenha
+                    !novoUsuario.confirmarSenha ||
+                    !podeAdicionarTipoSelecionado
                   }
                 >
                   {createUsuarioClinica.isPending ? 'Criando...' : 'Criar Usuário'}

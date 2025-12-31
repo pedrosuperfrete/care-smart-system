@@ -7,6 +7,23 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Mapeamento de planos para price_ids do Stripe
+// TODO: Substituir pelos IDs reais do Stripe
+const PLAN_PRICES: Record<string, { monthly: string; yearly: string }> = {
+  profissional: {
+    monthly: Deno.env.get("STRIPE_PRICE_SOLO_MONTHLY") || Deno.env.get("STRIPE_PRICE_ID") || "",
+    yearly: Deno.env.get("STRIPE_PRICE_SOLO_YEARLY") || "",
+  },
+  profissional_secretaria: {
+    monthly: Deno.env.get("STRIPE_PRICE_TEAM_MONTHLY") || "",
+    yearly: Deno.env.get("STRIPE_PRICE_TEAM_YEARLY") || "",
+  },
+  profissional_adicional: {
+    monthly: Deno.env.get("STRIPE_PRICE_ADDON_MONTHLY") || "",
+    yearly: Deno.env.get("STRIPE_PRICE_ADDON_YEARLY") || "",
+  },
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -46,10 +63,22 @@ serve(async (req) => {
       );
     }
 
+    // Parse request body para pegar o tipo de plano
+    let planType = "profissional"; // Default
+    let billingPeriod = "yearly"; // Default para anual (melhor para o usuário)
+    
+    try {
+      const body = await req.json();
+      if (body.planType) planType = body.planType;
+      if (body.billingPeriod) billingPeriod = body.billingPeriod;
+    } catch {
+      // Body vazio, usar defaults
+    }
+
     // ⚠️ SECURITY: Verify user is a professional before creating checkout
     const { data: profissional, error: profError } = await supabaseClient
       .from('profissionais')
-      .select('id, nome, stripe_customer_id, assinatura_ativa')
+      .select('id, nome, stripe_customer_id, assinatura_ativa, clinica_id')
       .eq('user_id', user.id)
       .eq('ativo', true)
       .single();
@@ -75,6 +104,7 @@ serve(async (req) => {
         metadata: {
           profissional_id: profissional.id,
           user_id: user.id,
+          clinica_id: profissional.clinica_id,
         },
       });
       customerId = customer.id;
@@ -86,11 +116,28 @@ serve(async (req) => {
         .eq('id', profissional.id);
     }
 
+    // Selecionar o price_id correto baseado no plano e período
+    const planConfig = PLAN_PRICES[planType] || PLAN_PRICES.profissional;
+    const priceId = billingPeriod === "monthly" ? planConfig.monthly : planConfig.yearly;
+
+    // Se não tem price_id configurado, usar o padrão
+    const finalPriceId = priceId || Deno.env.get("STRIPE_PRICE_ID");
+
+    if (!finalPriceId) {
+      console.error("Nenhum STRIPE_PRICE_ID configurado para o plano:", planType);
+      return new Response(
+        JSON.stringify({ error: "Price not configured for this plan" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+      );
+    }
+
+    console.log(`Criando checkout: plano=${planType}, período=${billingPeriod}, priceId=${finalPriceId}`);
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       line_items: [
         {
-          price: Deno.env.get("STRIPE_PRICE_ID"),
+          price: finalPriceId,
           quantity: 1,
         },
       ],
@@ -99,6 +146,9 @@ serve(async (req) => {
       cancel_url: `${req.headers.get("origin")}/app/configuracoes?tab=assinatura&canceled=true`,
       metadata: {
         profissional_id: profissional.id,
+        clinica_id: profissional.clinica_id,
+        plan_type: planType,
+        billing_period: billingPeriod,
       },
     });
 

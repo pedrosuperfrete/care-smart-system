@@ -649,12 +649,14 @@ export type Database = {
           onboarding_completo: boolean | null
           pix_chave: string | null
           planos_saude: Json | null
+          profissionais_adicionais_permitidos: number | null
           servicos_oferecidos: Json | null
           servicos_precos: Json | null
           stripe_customer_id: string | null
           stripe_status: string | null
           stripe_subscription_id: string | null
           telefone: string | null
+          tipo_plano: string | null
           user_id: string | null
         }
         Insert: {
@@ -679,12 +681,14 @@ export type Database = {
           onboarding_completo?: boolean | null
           pix_chave?: string | null
           planos_saude?: Json | null
+          profissionais_adicionais_permitidos?: number | null
           servicos_oferecidos?: Json | null
           servicos_precos?: Json | null
           stripe_customer_id?: string | null
           stripe_status?: string | null
           stripe_subscription_id?: string | null
           telefone?: string | null
+          tipo_plano?: string | null
           user_id?: string | null
         }
         Update: {
@@ -709,12 +713,14 @@ export type Database = {
           onboarding_completo?: boolean | null
           pix_chave?: string | null
           planos_saude?: Json | null
+          profissionais_adicionais_permitidos?: number | null
           servicos_oferecidos?: Json | null
           servicos_precos?: Json | null
           stripe_customer_id?: string | null
           stripe_status?: string | null
           stripe_subscription_id?: string | null
           telefone?: string | null
+          tipo_plano?: string | null
           user_id?: string | null
         }
         Relationships: [
@@ -1213,11 +1219,16 @@ export type Database = {
       is_profissional: { Args: never; Returns: boolean }
       is_recepcionista: { Args: never; Returns: boolean }
       normalizar_telefone: { Args: { telefone: string }; Returns: string }
+      pode_adicionar_membro_equipe: {
+        Args: { p_clinica_id: string; p_tipo_papel: string }
+        Returns: boolean
+      }
       update_user_by_admin: {
         Args: { p_email: string; p_tipo_usuario: string; p_user_id: string }
         Returns: undefined
       }
       user_has_complete_profile: { Args: never; Returns: boolean }
+      verificar_limite_plano: { Args: { p_clinica_id: string }; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "profissional" | "recepcionista"

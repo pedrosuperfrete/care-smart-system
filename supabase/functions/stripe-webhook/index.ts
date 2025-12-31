@@ -110,6 +110,10 @@ serve(async (req) => {
         const customerId = session.customer as string;
         const subscriptionId = session.subscription as string;
         
+        // Extrair metadata do checkout
+        const planType = session.metadata?.plan_type || null;
+        const billingPeriod = session.metadata?.billing_period || null;
+        
         if (customerId && subscriptionId) {
           // Buscar profissional pelo customer_id
           const { data: profissional, error } = await supabaseClient
@@ -119,12 +123,21 @@ serve(async (req) => {
             .single();
 
           if (!error && profissional) {
+            // Mapear tipo de plano para o formato do banco
+            let tipoPlanoDB: string | null = null;
+            if (planType === 'profissional') {
+              tipoPlanoDB = 'solo';
+            } else if (planType === 'profissional_secretaria') {
+              tipoPlanoDB = 'solo_secretaria';
+            }
+
             await supabaseClient
               .from('profissionais')
               .update({
                 stripe_subscription_id: subscriptionId,
                 assinatura_ativa: true,
                 stripe_status: 'active',
+                tipo_plano: tipoPlanoDB,
                 data_vencimento_assinatura: new Date().toISOString(), // Será atualizada no próximo invoice
               })
               .eq('id', profissional.id);
@@ -132,7 +145,10 @@ serve(async (req) => {
             logEvent("Checkout completado - assinatura ativada", { 
               profissionalId: profissional.id, 
               nome: profissional.nome,
-              subscriptionId 
+              subscriptionId,
+              planType,
+              tipoPlanoDB,
+              billingPeriod
             });
           } else {
             logEvent("ERRO: Profissional não encontrado para customer_id", { customerId });
