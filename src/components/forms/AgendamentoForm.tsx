@@ -134,15 +134,22 @@ export function AgendamentoForm({ agendamento, pacienteId, dataHoraInicial, onSu
   });
 
   useEffect(() => {
-    // Se pode escolher profissional e só existe 1 na clínica, preencher automaticamente
+    // Secretária/Admin com apenas 1 profissional: preencher automaticamente
     if (!agendamento && podeEscolherProfissional && profissionais.length === 1 && !formData.profissional_id) {
+      console.log('Auto-preenchendo profissional único:', profissionais[0].id);
       setFormData((prev) => ({ ...prev, profissional_id: profissionais[0].id }));
     }
 
-    // Se NÃO pode escolher, sempre garantir que está preenchido com o próprio profissional
+    // Profissional (não pode escolher): garantir que está preenchido com ele mesmo
     if (!agendamento && !podeEscolherProfissional && profissional?.id && !formData.profissional_id) {
+      console.log('Auto-preenchendo profissional próprio:', profissional.id);
       setFormData((prev) => ({ ...prev, profissional_id: profissional.id }));
     }
+    
+    // Log para debug
+    console.log('useEffect profissional - podeEscolher:', podeEscolherProfissional, 
+                'profissionais.length:', profissionais.length, 
+                'formData.profissional_id:', formData.profissional_id);
   }, [agendamento, podeEscolherProfissional, profissionais, profissional?.id, formData.profissional_id]);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -151,13 +158,22 @@ export function AgendamentoForm({ agendamento, pacienteId, dataHoraInicial, onSu
     console.log('Profissional disponível:', profissional);
     console.log('Lista de profissionais:', profissionais);
     
-    if (!formData.paciente_id || !formData.profissional_id || !formData.data_inicio || !formData.tipo_servico) {
-      console.error('Dados obrigatórios ausentes:', {
+    const camposFaltando = [];
+    if (!formData.paciente_id) camposFaltando.push('paciente');
+    if (!formData.profissional_id) camposFaltando.push('profissional');
+    if (!formData.data_inicio) camposFaltando.push('data/hora início');
+    if (!formData.tipo_servico) camposFaltando.push('tipo de serviço');
+    
+    if (camposFaltando.length > 0) {
+      console.error('Dados obrigatórios ausentes:', camposFaltando.join(', '), {
         paciente_id: formData.paciente_id,
         profissional_id: formData.profissional_id,
         data_inicio: formData.data_inicio,
         tipo_servico: formData.tipo_servico
       });
+      // Importar toast se ainda não estiver
+      const { toast } = await import('sonner');
+      toast.error(`Preencha os campos obrigatórios: ${camposFaltando.join(', ')}`);
       return;
     }
 
