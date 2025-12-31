@@ -237,6 +237,7 @@ export function useFinanceiroStats(startDate?: Date, endDate?: Date) {
           totalPendente: 0,
           totalVencido: 0,
           receitaMensal: 0,
+          quantidadePendentes: 0,
         };
       }
 
@@ -257,6 +258,7 @@ export function useFinanceiroStats(startDate?: Date, endDate?: Date) {
             totalPendente: 0,
             totalVencido: 0,
             receitaMensal: 0,
+            quantidadePendentes: 0,
           };
         }
 
@@ -283,6 +285,7 @@ export function useFinanceiroStats(startDate?: Date, endDate?: Date) {
             totalPendente: 0,
             totalVencido: 0,
             receitaMensal: 0,
+            quantidadePendentes: 0,
           };
         }
 
@@ -301,6 +304,7 @@ export function useFinanceiroStats(startDate?: Date, endDate?: Date) {
             totalPendente: 0,
             totalVencido: 0,
             receitaMensal: 0,
+            quantidadePendentes: 0,
           };
         }
 
@@ -339,6 +343,7 @@ export function useFinanceiroStats(startDate?: Date, endDate?: Date) {
           totalPendente: 0,
           totalVencido: 0,
           receitaMensal: 0,
+          quantidadePendentes: 0,
         };
       }
 
@@ -379,6 +384,7 @@ export function useFinanceiroStats(startDate?: Date, endDate?: Date) {
       let totalRecebido = 0;
       let totalPendente = 0; // A Receber: pagamentos que temos certeza que precisamos receber
       let totalVencido = 0;
+      let quantidadePendentes = 0;
 
       // IDs de agendamentos que já tem pagamento associado
       const agendamentosComPagamento = new Set<string>();
@@ -398,6 +404,7 @@ export function useFinanceiroStats(startDate?: Date, endDate?: Date) {
         if (pagamento.status === 'pago') {
           totalRecebido += valorPago > 0 ? valorPago : valorTotal;
         } else if (pagamento.status === 'pendente') {
+          quantidadePendentes++; // Contar pagamentos pendentes
           if (dataVencimento && dataVencimento < agora) {
             totalVencido += valorTotal - valorPago;
           } else {
@@ -435,6 +442,7 @@ export function useFinanceiroStats(startDate?: Date, endDate?: Date) {
         totalPendente,
         totalVencido,
         receitaMensal,
+        quantidadePendentes,
       };
       
       console.log('Estatísticas calculadas:', stats);
