@@ -3,8 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Trash2 } from 'lucide-react';
 import { GerenciarTiposServicos } from './GerenciarTiposServicos';
 
@@ -16,6 +16,12 @@ const formasPagamentoDisponiveis = [
   'Transferência Bancária'
 ];
 
+interface Profissional {
+  id: string;
+  nome: string;
+  especialidade: string;
+}
+
 interface ServicosPrecosProps {
   profileData: any;
   setProfileData: (data: any) => void;
@@ -26,6 +32,11 @@ interface ServicosPrecosProps {
   addPlanoSaude: () => void;
   removePlanoSaude: (index: number) => void;
   updatePlanoSaude: (index: number, value: string) => void;
+  // Props para filtro de profissional (admin/secretária)
+  podeGerenciarOutros?: boolean;
+  profissionais?: Profissional[];
+  selectedProfissionalId?: string;
+  onProfissionalChange?: (id: string) => void;
 }
 
 export function ServicosPrecos({ 
@@ -37,8 +48,14 @@ export function ServicosPrecos({
   handleFormaPagamentoChange,
   addPlanoSaude,
   removePlanoSaude,
-  updatePlanoSaude
+  updatePlanoSaude,
+  podeGerenciarOutros = false,
+  profissionais = [],
+  selectedProfissionalId = '',
+  onProfissionalChange
 }: ServicosPrecosProps) {
+  const showProfissionalFilter = podeGerenciarOutros && profissionais.length > 0;
+
   return (
     <div className="space-y-6">
       {/* Novo componente para gerenciar tipos de serviços */}
@@ -46,10 +63,32 @@ export function ServicosPrecos({
       
       <Card>
         <CardHeader>
-          <CardTitle>Configurações de Pagamento</CardTitle>
-          <CardDescription>
-            Configure as formas de pagamento e planos de saúde aceitos
-          </CardDescription>
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <CardTitle>Configurações de Pagamento</CardTitle>
+              <CardDescription>
+                Configure as formas de pagamento e planos de saúde aceitos
+              </CardDescription>
+            </div>
+            
+            {showProfissionalFilter && (
+              <Select
+                value={selectedProfissionalId}
+                onValueChange={onProfissionalChange}
+              >
+                <SelectTrigger className="w-[220px]">
+                  <SelectValue placeholder="Selecione profissional" />
+                </SelectTrigger>
+                <SelectContent>
+                  {profissionais.map((prof) => (
+                    <SelectItem key={prof.id} value={prof.id}>
+                      👤 {prof.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
 

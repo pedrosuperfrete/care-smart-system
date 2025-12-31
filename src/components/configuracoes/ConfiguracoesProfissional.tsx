@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Save, User } from 'lucide-react';
+import { Save } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfissionais } from '@/hooks/useProfissionais';
 import { supabase } from '@/integrations/supabase/client';
@@ -179,43 +177,15 @@ export function ConfiguracoesProfissional() {
     );
   }
 
+  // Lista simplificada de profissionais para o dropdown
+  const profissionaisSimples = profissionais.map(p => ({
+    id: p.id,
+    nome: p.nome,
+    especialidade: p.especialidade
+  }));
+
   return (
     <div className="space-y-6">
-      {/* Seletor de Profissional para Admin/Secretária */}
-      {podeGerenciarOutros && profissionais.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Selecionar Profissional
-            </CardTitle>
-            <CardDescription>
-              Escolha o profissional para gerenciar suas configurações
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="max-w-md">
-              <Label>Profissional</Label>
-              <Select
-                value={selectedProfissionalId}
-                onValueChange={setSelectedProfissionalId}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um profissional" />
-                </SelectTrigger>
-                <SelectContent>
-                  {profissionais.map((prof) => (
-                    <SelectItem key={prof.id} value={prof.id}>
-                      {prof.nome} - {prof.especialidade}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Configurações do Profissional Selecionado */}
       {selectedProfissional && (
         <>
@@ -223,6 +193,10 @@ export function ConfiguracoesProfissional() {
             profileData={profileData}
             setProfileData={setProfileData}
             handleServicoChange={handleServicoChange}
+            podeGerenciarOutros={podeGerenciarOutros}
+            profissionais={profissionaisSimples}
+            selectedProfissionalId={selectedProfissionalId}
+            onProfissionalChange={setSelectedProfissionalId}
           />
 
           <ServicosPrecos
@@ -235,6 +209,10 @@ export function ConfiguracoesProfissional() {
             addPlanoSaude={addPlanoSaude}
             removePlanoSaude={removePlanoSaude}
             updatePlanoSaude={updatePlanoSaude}
+            podeGerenciarOutros={podeGerenciarOutros}
+            profissionais={profissionaisSimples}
+            selectedProfissionalId={selectedProfissionalId}
+            onProfissionalChange={setSelectedProfissionalId}
           />
 
           <div className="flex justify-end">

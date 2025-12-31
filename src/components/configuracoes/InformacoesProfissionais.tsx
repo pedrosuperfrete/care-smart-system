@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { HorarioAtendimento } from './HorarioAtendimento';
 import { useClinica } from '@/hooks/useClinica';
 
@@ -18,13 +19,32 @@ const tiposConsultaDisponiveis = [
   'Exames / Procedimentos'
 ];
 
+interface Profissional {
+  id: string;
+  nome: string;
+  especialidade: string;
+}
+
 interface InformacoesProfissionaisProps {
   profileData: any;
   setProfileData: (data: any) => void;
   handleServicoChange: (servico: string, checked: boolean) => void;
+  // Props para filtro de profissional (admin/secretária)
+  podeGerenciarOutros?: boolean;
+  profissionais?: Profissional[];
+  selectedProfissionalId?: string;
+  onProfissionalChange?: (id: string) => void;
 }
 
-export function InformacoesProfissionais({ profileData, setProfileData, handleServicoChange }: InformacoesProfissionaisProps) {
+export function InformacoesProfissionais({ 
+  profileData, 
+  setProfileData, 
+  handleServicoChange,
+  podeGerenciarOutros = false,
+  profissionais = [],
+  selectedProfissionalId = '',
+  onProfissionalChange
+}: InformacoesProfissionaisProps) {
   const { data: clinica } = useClinica();
 
   // Carregar dados da clínica quando disponíveis
@@ -38,13 +58,37 @@ export function InformacoesProfissionais({ profileData, setProfileData, handleSe
     }
   }, [clinica, profileData, setProfileData]);
 
+  const showProfissionalFilter = podeGerenciarOutros && profissionais.length > 0;
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Informações Profissionais</CardTitle>
-        <CardDescription>
-          Suas informações profissionais e de apresentação
-        </CardDescription>
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <CardTitle>Informações Profissionais</CardTitle>
+            <CardDescription>
+              Suas informações profissionais e de apresentação
+            </CardDescription>
+          </div>
+          
+          {showProfissionalFilter && (
+            <Select
+              value={selectedProfissionalId}
+              onValueChange={onProfissionalChange}
+            >
+              <SelectTrigger className="w-[220px]">
+                <SelectValue placeholder="Selecione profissional" />
+              </SelectTrigger>
+              <SelectContent>
+                {profissionais.map((prof) => (
+                  <SelectItem key={prof.id} value={prof.id}>
+                    👤 {prof.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
