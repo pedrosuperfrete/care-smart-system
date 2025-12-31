@@ -29,6 +29,7 @@ interface BloqueioVirtual {
   titulo: string;
   descricao?: string;
   virtual?: boolean;
+  profissional_id?: string;
 }
 
 // Paleta de cores para profissionais (estilo Google Calendar)
@@ -334,65 +335,122 @@ export function VisaoSemanalGrid({
               ))}
               
               {/* Bloqueios virtuais (fora do expediente) */}
-              {bloqueiosVirtuais.filter(bl => isSameDay(new Date(bl.data_inicio), dia)).map((bloqueio) => (
-                <div
-                  key={`virtual-${bloqueio.id}`}
-                  className="absolute left-0 right-0 bg-gray-100 border border-gray-200 z-5 pointer-events-none"
-                  style={{
-                    top: `${calcularPosicaoTop(bloqueio.data_inicio)}px`,
-                    height: `${Math.max(calcularAltura(bloqueio.data_inicio, bloqueio.data_fim), 20)}px`
-                  }}
-                >
-                  <div className="h-full flex items-center justify-center">
-                    <span className="text-[9px] text-gray-400 font-medium truncate px-1">
-                      {bloqueio.titulo}
-                    </span>
+              {bloqueiosVirtuais.filter(bl => isSameDay(new Date(bl.data_inicio), dia)).map((bloqueio) => {
+                // Na visão multi-profissional, posicionar lado a lado
+                let positionStyle: React.CSSProperties = {};
+                let bloqueioColor = 'bg-gray-100 border-gray-200';
+                
+                if (showMultiProfessional && bloqueio.profissional_id && profissionais.length > 1) {
+                  const profIndex = profissionais.findIndex(p => p.id === bloqueio.profissional_id);
+                  if (profIndex >= 0) {
+                    const totalProfs = profissionais.length;
+                    const width = 100 / totalProfs;
+                    positionStyle = {
+                      left: `${profIndex * width}%`,
+                      width: `${width}%`,
+                    };
+                    const colors = profissionalColorMap.get(bloqueio.profissional_id);
+                    if (colors) {
+                      bloqueioColor = `${colors.bg} ${colors.border}`;
+                    }
+                  }
+                }
+                
+                return (
+                  <div
+                    key={`virtual-${bloqueio.id}`}
+                    className={`absolute ${bloqueioColor} border z-5 pointer-events-none opacity-60`}
+                    style={{
+                      top: `${calcularPosicaoTop(bloqueio.data_inicio)}px`,
+                      height: `${Math.max(calcularAltura(bloqueio.data_inicio, bloqueio.data_fim), 20)}px`,
+                      left: positionStyle.left || '0',
+                      right: showMultiProfessional ? undefined : '0',
+                      width: positionStyle.width,
+                    }}
+                  >
+                    <div className="h-full flex items-center justify-center">
+                      <span className="text-[8px] text-gray-500 font-medium truncate px-1">
+                        {showMultiProfessional && bloqueio.profissional_id 
+                          ? profissionais.find(p => p.id === bloqueio.profissional_id)?.nome?.split(' ')[0] || ''
+                          : bloqueio.titulo}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
               
               {/* Bloqueios do dia */}
-              {bloqueios.filter(bl => isSameDay(new Date(bl.data_inicio), dia)).map((bloqueio) => (
-                <div
-                  key={`bloqueio-${bloqueio.id}`}
-                  className="absolute left-1 right-1 bg-orange-100 border border-orange-200 p-1 rounded text-xs z-10 cursor-pointer hover:shadow-md transition-shadow"
-                  style={{
-                    top: `${calcularPosicaoTop(bloqueio.data_inicio)}px`,
-                    height: `${Math.max(calcularAltura(bloqueio.data_inicio, bloqueio.data_fim), 30)}px`
-                  }}
-                >
-                  <div className="font-medium text-orange-800 truncate text-[10px] mb-1">
-                    {bloqueio.titulo}
+              {bloqueios.filter(bl => isSameDay(new Date(bl.data_inicio), dia)).map((bloqueio) => {
+                // Na visão multi-profissional, posicionar lado a lado
+                let positionStyle: React.CSSProperties = { left: '4px', right: '4px' };
+                let bloqueioColor = { bg: 'bg-orange-100', border: 'border-orange-200', text: 'text-orange-800' };
+                
+                if (showMultiProfessional && bloqueio.profissional_id && profissionais.length > 1) {
+                  const profIndex = profissionais.findIndex(p => p.id === bloqueio.profissional_id);
+                  if (profIndex >= 0) {
+                    const totalProfs = profissionais.length;
+                    const width = 100 / totalProfs;
+                    positionStyle = {
+                      left: `calc(${profIndex * width}% + 2px)`,
+                      width: `calc(${width}% - 4px)`,
+                    };
+                    const colors = profissionalColorMap.get(bloqueio.profissional_id);
+                    if (colors) {
+                      bloqueioColor = { bg: colors.bg, border: colors.border, text: colors.text };
+                    }
+                  }
+                }
+                
+                return (
+                  <div
+                    key={`bloqueio-${bloqueio.id}`}
+                    className={`absolute ${bloqueioColor.bg} border ${bloqueioColor.border} p-1 rounded text-xs z-10 cursor-pointer hover:shadow-md transition-shadow`}
+                    style={{
+                      top: `${calcularPosicaoTop(bloqueio.data_inicio)}px`,
+                      height: `${Math.max(calcularAltura(bloqueio.data_inicio, bloqueio.data_fim), 30)}px`,
+                      ...positionStyle
+                    }}
+                  >
+                    <div className={`font-medium ${bloqueioColor.text} truncate text-[10px] mb-1`}>
+                      {bloqueio.titulo}
+                    </div>
+                    {showMultiProfessional && (
+                      <div className={`text-[8px] ${bloqueioColor.text} opacity-75 truncate`}>
+                        {profissionais.find(p => p.id === bloqueio.profissional_id)?.nome?.split(' ')[0]}
+                      </div>
+                    )}
+                    {!showMultiProfessional && (
+                      <div className="flex items-center gap-1 flex-wrap">
+                        <Badge variant="outline" className={`text-[9px] ${bloqueioColor.text} ${bloqueioColor.border} h-4 flex-shrink-0`}>
+                          Bloqueado
+                        </Badge>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-4 w-4 p-0 hover:bg-orange-200 flex-shrink-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setBloqueioParaEditar(bloqueio);
+                          }}
+                        >
+                          <Edit className="h-2 w-2" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-4 w-4 p-0 text-destructive hover:bg-orange-200 flex-shrink-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setBloqueioParaExcluir(bloqueio);
+                          }}
+                        >
+                          <Trash2 className="h-2 w-2" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center gap-1 flex-wrap">
-                    <Badge variant="outline" className="text-[9px] text-orange-700 border-orange-300 h-4 flex-shrink-0">
-                      Bloqueado
-                    </Badge>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-4 w-4 p-0 hover:bg-orange-200 flex-shrink-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setBloqueioParaEditar(bloqueio);
-                      }}
-                    >
-                      <Edit className="h-2 w-2" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-4 w-4 p-0 text-destructive hover:bg-orange-200 flex-shrink-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setBloqueioParaExcluir(bloqueio);
-                      }}
-                    >
-                      <Trash2 className="h-2 w-2" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
               
               {/* Agendamentos do dia */}
               {(() => {

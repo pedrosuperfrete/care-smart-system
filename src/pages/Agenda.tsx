@@ -13,7 +13,7 @@ import { useTiposServicos } from '@/hooks/useTiposServicos';
 import { usePacientes } from '@/hooks/usePacientes';
 import { useProfissionais } from '@/hooks/useProfissionais';
 import { useBloqueiosAgenda, useDeleteBloqueio } from '@/hooks/useBloqueiosAgenda';
-import { useHorariosAtendimento } from '@/hooks/useHorariosAtendimento';
+import { useHorariosAtendimento, useHorariosMultiplosProfissionais } from '@/hooks/useHorariosAtendimento';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { toDateTimeLocalString, fromDateTimeLocalString, formatTimeLocal, isSameDayLocal } from '@/lib/dateUtils';
@@ -57,6 +57,25 @@ export default function Agenda() {
   const { data: tiposServicos = [], isLoading: loadingTipos } = useTiposServicos();
   const { profissional: currentProfissional, isAdmin, isRecepcionista } = useAuth();
   const { getBloqueiosVirtuais, getBloqueiosVirtuaisSemana, hasHorariosConfigurados } = useHorariosAtendimento();
+  
+  // Hook para bloqueios virtuais de múltiplos profissionais (admin/secretária)
+  const showMultiProfessional = (isAdmin || isRecepcionista) && profissionais.length > 1;
+  const { getBloqueiosVirtuaisMultiplos, getBloqueiosVirtuaisSemanaMultiplos } = useHorariosMultiplosProfissionais(
+    profissionais.map(p => ({ id: p.id, nome: p.nome, horarios_atendimento: p.horarios_atendimento }))
+  );
+  
+  // Função para obter bloqueios virtuais corretos baseado no perfil
+  const getCorrectBloqueiosVirtuais = (date: Date) => {
+    return showMultiProfessional 
+      ? getBloqueiosVirtuaisMultiplos(date)
+      : getBloqueiosVirtuais(date);
+  };
+  
+  const getCorrectBloqueiosVirtuaisSemana = (startOfWeek: Date) => {
+    return showMultiProfessional
+      ? getBloqueiosVirtuaisSemanaMultiplos(startOfWeek)
+      : getBloqueiosVirtuaisSemana(startOfWeek);
+  };
 
   const [viewMode, setViewMode] = useState<'dia' | 'semana' | 'mes'>('dia');
   const [useGridView, setUseGridView] = useState(true); // Nova opção para grade de horários
@@ -427,7 +446,7 @@ export default function Agenda() {
               const bloqueioDate = new Date(bloqueio.data_inicio);
               return isSameDayLocal(bloqueioDate, selectedDate);
             })}
-            bloqueiosVirtuais={getBloqueiosVirtuais(selectedDate)}
+            bloqueiosVirtuais={getCorrectBloqueiosVirtuais(selectedDate)}
             selectedDate={selectedDate}
             onEditarAgendamento={handleEditarAgendamento}
             onConfirmarAgendamento={handleConfirmar}
@@ -616,7 +635,7 @@ export default function Agenda() {
           <VisaoSemanalGrid
             agendamentos={getWeekAgendamentos()}
             bloqueios={bloqueios}
-            bloqueiosVirtuais={getBloqueiosVirtuaisSemana(getStartOfWeek())}
+            bloqueiosVirtuais={getCorrectBloqueiosVirtuaisSemana(getStartOfWeek())}
             semanaInicio={getStartOfWeek()}
             onEditarAgendamento={handleEditarAgendamento}
             onConfirmarAgendamento={handleConfirmar}

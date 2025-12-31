@@ -38,6 +38,7 @@ interface BloqueioVirtual {
   titulo: string;
   descricao?: string;
   virtual?: boolean;
+  profissional_id?: string;
 }
 
 // Paleta de cores para profissionais (estilo Google Calendar)
@@ -314,81 +315,138 @@ export function VisaoDiaria({
           ))}
           
           {/* Bloqueios virtuais (horários fora do expediente) */}
-          {bloqueiosVirtuais.map((bloqueio) => (
-            <div
-              key={`virtual-${bloqueio.id}`}
-              className="absolute left-0 right-2 bg-gray-100 border border-gray-200 z-5 pointer-events-none"
-              style={{
-                top: `${calcularPosicaoTop(bloqueio.data_inicio)}px`,
-                height: `${calcularAltura(bloqueio.data_inicio, bloqueio.data_fim)}px`,
-                minHeight: '20px'
-              }}
-            >
-              <div className="p-2 h-full flex items-center justify-center">
-                <span className="text-xs text-gray-500 font-medium">
-                  {bloqueio.titulo}
-                </span>
+          {bloqueiosVirtuais.map((bloqueio) => {
+            // Na visão multi-profissional, posicionar lado a lado
+            let positionStyle: React.CSSProperties = {};
+            let bloqueioColor = 'bg-gray-100 border-gray-200';
+            
+            if (showMultiProfessional && bloqueio.profissional_id && profissionais.length > 1) {
+              const profIndex = profissionais.findIndex(p => p.id === bloqueio.profissional_id);
+              if (profIndex >= 0) {
+                const totalProfs = profissionais.length;
+                const width = 100 / totalProfs;
+                positionStyle = {
+                  left: `${profIndex * width}%`,
+                  width: `${width}%`,
+                };
+                const colors = profissionalColorMap.get(bloqueio.profissional_id);
+                if (colors) {
+                  bloqueioColor = `${colors.bg} ${colors.border}`;
+                }
+              }
+            }
+            
+            return (
+              <div
+                key={`virtual-${bloqueio.id}`}
+                className={`absolute ${bloqueioColor} border z-5 pointer-events-none opacity-60`}
+                style={{
+                  top: `${calcularPosicaoTop(bloqueio.data_inicio)}px`,
+                  height: `${calcularAltura(bloqueio.data_inicio, bloqueio.data_fim)}px`,
+                  minHeight: '20px',
+                  left: positionStyle.left || '0',
+                  right: showMultiProfessional ? undefined : '8px',
+                  width: positionStyle.width,
+                }}
+              >
+                <div className="p-1 h-full flex items-center justify-center">
+                  <span className="text-[10px] text-gray-600 font-medium truncate">
+                    {showMultiProfessional && bloqueio.profissional_id 
+                      ? profissionais.find(p => p.id === bloqueio.profissional_id)?.nome?.split(' ')[0] || bloqueio.titulo
+                      : bloqueio.titulo}
+                  </span>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           
           {/* Bloqueios posicionados absolutamente */}
-          {bloqueios.map((bloqueio) => (
-            <Card
-              key={`bloqueio-${bloqueio.id}`}
-              className="absolute left-0 right-2 border-orange-200 bg-orange-50 cursor-pointer hover:shadow-md transition-shadow z-10"
-              style={{
-                top: `${calcularPosicaoTop(bloqueio.data_inicio)}px`,
-                height: `${calcularAltura(bloqueio.data_inicio, bloqueio.data_fim)}px`,
-                minHeight: '40px'
-              }}
-            >
-              <CardContent className="p-2 h-full">
-                <div className="flex items-start justify-between h-full">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <Clock className="h-3 w-3 text-orange-600 flex-shrink-0" />
-                      <span className="text-xs font-medium text-orange-800 truncate">
-                        {formatTimeLocal(bloqueio.data_inicio)} - {formatTimeLocal(bloqueio.data_fim)}
-                      </span>
+          {bloqueios.map((bloqueio) => {
+            // Na visão multi-profissional, posicionar lado a lado
+            let positionStyle: React.CSSProperties = { left: '0', right: '8px' };
+            let bloqueioColor = { bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-700' };
+            
+            if (showMultiProfessional && bloqueio.profissional_id && profissionais.length > 1) {
+              const profIndex = profissionais.findIndex(p => p.id === bloqueio.profissional_id);
+              if (profIndex >= 0) {
+                const totalProfs = profissionais.length;
+                const width = 100 / totalProfs;
+                positionStyle = {
+                  left: `${profIndex * width}%`,
+                  width: `${width - 1}%`,
+                };
+                const colors = profissionalColorMap.get(bloqueio.profissional_id);
+                if (colors) {
+                  bloqueioColor = { bg: colors.bg.replace('100', '50'), border: colors.border, text: colors.text };
+                }
+              }
+            }
+            
+            return (
+              <Card
+                key={`bloqueio-${bloqueio.id}`}
+                className={`absolute ${bloqueioColor.border} ${bloqueioColor.bg} cursor-pointer hover:shadow-md transition-shadow z-10`}
+                style={{
+                  top: `${calcularPosicaoTop(bloqueio.data_inicio)}px`,
+                  height: `${calcularAltura(bloqueio.data_inicio, bloqueio.data_fim)}px`,
+                  minHeight: '40px',
+                  ...positionStyle
+                }}
+              >
+                <CardContent className="p-2 h-full">
+                  <div className="flex items-start justify-between h-full">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <Clock className={`h-3 w-3 ${bloqueioColor.text} flex-shrink-0`} />
+                        <span className={`text-xs font-medium ${bloqueioColor.text} truncate`}>
+                          {formatTimeLocal(bloqueio.data_inicio)} - {formatTimeLocal(bloqueio.data_fim)}
+                        </span>
+                      </div>
+                      <div className={`text-sm ${bloqueioColor.text} font-medium truncate`}>
+                        {bloqueio.titulo}
+                      </div>
+                      {showMultiProfessional && bloqueio.profissional_id && (
+                        <div className={`text-xs ${bloqueioColor.text} opacity-75 truncate`}>
+                          {profissionais.find(p => p.id === bloqueio.profissional_id)?.nome}
+                        </div>
+                      )}
+                      {bloqueio.descricao && calcularAltura(bloqueio.data_inicio, bloqueio.data_fim) > 80 && (
+                        <div className={`text-xs ${bloqueioColor.text} mt-1 truncate opacity-75`}>
+                          {bloqueio.descricao}
+                        </div>
+                      )}
                     </div>
-                    <div className="text-sm text-orange-700 font-medium truncate">
-                      {bloqueio.titulo}
-                    </div>
-                    {bloqueio.descricao && calcularAltura(bloqueio.data_inicio, bloqueio.data_fim) > 60 && (
-                      <div className="text-xs text-orange-600 mt-1 truncate">
-                        {bloqueio.descricao}
+                    {!showMultiProfessional && (
+                      <div className="flex space-x-1 ml-2 flex-shrink-0">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 w-6 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setBloqueioParaEditar(bloqueio);
+                          }}
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setBloqueioParaExcluir(bloqueio);
+                          }}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
                       </div>
                     )}
                   </div>
-                  <div className="flex space-x-1 ml-2 flex-shrink-0">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-6 p-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setBloqueioParaEditar(bloqueio);
-                      }}
-                    >
-                      <Edit className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setBloqueioParaExcluir(bloqueio);
-                      }}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
           
           {/* Agendamentos posicionados absolutamente */}
           {agendamentos.filter(ag => !ag.desmarcada).map((agendamento) => {

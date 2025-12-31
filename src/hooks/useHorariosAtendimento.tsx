@@ -24,6 +24,13 @@ interface BloqueioVirtual {
   titulo: string;
   descricao: string;
   virtual: true;
+  profissional_id?: string;
+}
+
+interface ProfissionalComHorarios {
+  id: string;
+  nome: string;
+  horarios_atendimento?: unknown;
 }
 
 // Mapeia dia da semana JS (0-6) para chave do objeto de horários
@@ -36,6 +43,66 @@ const dayKeyMap: Record<number, keyof HorariosAtendimento> = {
   5: 'sexta',
   6: 'sabado',
 };
+
+/**
+ * Gera bloqueios virtuais para os horários fora do expediente de um profissional
+ */
+function gerarBloqueiosVirtuaisProfissional(
+  date: Date,
+  profissionalId: string,
+  horarios: HorariosAtendimento
+): BloqueioVirtual[] {
+  const bloqueios: BloqueioVirtual[] = [];
+  const dayOfWeek = date.getDay();
+  const dayKey = dayKeyMap[dayOfWeek];
+  const horarioDia = horarios[dayKey];
+  
+  const dateStr = date.toISOString().split('T')[0];
+
+  // Se o dia não está ativo, bloqueia o dia inteiro
+  if (!horarioDia?.ativo) {
+    bloqueios.push({
+      id: `virtual-${profissionalId}-${dateStr}-closed`,
+      data_inicio: `${dateStr}T00:00:00`,
+      data_fim: `${dateStr}T23:59:00`,
+      titulo: 'Dia fechado',
+      descricao: 'Não há atendimento neste dia',
+      virtual: true,
+      profissional_id: profissionalId,
+    });
+    return bloqueios;
+  }
+
+  // Bloquear horários antes do início do expediente (da 0h até o início)
+  const [inicioHours, inicioMinutes] = horarioDia.inicio.split(':').map(Number);
+  if (inicioHours > 0 || inicioMinutes > 0) {
+    bloqueios.push({
+      id: `virtual-${profissionalId}-${dateStr}-before`,
+      data_inicio: `${dateStr}T00:00:00`,
+      data_fim: `${dateStr}T${horarioDia.inicio}:00`,
+      titulo: 'Fora do expediente',
+      descricao: 'Horário antes do início do atendimento',
+      virtual: true,
+      profissional_id: profissionalId,
+    });
+  }
+
+  // Bloquear horários após o fim do expediente (do fim até 23:59)
+  const [fimHours] = horarioDia.fim.split(':').map(Number);
+  if (fimHours < 24) {
+    bloqueios.push({
+      id: `virtual-${profissionalId}-${dateStr}-after`,
+      data_inicio: `${dateStr}T${horarioDia.fim}:00`,
+      data_fim: `${dateStr}T23:59:00`,
+      titulo: 'Fora do expediente',
+      descricao: 'Horário após o fim do atendimento',
+      virtual: true,
+      profissional_id: profissionalId,
+    });
+  }
+
+  return bloqueios;
+}
 
 /**
  * Hook que retorna os horários de atendimento do profissional atual
@@ -92,53 +159,8 @@ export function useHorariosAtendimento() {
    * Esses bloqueios são mostrados na agenda mas não são salvos no banco
    */
   const getBloqueiosVirtuais = (date: Date): BloqueioVirtual[] => {
-    const bloqueios: BloqueioVirtual[] = [];
-    const dayOfWeek = date.getDay();
-    const dayKey = dayKeyMap[dayOfWeek];
-    const horarioDia = horarios[dayKey];
-    
-    const dateStr = date.toISOString().split('T')[0];
-
-    // Se o dia não está ativo, bloqueia o dia inteiro
-    if (!horarioDia?.ativo) {
-      bloqueios.push({
-        id: `virtual-${dateStr}-closed`,
-        data_inicio: `${dateStr}T00:00:00`,
-        data_fim: `${dateStr}T23:59:00`,
-        titulo: 'Dia fechado',
-        descricao: 'Não há atendimento neste dia',
-        virtual: true,
-      });
-      return bloqueios;
-    }
-
-    // Bloquear horários antes do início do expediente (da 0h até o início)
-    const [inicioHours, inicioMinutes] = horarioDia.inicio.split(':').map(Number);
-    if (inicioHours > 0 || inicioMinutes > 0) {
-      bloqueios.push({
-        id: `virtual-${dateStr}-before`,
-        data_inicio: `${dateStr}T00:00:00`,
-        data_fim: `${dateStr}T${horarioDia.inicio}:00`,
-        titulo: 'Fora do expediente',
-        descricao: 'Horário antes do início do atendimento',
-        virtual: true,
-      });
-    }
-
-    // Bloquear horários após o fim do expediente (do fim até 23:59)
-    const [fimHours, fimMinutes] = horarioDia.fim.split(':').map(Number);
-    if (fimHours < 24) {
-      bloqueios.push({
-        id: `virtual-${dateStr}-after`,
-        data_inicio: `${dateStr}T${horarioDia.fim}:00`,
-        data_fim: `${dateStr}T23:59:00`,
-        titulo: 'Fora do expediente',
-        descricao: 'Horário após o fim do atendimento',
-        virtual: true,
-      });
-    }
-
-    return bloqueios;
+    if (!profissional) return [];
+    return gerarBloqueiosVirtuaisProfissional(date, profissional.id, horarios);
   };
 
   /**
@@ -171,5 +193,46 @@ export function useHorariosAtendimento() {
     getBloqueiosVirtuais,
     getBloqueiosVirtuaisSemana,
     hasHorariosConfigurados,
+  };
+}
+
+/**
+ * Hook para gerar bloqueios virtuais de múltiplos profissionais
+ * Usado por admin/secretária para visualizar a agenda de todos
+ */
+export function useHorariosMultiplosProfissionais(profissionais: ProfissionalComHorarios[]) {
+  /**
+   * Gera bloqueios virtuais para um dia específico de todos os profissionais
+   */
+  const getBloqueiosVirtuaisMultiplos = (date: Date): BloqueioVirtual[] => {
+    const todosBloqueios: BloqueioVirtual[] = [];
+    
+    for (const prof of profissionais) {
+      const horarios = (prof.horarios_atendimento as HorariosAtendimento) || {};
+      const bloqueiosProf = gerarBloqueiosVirtuaisProfissional(date, prof.id, horarios);
+      todosBloqueios.push(...bloqueiosProf);
+    }
+    
+    return todosBloqueios;
+  };
+
+  /**
+   * Gera bloqueios virtuais para uma semana inteira de todos os profissionais
+   */
+  const getBloqueiosVirtuaisSemanaMultiplos = (startOfWeek: Date): BloqueioVirtual[] => {
+    const bloqueios: BloqueioVirtual[] = [];
+    
+    for (let i = 0; i < 7; i++) {
+      const dia = new Date(startOfWeek);
+      dia.setDate(startOfWeek.getDate() + i);
+      bloqueios.push(...getBloqueiosVirtuaisMultiplos(dia));
+    }
+    
+    return bloqueios;
+  };
+
+  return {
+    getBloqueiosVirtuaisMultiplos,
+    getBloqueiosVirtuaisSemanaMultiplos,
   };
 }
