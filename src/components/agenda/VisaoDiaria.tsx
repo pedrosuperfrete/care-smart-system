@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,13 +21,14 @@ interface Agendamento {
   data_fim: string;
   pacientes?: { nome: string };
   profissionais?: { nome: string };
+  profissional_id?: string;
   tipo_servico: string;
   servicos_adicionais?: any;
   valor?: number;
   observacoes?: string;
   status?: string;
   desmarcada?: boolean;
-  [key: string]: any; // Allow additional properties from Supabase
+  [key: string]: any;
 }
 
 interface BloqueioVirtual {
@@ -38,6 +39,18 @@ interface BloqueioVirtual {
   descricao?: string;
   virtual?: boolean;
 }
+
+// Paleta de cores para profissionais (estilo Google Calendar)
+const CORES_PROFISSIONAIS = [
+  { bg: 'bg-blue-100', border: 'border-blue-400', text: 'text-blue-800', accent: '#3b82f6' },
+  { bg: 'bg-pink-100', border: 'border-pink-400', text: 'text-pink-800', accent: '#ec4899' },
+  { bg: 'bg-green-100', border: 'border-green-400', text: 'text-green-800', accent: '#22c55e' },
+  { bg: 'bg-purple-100', border: 'border-purple-400', text: 'text-purple-800', accent: '#a855f7' },
+  { bg: 'bg-orange-100', border: 'border-orange-400', text: 'text-orange-800', accent: '#f97316' },
+  { bg: 'bg-teal-100', border: 'border-teal-400', text: 'text-teal-800', accent: '#14b8a6' },
+  { bg: 'bg-red-100', border: 'border-red-400', text: 'text-red-800', accent: '#ef4444' },
+  { bg: 'bg-indigo-100', border: 'border-indigo-400', text: 'text-indigo-800', accent: '#6366f1' },
+];
 
 interface VisaoDiariaProps {
   agendamentos: Agendamento[];
@@ -51,6 +64,9 @@ interface VisaoDiariaProps {
   onMarcarFaltaAgendamento: (id: string) => void;
   onExcluirBloqueio: (id: string) => void;
   onNovaConsulta: (dataHora: Date) => void;
+  // Props para exibição multi-profissional
+  showMultiProfessional?: boolean;
+  profissionais?: Array<{ id: string; nome: string }>;
 }
 
 export function VisaoDiaria({
@@ -64,12 +80,80 @@ export function VisaoDiaria({
   onMarcarRealizadoAgendamento,
   onMarcarFaltaAgendamento,
   onExcluirBloqueio,
-  onNovaConsulta
+  onNovaConsulta,
+  showMultiProfessional = false,
+  profissionais = []
 }: VisaoDiariaProps) {
   const [bloqueioParaEditar, setBloqueioParaEditar] = useState<BloqueioAgenda | null>(null);
   const [bloqueioParaExcluir, setBloqueioParaExcluir] = useState<BloqueioAgenda | null>(null);
   const [agendamentoParaDesmarcar, setAgendamentoParaDesmarcar] = useState<Agendamento | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Mapear profissionais para cores
+  const profissionalColorMap = useMemo(() => {
+    const map = new Map<string, typeof CORES_PROFISSIONAIS[0]>();
+    profissionais.forEach((prof, index) => {
+      map.set(prof.id, CORES_PROFISSIONAIS[index % CORES_PROFISSIONAIS.length]);
+    });
+    return map;
+  }, [profissionais]);
+
+  // Calcular posicionamento horizontal para agendamentos sobrepostos
+  const getOverlapInfo = useMemo(() => {
+    if (!showMultiProfessional) return new Map<string, { index: number; total: number }>();
+    
+    const overlapMap = new Map<string, { index: number; total: number }>();
+    const sortedAgendamentos = [...agendamentos].filter(ag => !ag.desmarcada).sort((a, b) => 
+      new Date(a.data_inicio).getTime() - new Date(b.data_inicio).getTime()
+    );
+    
+    // Para cada agendamento, encontrar quantos outros se sobrepõem
+    sortedAgendamentos.forEach((ag) => {
+      const agStart = new Date(ag.data_inicio).getTime();
+      const agEnd = new Date(ag.data_fim).getTime();
+      
+      // Encontrar todos que se sobrepõem com este
+      const overlapping = sortedAgendamentos.filter(other => {
+        if (other.id === ag.id) return false;
+        const otherStart = new Date(other.data_inicio).getTime();
+        const otherEnd = new Date(other.data_fim).getTime();
+        return agStart < otherEnd && agEnd > otherStart;
+      });
+      
+      if (overlapping.length === 0) {
+        overlapMap.set(ag.id, { index: 0, total: 1 });
+      } else {
+        // Agrupar todos que se sobrepõem juntos
+        const group = [ag, ...overlapping].sort((a, b) => {
+          // Ordenar por profissional_id para consistência
+          return (a.profissional_id || '').localeCompare(b.profissional_id || '');
+        });
+        const myIndex = group.findIndex(g => g.id === ag.id);
+        overlapMap.set(ag.id, { index: myIndex, total: group.length });
+      }
+    });
+    
+    return overlapMap;
+  }, [agendamentos, showMultiProfessional]);
+
+  const getAgendamentoStyle = (agendamento: Agendamento) => {
+    const overlapInfo = getOverlapInfo.get(agendamento.id) || { index: 0, total: 1 };
+    const width = 100 / overlapInfo.total;
+    const left = overlapInfo.index * width;
+    
+    return {
+      width: `calc(${width}% - 8px)`,
+      left: `calc(${left}% + 4px)`,
+    };
+  };
+
+  const getAgendamentoCores = (agendamento: Agendamento) => {
+    if (!showMultiProfessional || !agendamento.profissional_id) {
+      return { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-800' };
+    }
+    const cores = profissionalColorMap.get(agendamento.profissional_id);
+    return cores || CORES_PROFISSIONAIS[0];
+  };
 
   // Scroll automático para 8h ao montar o componente
   useEffect(() => {
@@ -307,129 +391,146 @@ export function VisaoDiaria({
           ))}
           
           {/* Agendamentos posicionados absolutamente */}
-          {agendamentos.filter(ag => !ag.desmarcada).map((agendamento) => (
-            <Card
-              key={`agendamento-${agendamento.id}`}
-              className={`absolute left-0 right-2 cursor-pointer hover:shadow-md transition-shadow z-10 ${
-                agendamento.desmarcada ? 'opacity-50' : ''
-              }`}
-              style={{
-                top: `${calcularPosicaoTop(agendamento.data_inicio)}px`,
-                height: `${calcularAltura(agendamento.data_inicio, agendamento.data_fim)}px`,
-                minHeight: '40px'
-              }}
-              onClick={() => onEditarAgendamento(agendamento)}
-            >
-              <CardContent className="p-2 h-full">
-                <div className="flex justify-between items-start h-full">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <Clock className="h-3 w-3 text-gray-500 flex-shrink-0" />
-                      <span className={`text-xs font-medium truncate ${agendamento.desmarcada ? 'line-through' : ''}`}>
-                        {formatTimeLocal(agendamento.data_inicio)} - {formatTimeLocal(agendamento.data_fim)}
-                      </span>
-                      <Badge className={`text-xs ${agendamento.desmarcada ? 'bg-gray-100 text-gray-600' : getStatusColor(agendamento.status || 'pendente')}`}>
-                        {agendamento.desmarcada ? 'Desmarcada' : getStatusText(agendamento.status || 'pendente')}
-                      </Badge>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2 mb-1">
-                      <User className="h-3 w-3 text-gray-500 flex-shrink-0" />
-                      <span className={`text-sm font-medium truncate ${agendamento.desmarcada ? 'line-through' : ''}`}>
-                        {agendamento.pacientes?.nome}
-                      </span>
-                    </div>
-                    
-                    {calcularAltura(agendamento.data_inicio, agendamento.data_fim) > 60 && (
-                      <div className={`text-xs text-gray-600 space-y-1 ${agendamento.desmarcada ? 'line-through' : ''}`}>
-                        <p className="truncate">
-                          <strong>Tipo:</strong> {agendamento.tipo_servico}
-                          {Array.isArray(agendamento.servicos_adicionais) && agendamento.servicos_adicionais.length > 0 && (
-                            <span className="text-muted-foreground"> + {agendamento.servicos_adicionais.map((s: ServicoAdicional) => s.nome).join(', ')}</span>
-                          )}
-                        </p>
-                        <p className="truncate"><strong>Profissional:</strong> {agendamento.profissionais?.nome}</p>
-                        {agendamento.valor && (
+          {agendamentos.filter(ag => !ag.desmarcada).map((agendamento) => {
+            const cores = getAgendamentoCores(agendamento);
+            const positionStyle = showMultiProfessional ? getAgendamentoStyle(agendamento) : {};
+            
+            return (
+              <Card
+                key={`agendamento-${agendamento.id}`}
+                className={`absolute cursor-pointer hover:shadow-md transition-shadow z-10 ${cores.bg} ${cores.border} border-l-4 ${
+                  agendamento.desmarcada ? 'opacity-50' : ''
+                }`}
+                style={{
+                  top: `${calcularPosicaoTop(agendamento.data_inicio)}px`,
+                  height: `${calcularAltura(agendamento.data_inicio, agendamento.data_fim)}px`,
+                  minHeight: '40px',
+                  ...(showMultiProfessional ? positionStyle : { left: 0, right: '8px' })
+                }}
+                onClick={() => onEditarAgendamento(agendamento)}
+              >
+                <CardContent className="p-2 h-full">
+                  <div className="flex justify-between items-start h-full">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <Clock className={`h-3 w-3 flex-shrink-0 ${cores.text}`} />
+                        <span className={`text-xs font-medium truncate ${cores.text} ${agendamento.desmarcada ? 'line-through' : ''}`}>
+                          {formatTimeLocal(agendamento.data_inicio)} - {formatTimeLocal(agendamento.data_fim)}
+                        </span>
+                        {!showMultiProfessional && (
+                          <Badge className={`text-xs ${agendamento.desmarcada ? 'bg-gray-100 text-gray-600' : getStatusColor(agendamento.status || 'pendente')}`}>
+                            {agendamento.desmarcada ? 'Desmarcada' : getStatusText(agendamento.status || 'pendente')}
+                          </Badge>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center space-x-2 mb-1">
+                        <User className={`h-3 w-3 flex-shrink-0 ${cores.text}`} />
+                        <span className={`text-sm font-medium truncate ${cores.text} ${agendamento.desmarcada ? 'line-through' : ''}`}>
+                          {agendamento.pacientes?.nome}
+                        </span>
+                      </div>
+                      
+                      {/* Mostrar nome do profissional quando em modo multi-profissional */}
+                      {showMultiProfessional && (
+                        <div className={`text-xs font-medium truncate ${cores.text} opacity-80`}>
+                          {agendamento.profissionais?.nome}
+                        </div>
+                      )}
+                      
+                      {!showMultiProfessional && calcularAltura(agendamento.data_inicio, agendamento.data_fim) > 60 && (
+                        <div className={`text-xs text-gray-600 space-y-1 ${agendamento.desmarcada ? 'line-through' : ''}`}>
                           <p className="truncate">
-                            <strong>Valor:</strong> R$ {formatCurrency(
-                              (agendamento.valor || 0) +
-                              (Array.isArray(agendamento.servicos_adicionais)
-                                ? agendamento.servicos_adicionais.reduce(
-                                    (acc: number, s: ServicoAdicional) =>
-                                      acc + Number(s.valor ?? s.preco ?? 0),
-                                    0
-                                  )
-                                : 0)
+                            <strong>Tipo:</strong> {agendamento.tipo_servico}
+                            {Array.isArray(agendamento.servicos_adicionais) && agendamento.servicos_adicionais.length > 0 && (
+                              <span className="text-muted-foreground"> + {agendamento.servicos_adicionais.map((s: ServicoAdicional) => s.nome).join(', ')}</span>
                             )}
                           </p>
+                          <p className="truncate"><strong>Profissional:</strong> {agendamento.profissionais?.nome}</p>
+                          {agendamento.valor && (
+                            <p className="truncate">
+                              <strong>Valor:</strong> R$ {formatCurrency(
+                                (agendamento.valor || 0) +
+                                (Array.isArray(agendamento.servicos_adicionais)
+                                  ? agendamento.servicos_adicionais.reduce(
+                                      (acc: number, s: ServicoAdicional) =>
+                                        acc + Number(s.valor ?? s.preco ?? 0),
+                                      0
+                                    )
+                                  : 0)
+                              )}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {!showMultiProfessional && (
+                      <div className="flex flex-col space-y-1 ml-2 flex-shrink-0">
+                        {!agendamento.desmarcada && (
+                          <>
+                            {agendamento.status === 'pendente' && (
+                              <Button 
+                                size="sm"
+                                className="h-6 w-6 p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onConfirmarAgendamento(agendamento.id);
+                                }}
+                              >
+                                <CheckCircle className="h-3 w-3" />
+                              </Button>
+                            )}
+                            {(agendamento.status === 'pendente' || agendamento.status === 'confirmado') && (
+                              <Button 
+                                size="sm"
+                                variant="outline"
+                                className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setAgendamentoParaDesmarcar(agendamento);
+                                }}
+                              >
+                                <XCircle className="h-3 w-3" />
+                              </Button>
+                            )}
+                            {agendamento.status === 'confirmado' && (
+                              <>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  className="h-6 px-2 text-xs"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onMarcarRealizadoAgendamento(agendamento.id);
+                                  }}
+                                  title="Marcar como realizado"
+                                >
+                                  ✓
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onMarcarFaltaAgendamento(agendamento.id);
+                                  }}
+                                  title="Marcar como falta"
+                                >
+                                  <UserX className="h-3 w-3" />
+                                </Button>
+                              </>
+                            )}
+                          </>
                         )}
                       </div>
                     )}
                   </div>
-                  
-                  <div className="flex flex-col space-y-1 ml-2 flex-shrink-0">
-                    {!agendamento.desmarcada && (
-                      <>
-                        {agendamento.status === 'pendente' && (
-                          <Button 
-                            size="sm"
-                            className="h-6 w-6 p-0"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onConfirmarAgendamento(agendamento.id);
-                            }}
-                          >
-                            <CheckCircle className="h-3 w-3" />
-                          </Button>
-                        )}
-                        {(agendamento.status === 'pendente' || agendamento.status === 'confirmado') && (
-                          <Button 
-                            size="sm"
-                            variant="outline"
-                            className="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setAgendamentoParaDesmarcar(agendamento);
-                            }}
-                          >
-                            <XCircle className="h-3 w-3" />
-                          </Button>
-                        )}
-                        {agendamento.status === 'confirmado' && (
-                          <>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              className="h-6 px-2 text-xs"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onMarcarRealizadoAgendamento(agendamento.id);
-                              }}
-                              title="Marcar como realizado"
-                            >
-                              ✓
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              className="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onMarcarFaltaAgendamento(agendamento.id);
-                              }}
-                              title="Marcar como falta"
-                            >
-                              <UserX className="h-3 w-3" />
-                            </Button>
-                          </>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
         {/* Fim scroll container */}
         </div>

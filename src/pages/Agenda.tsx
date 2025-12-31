@@ -439,6 +439,9 @@ export default function Agenda() {
               setDataHoraSelecionada(dataHora);
               setIsNewConsultaOpen(true);
             }}
+            // Exibição multi-profissional para admin/secretária com múltiplos profissionais
+            showMultiProfessional={(isAdmin || isRecepcionista) && profissionais.length > 1}
+            profissionais={profissionais.map(p => ({ id: p.id, nome: p.nome }))}
           />
         ) : (
           <div className="space-y-4">
@@ -625,6 +628,9 @@ export default function Agenda() {
               setDataHoraSelecionada(dataHora);
               setIsNewConsultaOpen(true);
             }}
+            // Exibição multi-profissional para admin/secretária com múltiplos profissionais
+            showMultiProfessional={(isAdmin || isRecepcionista) && profissionais.length > 1}
+            profissionais={profissionais.map(p => ({ id: p.id, nome: p.nome }))}
           />
         ) : (
           <VisaoSemanal

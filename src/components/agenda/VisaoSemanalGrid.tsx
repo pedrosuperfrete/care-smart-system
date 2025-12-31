@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,7 @@ interface Agendamento {
   data_fim: string;
   pacientes?: { nome: string };
   profissionais?: { nome: string };
+  profissional_id?: string;
   tipo_servico: string;
   valor?: number;
   observacoes?: string;
@@ -30,6 +31,18 @@ interface BloqueioVirtual {
   virtual?: boolean;
 }
 
+// Paleta de cores para profissionais (estilo Google Calendar)
+const CORES_PROFISSIONAIS = [
+  { bg: 'bg-blue-100', border: 'border-blue-400', text: 'text-blue-800', accent: '#3b82f6' },
+  { bg: 'bg-pink-100', border: 'border-pink-400', text: 'text-pink-800', accent: '#ec4899' },
+  { bg: 'bg-green-100', border: 'border-green-400', text: 'text-green-800', accent: '#22c55e' },
+  { bg: 'bg-purple-100', border: 'border-purple-400', text: 'text-purple-800', accent: '#a855f7' },
+  { bg: 'bg-orange-100', border: 'border-orange-400', text: 'text-orange-800', accent: '#f97316' },
+  { bg: 'bg-teal-100', border: 'border-teal-400', text: 'text-teal-800', accent: '#14b8a6' },
+  { bg: 'bg-red-100', border: 'border-red-400', text: 'text-red-800', accent: '#ef4444' },
+  { bg: 'bg-indigo-100', border: 'border-indigo-400', text: 'text-indigo-800', accent: '#6366f1' },
+];
+
 interface VisaoSemanalGridProps {
   agendamentos: Agendamento[];
   bloqueios: BloqueioAgenda[];
@@ -42,6 +55,9 @@ interface VisaoSemanalGridProps {
   onMarcarFaltaAgendamento: (id: string) => void;
   onExcluirBloqueio: (id: string) => void;
   onNovaConsulta: (dataHora: Date) => void;
+  // Props para exibição multi-profissional
+  showMultiProfessional?: boolean;
+  profissionais?: Array<{ id: string; nome: string }>;
 }
 
 export function VisaoSemanalGrid({
@@ -55,12 +71,68 @@ export function VisaoSemanalGrid({
   onMarcarRealizadoAgendamento,
   onMarcarFaltaAgendamento,
   onExcluirBloqueio,
-  onNovaConsulta
+  onNovaConsulta,
+  showMultiProfessional = false,
+  profissionais = []
 }: VisaoSemanalGridProps) {
   const [bloqueioParaEditar, setBloqueioParaEditar] = useState<BloqueioAgenda | null>(null);
   const [bloqueioParaExcluir, setBloqueioParaExcluir] = useState<BloqueioAgenda | null>(null);
   const [agendamentoParaDesmarcar, setAgendamentoParaDesmarcar] = useState<Agendamento | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Mapear profissionais para cores
+  const profissionalColorMap = useMemo(() => {
+    const map = new Map<string, typeof CORES_PROFISSIONAIS[0]>();
+    profissionais.forEach((prof, index) => {
+      map.set(prof.id, CORES_PROFISSIONAIS[index % CORES_PROFISSIONAIS.length]);
+    });
+    return map;
+  }, [profissionais]);
+
+  // Função para obter cores de um agendamento
+  const getAgendamentoCores = (agendamento: Agendamento) => {
+    if (!showMultiProfessional || !agendamento.profissional_id) {
+      return { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-800' };
+    }
+    const cores = profissionalColorMap.get(agendamento.profissional_id);
+    return cores || CORES_PROFISSIONAIS[0];
+  };
+
+  // Calcular posicionamento horizontal para agendamentos sobrepostos no mesmo dia
+  const getOverlapInfoForDay = (dia: Date) => {
+    if (!showMultiProfessional) return new Map<string, { index: number; total: number }>();
+    
+    const overlapMap = new Map<string, { index: number; total: number }>();
+    const dayAgendamentos = agendamentos.filter(ag => 
+      !ag.desmarcada && isSameDay(new Date(ag.data_inicio), dia)
+    ).sort((a, b) => 
+      new Date(a.data_inicio).getTime() - new Date(b.data_inicio).getTime()
+    );
+    
+    dayAgendamentos.forEach((ag) => {
+      const agStart = new Date(ag.data_inicio).getTime();
+      const agEnd = new Date(ag.data_fim).getTime();
+      
+      const overlapping = dayAgendamentos.filter(other => {
+        if (other.id === ag.id) return false;
+        const otherStart = new Date(other.data_inicio).getTime();
+        const otherEnd = new Date(other.data_fim).getTime();
+        return agStart < otherEnd && agEnd > otherStart;
+      });
+      
+      if (overlapping.length === 0) {
+        overlapMap.set(ag.id, { index: 0, total: 1 });
+      } else {
+        const group = [ag, ...overlapping].sort((a, b) => 
+          (a.profissional_id || '').localeCompare(b.profissional_id || '')
+        );
+        const myIndex = group.findIndex(g => g.id === ag.id);
+        overlapMap.set(ag.id, { index: myIndex, total: group.length });
+      }
+    });
+    
+    return overlapMap;
+  };
 
   // Scroll automático para 8h ao montar o componente
   useEffect(() => {
@@ -323,94 +395,116 @@ export function VisaoSemanalGrid({
               ))}
               
               {/* Agendamentos do dia */}
-              {agendamentos.filter(ag => !ag.desmarcada && isSameDay(new Date(ag.data_inicio), dia)).map((agendamento) => (
-                <div
-                  key={`agendamento-${agendamento.id}`}
-                  className={`absolute left-1 right-1 bg-blue-50 border border-blue-200 p-1 rounded text-xs z-10 cursor-pointer hover:shadow-md transition-shadow ${
-                    agendamento.desmarcada ? 'opacity-50' : ''
-                  }`}
-                  style={{
-                    top: `${calcularPosicaoTop(agendamento.data_inicio)}px`,
-                    height: `${Math.max(calcularAltura(agendamento.data_inicio, agendamento.data_fim), 30)}px`
-                  }}
-                >
-                  <div className={`font-medium truncate text-[10px] mb-1 ${agendamento.desmarcada ? 'line-through' : ''}`}>
-                    {agendamento.pacientes?.nome}
-                  </div>
-                  <div className="flex items-center gap-1 flex-wrap">
-                    <Badge className={`text-[9px] h-4 flex-shrink-0 ${getStatusColor(agendamento.status || 'pendente')}`}>
-                      {agendamento.desmarcada ? 'Desmarcada' : getStatusText(agendamento.status || 'pendente')}
-                    </Badge>
-                    {!agendamento.desmarcada && (
-                      <>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-4 w-4 p-0 hover:bg-blue-200 flex-shrink-0"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onEditarAgendamento(agendamento);
-                          }}
-                        >
-                          <Edit className="h-2 w-2" />
-                        </Button>
-                        {agendamento.status === 'pendente' && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-4 w-4 p-0 hover:bg-blue-200 flex-shrink-0"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onConfirmarAgendamento(agendamento.id);
-                            }}
-                          >
-                            <CheckCircle className="h-2 w-2" />
-                          </Button>
-                        )}
-                        {(agendamento.status === 'pendente' || agendamento.status === 'confirmado') && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-4 w-4 p-0 hover:bg-red-200 text-destructive flex-shrink-0"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setAgendamentoParaDesmarcar(agendamento);
-                            }}
-                          >
-                            <XCircle className="h-2 w-2" />
-                          </Button>
-                        )}
-                        {agendamento.status === 'confirmado' && (
-                          <>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-4 w-4 p-0 hover:bg-blue-200 flex-shrink-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onMarcarRealizadoAgendamento(agendamento.id);
-                              }}
-                              title="Marcar como realizado"
-                            >
-                              ✓
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-4 w-4 p-0 hover:bg-red-200 text-destructive flex-shrink-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onMarcarFaltaAgendamento(agendamento.id);
-                              }}
-                              title="Marcar como falta"
-                            >
-                              <UserX className="h-2 w-2" />
-                            </Button>
-                          </>
-                        )}
-                      </>
-                    )}
-                  </div>
+              {(() => {
+                const overlapInfo = getOverlapInfoForDay(dia);
+                return agendamentos.filter(ag => !ag.desmarcada && isSameDay(new Date(ag.data_inicio), dia)).map((agendamento) => {
+                  const cores = getAgendamentoCores(agendamento);
+                  const overlap = overlapInfo.get(agendamento.id) || { index: 0, total: 1 };
+                  const width = showMultiProfessional && overlap.total > 1 ? `calc(${100 / overlap.total}% - 2px)` : 'calc(100% - 8px)';
+                  const left = showMultiProfessional && overlap.total > 1 ? `calc(${overlap.index * (100 / overlap.total)}% + 4px)` : '4px';
+                  
+                  return (
+                    <div
+                      key={`agendamento-${agendamento.id}`}
+                      className={`absolute ${cores.bg} border-l-2 ${cores.border} p-1 rounded text-xs z-10 cursor-pointer hover:shadow-md transition-shadow ${
+                        agendamento.desmarcada ? 'opacity-50' : ''
+                      }`}
+                      style={{
+                        top: `${calcularPosicaoTop(agendamento.data_inicio)}px`,
+                        height: `${Math.max(calcularAltura(agendamento.data_inicio, agendamento.data_fim), 30)}px`,
+                        width,
+                        left
+                      }}
+                      onClick={() => onEditarAgendamento(agendamento)}
+                    >
+                      <div className={`font-medium truncate text-[10px] mb-1 ${cores.text} ${agendamento.desmarcada ? 'line-through' : ''}`}>
+                        {agendamento.pacientes?.nome}
+                      </div>
+                      {showMultiProfessional && (
+                        <div className={`text-[9px] truncate ${cores.text} opacity-75`}>
+                          {agendamento.profissionais?.nome}
+                        </div>
+                      )}
+                      {!showMultiProfessional && (
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <Badge className={`text-[9px] h-4 flex-shrink-0 ${getStatusColor(agendamento.status || 'pendente')}`}>
+                            {agendamento.desmarcada ? 'Desmarcada' : getStatusText(agendamento.status || 'pendente')}
+                          </Badge>
+                          {!agendamento.desmarcada && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-4 w-4 p-0 hover:bg-blue-200 flex-shrink-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onEditarAgendamento(agendamento);
+                                }}
+                              >
+                                <Edit className="h-2 w-2" />
+                              </Button>
+                              {agendamento.status === 'pendente' && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-4 w-4 p-0 hover:bg-blue-200 flex-shrink-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onConfirmarAgendamento(agendamento.id);
+                                  }}
+                                >
+                                  <CheckCircle className="h-2 w-2" />
+                                </Button>
+                              )}
+                              {(agendamento.status === 'pendente' || agendamento.status === 'confirmado') && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-4 w-4 p-0 hover:bg-red-200 text-destructive flex-shrink-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setAgendamentoParaDesmarcar(agendamento);
+                                  }}
+                                >
+                                  <XCircle className="h-2 w-2" />
+                                </Button>
+                              )}
+                              {agendamento.status === 'confirmado' && (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-4 w-4 p-0 hover:bg-blue-200 flex-shrink-0"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onMarcarRealizadoAgendamento(agendamento.id);
+                                    }}
+                                    title="Marcar como realizado"
+                                  >
+                                    ✓
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-4 w-4 p-0 hover:bg-red-200 text-destructive flex-shrink-0"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onMarcarFaltaAgendamento(agendamento.id);
+                                    }}
+                                    title="Marcar como falta"
+                                  >
+                                    <UserX className="h-2 w-2" />
+                                  </Button>
+                                </>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                });
+              })()}
                 </div>
               ))}
             </div>
