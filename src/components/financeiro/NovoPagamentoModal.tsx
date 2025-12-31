@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,9 +16,12 @@ import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { usePacientes } from '@/hooks/usePacientes';
 import { useTiposServicos } from '@/hooks/useTiposServicos';
+import { useProfissionais } from '@/hooks/useProfissionais';
+import { useAuth } from '@/hooks/useAuth';
 
 const formSchema = z.object({
   paciente_id: z.string().min(1, 'Paciente é obrigatório'),
+  profissional_id: z.string().min(1, 'Profissional é obrigatório'),
   servico_prestado: z.string().min(1, 'Serviço prestado é obrigatório'),
   valor_total: z.number().min(0.01, 'Valor total deve ser maior que zero'),
   forma_pagamento: z.enum(['dinheiro', 'cartao_credito', 'cartao_debito', 'pix', 'link']),
@@ -48,16 +51,36 @@ export function NovoPagamentoModal({ open, onOpenChange, onSave }: NovoPagamento
   const [isLoading, setIsLoading] = useState(false);
   const { data: pacientes = [], isLoading: pacientesLoading } = usePacientes();
   const { data: tiposServicos = [] } = useTiposServicos();
+  const { data: profissionais = [] } = useProfissionais();
+  const { profissional, isRecepcionista, isAdmin } = useAuth();
+
+  // Determinar se pode escolher profissional
+  const podeEscolherProfissional = isRecepcionista || isAdmin;
+  const deveMostrarSelectProfissional = podeEscolherProfissional && profissionais.length > 1;
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       paciente_id: '',
+      profissional_id: podeEscolherProfissional ? '' : (profissional?.id || ''),
       servico_prestado: '',
       forma_pagamento: 'dinheiro',
       status: 'pendente',
     },
   });
+
+  // Preencher profissional_id automaticamente
+  useEffect(() => {
+    const currentProfId = form.getValues('profissional_id');
+    
+    if (!podeEscolherProfissional && profissional?.id && !currentProfId) {
+      form.setValue('profissional_id', profissional.id);
+    }
+    
+    if (podeEscolherProfissional && profissionais.length === 1 && !currentProfId) {
+      form.setValue('profissional_id', profissionais[0].id);
+    }
+  }, [podeEscolherProfissional, profissional?.id, profissionais, form]);
 
   const servicoSelecionado = form.watch('servico_prestado');
 
@@ -117,6 +140,45 @@ export function NovoPagamentoModal({ open, onOpenChange, onSave }: NovoPagamento
                         ))}
                       </SelectContent>
                     </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Profissional - Select ou Input fixo dependendo do tipo de usuário */}
+            <FormField
+              control={form.control}
+              name="profissional_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Profissional</FormLabel>
+                  <FormControl>
+                    {deveMostrarSelectProfissional ? (
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o profissional" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {profissionais.map((prof) => (
+                            <SelectItem key={prof.id} value={prof.id}>
+                              {prof.nome} {prof.especialidade ? `- ${prof.especialidade}` : ''}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input
+                        value={(() => {
+                          if (podeEscolherProfissional && profissionais.length === 1) {
+                            return `${profissionais[0].nome}${profissionais[0].especialidade ? ` - ${profissionais[0].especialidade}` : ''}`;
+                          }
+                          return profissional?.nome || 'Carregando...';
+                        })()}
+                        disabled
+                        className="bg-muted"
+                      />
+                    )}
                   </FormControl>
                   <FormMessage />
                 </FormItem>
