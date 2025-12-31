@@ -34,6 +34,9 @@ export function GerenciarTiposServicos() {
   const podeEscolherProfissional = isRecepcionista || isAdmin;
   const deveMostrarSelectProfissional = podeEscolherProfissional && profissionais.length > 0;
   
+  // Filtro por profissional (para secretárias/admins)
+  const [filtroProfissional, setFiltroProfissional] = useState<string>('todos');
+  
   const [novoTipo, setNovoTipo] = useState({ 
     nome: '', 
     preco: '',
@@ -50,6 +53,13 @@ export function GerenciarTiposServicos() {
   });
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+
+  // Filtrar tipos de serviço conforme seleção
+  const tiposServicosFiltrados = tiposServicos.filter(tipo => {
+    if (filtroProfissional === 'todos') return true;
+    if (filtroProfissional === 'clinica') return !tipo.profissional_id;
+    return tipo.profissional_id === filtroProfissional || !tipo.profissional_id;
+  });
 
   const handleCriarTipo = async () => {
     if (!novoTipo.nome.trim()) return;
@@ -131,7 +141,7 @@ export function GerenciarTiposServicos() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <CardTitle>Tipos de Serviços</CardTitle>
             <CardDescription>
@@ -139,13 +149,35 @@ export function GerenciarTiposServicos() {
             </CardDescription>
           </div>
           
-          <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-            <DialogTrigger asChild>
-              <Button size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Novo Serviço
-              </Button>
-            </DialogTrigger>
+          <div className="flex items-center gap-2">
+            {/* Filtro por profissional para secretárias/admins */}
+            {deveMostrarSelectProfissional && (
+              <Select
+                value={filtroProfissional}
+                onValueChange={setFiltroProfissional}
+              >
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Filtrar por..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os serviços</SelectItem>
+                  <SelectItem value="clinica">🏥 Somente da Clínica</SelectItem>
+                  {profissionais.map((prof) => (
+                    <SelectItem key={prof.id} value={prof.id}>
+                      👤 {prof.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          
+            <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+              <DialogTrigger asChild>
+                <Button size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Novo Serviço
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>Novo Tipo de Serviço</DialogTitle>
@@ -289,17 +321,18 @@ export function GerenciarTiposServicos() {
               </div>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
       </CardHeader>
       
       <CardContent>
         <div className="space-y-2">
-          {tiposServicos.length === 0 ? (
+          {tiposServicosFiltrados.length === 0 ? (
             <p className="text-muted-foreground text-center py-8">
               Nenhum tipo de serviço cadastrado ainda.
             </p>
           ) : (
-            tiposServicos.map((tipo) => {
+            tiposServicosFiltrados.map((tipo) => {
               // Encontrar o nome do profissional se existir
               const profissionalDoTipo = tipo.profissional_id 
                 ? profissionais.find(p => p.id === tipo.profissional_id)
