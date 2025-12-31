@@ -54,19 +54,25 @@ export function GerenciarTiposServicos() {
   const handleCriarTipo = async () => {
     if (!novoTipo.nome.trim()) return;
     
-    // Se pode escolher profissional, usa o selecionado; senão, usa o próprio profissional
-    const profissionalIdFinal = podeEscolherProfissional 
-      ? novoTipo.profissionalId || undefined
-      : profissional?.id;
-    
-    // Buscar a clinica_id do profissional selecionado ou usar a clínica atual
+    // Determinar profissional_id e clinica_id baseado na seleção
+    let profissionalIdFinal: string | undefined = undefined;
     let clinicaIdFinal: string | null | undefined = clinicaAtual || profissional?.clinica_id;
     
-    if (profissionalIdFinal && profissionais.length > 0) {
-      const profissionalSelecionado = profissionais.find(p => p.id === profissionalIdFinal);
-      if (profissionalSelecionado?.clinica_id) {
-        clinicaIdFinal = profissionalSelecionado.clinica_id;
+    if (podeEscolherProfissional) {
+      // Se selecionou "clinica", profissional_id fica null (serviço para toda clínica)
+      if (novoTipo.profissionalId === 'clinica') {
+        profissionalIdFinal = undefined;
+      } else if (novoTipo.profissionalId) {
+        // Se selecionou um profissional específico
+        profissionalIdFinal = novoTipo.profissionalId;
+        const profissionalSelecionado = profissionais.find(p => p.id === profissionalIdFinal);
+        if (profissionalSelecionado?.clinica_id) {
+          clinicaIdFinal = profissionalSelecionado.clinica_id;
+        }
       }
+    } else {
+      // Se não pode escolher, usa o próprio profissional
+      profissionalIdFinal = profissional?.id;
     }
     
     const data = {
@@ -151,22 +157,28 @@ export function GerenciarTiposServicos() {
               <div className="space-y-4">
                 {deveMostrarSelectProfissional && (
                   <div>
-                    <Label htmlFor="profissional">Profissional *</Label>
+                    <Label htmlFor="profissional">Visibilidade *</Label>
                     <Select
                       value={novoTipo.profissionalId}
                       onValueChange={(value) => setNovoTipo(prev => ({ ...prev, profissionalId: value }))}
                     >
                       <SelectTrigger id="profissional">
-                        <SelectValue placeholder="Selecione o profissional" />
+                        <SelectValue placeholder="Selecione a visibilidade" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="clinica">
+                          🏥 Toda a Clínica (visível para todos)
+                        </SelectItem>
                         {profissionais.map((prof) => (
                           <SelectItem key={prof.id} value={prof.id}>
-                            {prof.nome}
+                            👤 {prof.nome} (exclusivo)
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Escolha "Toda a Clínica" para que todos os profissionais vejam este serviço
+                    </p>
                   </div>
                 )}
                 
@@ -287,25 +299,44 @@ export function GerenciarTiposServicos() {
               Nenhum tipo de serviço cadastrado ainda.
             </p>
           ) : (
-            tiposServicos.map((tipo) => (
-              <div key={tipo.id} className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="flex-1">
-                  <h4 className="font-medium">{tipo.nome}</h4>
-                  <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
-                    {tipo.preco && (
-                      <span>R$ {formatCurrency(tipo.preco)}</span>
-                    )}
-                    {tipo.percentual_cobranca_agendamento && (
-                      <span className="text-primary">
-                        • {formatPercentual(tipo.percentual_cobranca_agendamento)} no agendamento
-                      </span>
-                    )}
-                    {tipo.percentual_cobranca_falta && (
-                      <span className="text-destructive">
-                        • {formatPercentual(tipo.percentual_cobranca_falta)} em falta
-                      </span>
-                    )}
-                  </div>
+            tiposServicos.map((tipo) => {
+              // Encontrar o nome do profissional se existir
+              const profissionalDoTipo = tipo.profissional_id 
+                ? profissionais.find(p => p.id === tipo.profissional_id)
+                : null;
+              
+              return (
+                <div key={tipo.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-medium">{tipo.nome}</h4>
+                      {podeEscolherProfissional && (
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${
+                          tipo.profissional_id 
+                            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' 
+                            : 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
+                        }`}>
+                          {tipo.profissional_id 
+                            ? `👤 ${profissionalDoTipo?.nome || 'Profissional'}` 
+                            : '🏥 Toda Clínica'}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
+                      {tipo.preco && (
+                        <span>R$ {formatCurrency(tipo.preco)}</span>
+                      )}
+                      {tipo.percentual_cobranca_agendamento && (
+                        <span className="text-primary">
+                          • {formatPercentual(tipo.percentual_cobranca_agendamento)} no agendamento
+                        </span>
+                      )}
+                      {tipo.percentual_cobranca_falta && (
+                        <span className="text-destructive">
+                          • {formatPercentual(tipo.percentual_cobranca_falta)} em falta
+                        </span>
+                      )}
+                    </div>
                 </div>
                 
                 <div className="flex items-center space-x-2">
@@ -326,8 +357,9 @@ export function GerenciarTiposServicos() {
                   </Button>
                 </div>
               </div>
-            ))
-          )}
+            );
+          })
+        )}
         </div>
       </CardContent>
 
