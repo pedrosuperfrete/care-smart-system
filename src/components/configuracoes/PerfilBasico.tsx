@@ -19,6 +19,17 @@ interface PerfilBasicoProps {
 }
 
 export function PerfilBasico({ userProfile, profissional, profileData, setProfileData }: PerfilBasicoProps) {
+  // Traduz o tipo de usuário do banco para exibição
+  const getTipoUsuarioDisplay = (tipo: string | undefined) => {
+    if (!tipo) return '';
+    switch (tipo) {
+      case 'recepcionista': return 'Secretária';
+      case 'profissional': return 'Profissional';
+      case 'admin': return 'Administrador';
+      default: return tipo;
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -36,7 +47,7 @@ export function PerfilBasico({ userProfile, profissional, profileData, setProfil
           
           <div className="space-y-2">
             <Label>Tipo de Usuário</Label>
-            <Input value={userProfile?.tipo_usuario || ''} disabled />
+            <Input value={getTipoUsuarioDisplay(userProfile?.tipo_usuario)} disabled />
           </div>
 
           {profissional && (
