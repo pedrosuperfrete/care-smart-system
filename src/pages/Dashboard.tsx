@@ -7,7 +7,7 @@ import { useAgendamentosStats, useProximosAgendamentos } from '@/hooks/useAgenda
 import { useFinanceiroStats } from '@/hooks/useFinanceiro';
 import { useAtividadesRecentes } from '@/hooks/useAtividades';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Users, FileText, DollarSign, Plus, BarChart3, Clock } from 'lucide-react';
+import { Calendar, Users, FileText, DollarSign, Plus, BarChart3, Clock, CreditCard } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import { formatDateTimeLocal } from '@/lib/dateUtils';
 
@@ -39,7 +39,13 @@ export default function Dashboard() {
       icon: FileText,
       description: 'Aguardando confirmação',
     },
-    {
+    // Para secretárias, mostrar Pagamentos Pendentes em vez de Receita do Mês
+    ...(isRecepcionista ? [{
+      title: 'Pagamentos Pendentes',
+      value: financeiroStats?.quantidadePendentes || 0,
+      icon: CreditCard,
+      description: 'Precisam ser cobrados',
+    }] : [{
       title: 'Receita do Mês',
       value: new Intl.NumberFormat('pt-BR', {
         style: 'currency',
@@ -47,9 +53,9 @@ export default function Dashboard() {
       }).format(financeiroStats?.receitaMensal || 0),
       icon: DollarSign,
       description: 'Faturamento atual',
-      hidden: !isAdmin && !isProfissional && !isRecepcionista,
-    },
-  ];
+      hidden: !isAdmin && !isProfissional,
+    }]),
+  ].flat();
 
   const quickActions = [
     {
