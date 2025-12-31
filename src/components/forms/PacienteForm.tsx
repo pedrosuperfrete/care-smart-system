@@ -11,7 +11,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EnhancedDatePicker } from '@/components/ui/enhanced-date-picker';
 import { useCreatePaciente, useUpdatePaciente } from '@/hooks/usePacientes';
-import { LimiteAssinaturaModal } from '@/components/modals/LimiteAssinaturaModal';
 import { useAuth } from '@/hooks/useAuth';
 import { Tables } from '@/integrations/supabase/types';
 import { toLocalDateString, fromLocalDateString } from '@/lib/dateUtils';
@@ -93,7 +92,6 @@ export function PacienteForm({ paciente, onSuccess, viewMode = false }: Paciente
   const createPaciente = useCreatePaciente();
   const updatePaciente = useUpdatePaciente();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showLimiteModal, setShowLimiteModal] = useState(false);
   const [isEditing, setIsEditing] = useState(!viewMode);
   
   // Formata telefone inicial se houver
@@ -202,7 +200,6 @@ export function PacienteForm({ paciente, onSuccess, viewMode = false }: Paciente
       } else {
         await createPaciente.mutateAsync({ 
           ...pacienteData, 
-          verificarLimite: true,
           inadimplente: false
         });
       }
@@ -210,9 +207,6 @@ export function PacienteForm({ paciente, onSuccess, viewMode = false }: Paciente
       onSuccess?.();
     } catch (error: any) {
       console.error('Erro ao salvar paciente:', error);
-      if (error.message === "LIMITE_ATINGIDO") {
-        setShowLimiteModal(true);
-      }
     } finally {
       setIsSubmitting(false);
     }
@@ -501,11 +495,6 @@ export function PacienteForm({ paciente, onSuccess, viewMode = false }: Paciente
           </div>
         </form>
       </CardContent>
-
-      <LimiteAssinaturaModal 
-        open={showLimiteModal}
-        onOpenChange={setShowLimiteModal}
-      />
     </Card>
   );
 }
