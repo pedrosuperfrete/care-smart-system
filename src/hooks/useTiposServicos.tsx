@@ -34,7 +34,7 @@ export interface UpdateTipoServicoData {
 }
 
 export function useTiposServicos() {
-  const { profissional } = useAuth();
+  const { user } = useAuth();
   
   return useQuery({
     queryKey: ['tipos-servicos'],
@@ -48,7 +48,7 @@ export function useTiposServicos() {
       if (error) throw error;
       return data as TipoServico[];
     },
-    enabled: !!profissional
+    enabled: !!user
   });
 }
 
