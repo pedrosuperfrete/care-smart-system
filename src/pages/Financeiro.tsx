@@ -393,7 +393,7 @@ export default function Financeiro() {
                         {getStatusBadge(status)}
                       </TableCell>
                       <TableCell>
-                        <div className="flex space-x-2">
+                        <div className="flex space-x-2" onClick={(e) => e.stopPropagation()}>
                           {status === 'pendente' && (
                             <Button 
                               size="sm" 
