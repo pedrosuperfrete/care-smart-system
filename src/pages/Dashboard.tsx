@@ -161,7 +161,11 @@ export default function Dashboard() {
             ) : (
               <div className="space-y-3">
                 {proximosAgendamentos.map((agendamento) => (
-                  <div key={agendamento.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div 
+                    key={agendamento.id} 
+                    className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => navigate(`/app/agenda?agendamento=${agendamento.id}`)}
+                  >
                     <div className="flex items-center space-x-3">
                       <div className="text-lg">
                         {agendamento.confirmado_pelo_paciente ? '✅' : '⏳'}
@@ -175,17 +179,8 @@ export default function Dashboard() {
                         </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-sm text-gray-500">
-                        {agendamento.tipo_servico}
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate(`/app/pacientes`)}
-                      >
-                        Ver
-                      </Button>
+                    <div className="text-sm text-muted-foreground">
+                      {agendamento.tipo_servico}
                     </div>
                   </div>
                 ))}
