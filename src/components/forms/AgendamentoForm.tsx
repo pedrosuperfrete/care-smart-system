@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -47,7 +47,7 @@ interface AgendamentoFormProps {
 }
 
 export function AgendamentoForm({ agendamento, pacienteId, dataHoraInicial, onSuccess }: AgendamentoFormProps) {
-  const { profissional, user, clinicaAtual } = useAuth();
+  const { profissional, user, clinicaAtual, isRecepcionista, isAdmin } = useAuth();
   const queryClient = useQueryClient();
   const createMutation = useCreateAgendamento();
   const updateMutation = useUpdateAgendamento();
@@ -83,11 +83,11 @@ export function AgendamentoForm({ agendamento, pacienteId, dataHoraInicial, onSu
 
   console.log('Tipos de serviços carregados:', tiposServicos, 'Loading:', loadingTipos);
 
-  // Secretária não tem profissional associado, então deve sempre ver a lista
-  // Profissional só vê input fixo se for o único da clínica
-  const isSecretaria = !profissional;
-  const deveMostrarSelect = isSecretaria || profissionais.length > 1;
-  
+  // Secretária (recepcionista) e admin podem escolher o profissional quando há mais de 1 na clínica.
+  // Profissional sempre agenda para si mesmo.
+  const podeEscolherProfissional = isRecepcionista || isAdmin;
+  const deveMostrarSelectProfissional = podeEscolherProfissional && profissionais.length > 1;
+  const deveFixarProfissional = !deveMostrarSelectProfissional;
   // Helper para formatar data para o formato local (evita problema de fuso horário com toISOString)
   const formatToLocalDateTime = (date: Date) => {
     const year = date.getFullYear();
@@ -122,7 +122,9 @@ export function AgendamentoForm({ agendamento, pacienteId, dataHoraInicial, onSu
 
   const [formData, setFormData] = useState({
     paciente_id: agendamento?.paciente_id || pacienteId || '',
-    profissional_id: agendamento?.profissional_id || (profissional?.id || ''),
+    profissional_id:
+      agendamento?.profissional_id ||
+      (podeEscolherProfissional ? '' : (profissional?.id || '')),
     data_inicio: getDataInicioDefault(),
     data_fim: getDataFimDefault(),
     tipo_servico: agendamento?.tipo_servico || '',
@@ -131,6 +133,17 @@ export function AgendamentoForm({ agendamento, pacienteId, dataHoraInicial, onSu
     status: agendamento?.status || 'pendente',
   });
 
+  useEffect(() => {
+    // Se pode escolher profissional e só existe 1 na clínica, preencher automaticamente
+    if (!agendamento && podeEscolherProfissional && profissionais.length === 1 && !formData.profissional_id) {
+      setFormData((prev) => ({ ...prev, profissional_id: profissionais[0].id }));
+    }
+
+    // Se NÃO pode escolher, sempre garantir que está preenchido com o próprio profissional
+    if (!agendamento && !podeEscolherProfissional && profissional?.id && !formData.profissional_id) {
+      setFormData((prev) => ({ ...prev, profissional_id: profissional.id }));
+    }
+  }, [agendamento, podeEscolherProfissional, profissionais, profissional?.id, formData.profissional_id]);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -342,15 +355,22 @@ export function AgendamentoForm({ agendamento, pacienteId, dataHoraInicial, onSu
 
         <div className="space-y-2">
           <Label htmlFor="profissional">Profissional *</Label>
-          {!deveMostrarSelect && profissional ? (
+
+          {deveFixarProfissional ? (
             <Input
-              value={profissional?.nome || profissional?.especialidade || user?.email || 'Carregando...'}
+              value={(() => {
+                if (podeEscolherProfissional) {
+                  const unico = profissionais.length === 1 ? profissionais[0] : null;
+                  return unico ? `${unico.nome}${unico.especialidade ? ` - ${unico.especialidade}` : ''}` : 'Carregando...';
+                }
+                return profissional?.nome || profissional?.especialidade || user?.email || 'Carregando...';
+              })()}
               disabled
               className="bg-muted"
             />
           ) : (
-            <Select 
-              value={formData.profissional_id} 
+            <Select
+              value={formData.profissional_id}
               onValueChange={(value) => handleChange('profissional_id', value)}
             >
               <SelectTrigger>
