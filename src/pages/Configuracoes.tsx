@@ -6,13 +6,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { User, Building, Users, Save, Crown } from 'lucide-react';
 import { toast } from 'sonner';
 import { PerfilBasico } from '@/components/configuracoes/PerfilBasico';
-import { InformacoesProfissionais } from '@/components/configuracoes/InformacoesProfissionais';
-import { ServicosPrecos } from '@/components/configuracoes/ServicosPrecos';
 import { GerenciarEquipe } from '@/components/configuracoes/GerenciarEquipe';
 import { ConfiguracoesSistema } from '@/components/configuracoes/ConfiguracoesSistema';
 import { ConfiguracaoClinica } from '@/components/configuracoes/ConfiguracaoClinica';
 import { AssinaturaStatus } from '@/components/configuracoes/AssinaturaStatus';
 import { ConfiguracaoWhatsApp } from '@/components/configuracoes/ConfiguracaoWhatsApp';
+import { ConfiguracoesProfissional } from '@/components/configuracoes/ConfiguracoesProfissional';
 
 export default function Configuracoes() {
   const { userProfile, profissional, isAdmin, isRecepcionista, updateProfissional } = useAuth();
@@ -22,21 +21,12 @@ export default function Configuracoes() {
     return params.get('tab') || 'perfil';
   });
 
-  // Estado para dados do perfil profissional
+  // Estado para dados do perfil básico do usuário
   const [profileData, setProfileData] = useState({
     nome: profissional?.nome || '',
     especialidade: profissional?.especialidade || '',
     crm_cro: profissional?.crm_cro || '',
     telefone: profissional?.telefone || '',
-    mini_bio: profissional?.mini_bio || '',
-    servicos_oferecidos: (profissional?.servicos_oferecidos as string[]) || [],
-    nome_clinica: profissional?.nome_clinica || '',
-    cnpj_clinica: '',
-    endereco_clinica: '',
-    horarios_atendimento: profissional?.horarios_atendimento || {},
-    servicos_precos: (profissional?.servicos_precos as Array<{nome: string, preco: string}>) || [],
-    formas_pagamento: (profissional?.formas_pagamento as string[]) || [],
-    planos_saude: (profissional?.planos_saude as string[]) || [],
     pix_chave: (profissional as any)?.pix_chave || '',
     conta_bancaria: (profissional as any)?.conta_bancaria || '',
   });
@@ -45,20 +35,11 @@ export default function Configuracoes() {
     setLoading(true);
     try {
       if (profissional) {
-        // IMPORTANTE: a tabela `profissionais` não possui colunas como `cnpj_clinica`/`endereco_clinica`.
-        // Elas pertencem à entidade `clinicas`. Aqui salvamos APENAS os campos do profissional.
         const updateData = {
           nome: profileData.nome,
           especialidade: profileData.especialidade,
           crm_cro: profileData.crm_cro,
           telefone: profileData.telefone?.trim() ? profileData.telefone.trim() : null,
-          mini_bio: profileData.mini_bio,
-          servicos_oferecidos: profileData.servicos_oferecidos,
-          nome_clinica: profileData.nome_clinica?.trim() ? profileData.nome_clinica.trim() : null,
-          horarios_atendimento: profileData.horarios_atendimento,
-          servicos_precos: profileData.servicos_precos,
-          formas_pagamento: profileData.formas_pagamento,
-          planos_saude: profileData.planos_saude,
           pix_chave: profileData.pix_chave?.trim() ? profileData.pix_chave.trim() : null,
           conta_bancaria: profileData.conta_bancaria?.trim() ? profileData.conta_bancaria.trim() : null,
         };
@@ -73,56 +54,11 @@ export default function Configuracoes() {
     }
   };
 
-  const handleServicoChange = (servico: string, checked: boolean) => {
-    const newServicos = checked 
-      ? [...profileData.servicos_oferecidos, servico]
-      : profileData.servicos_oferecidos.filter(s => s !== servico);
-    
-    setProfileData({ ...profileData, servicos_oferecidos: newServicos });
-  };
-
-  const handleFormaPagamentoChange = (forma: string, checked: boolean) => {
-    const newFormas = checked 
-      ? [...profileData.formas_pagamento, forma]
-      : profileData.formas_pagamento.filter(f => f !== forma);
-    
-    setProfileData({ ...profileData, formas_pagamento: newFormas });
-  };
-
-  const addServicoPreco = () => {
-    setProfileData({
-      ...profileData,
-      servicos_precos: [...profileData.servicos_precos, { nome: '', preco: '' }]
-    });
-  };
-
-  const removeServicoPreco = (index: number) => {
-    const newServicos = profileData.servicos_precos.filter((_, i) => i !== index);
-    setProfileData({ ...profileData, servicos_precos: newServicos });
-  };
-
-  const updateServicoPreco = (index: number, field: 'nome' | 'preco', value: string) => {
-    const newServicos = [...profileData.servicos_precos];
-    newServicos[index][field] = value;
-    setProfileData({ ...profileData, servicos_precos: newServicos });
-  };
-
-  const addPlanoSaude = () => {
-    setProfileData({
-      ...profileData,
-      planos_saude: [...profileData.planos_saude, '']
-    });
-  };
-
-  const removePlanoSaude = (index: number) => {
-    const newPlanos = profileData.planos_saude.filter((_, i) => i !== index);
-    setProfileData({ ...profileData, planos_saude: newPlanos });
-  };
-
-  const updatePlanoSaude = (index: number, value: string) => {
-    const newPlanos = [...profileData.planos_saude];
-    newPlanos[index] = value;
-    setProfileData({ ...profileData, planos_saude: newPlanos });
+  // Determinar número de colunas do grid baseado nos acessos
+  const getGridCols = () => {
+    if (isRecepcionista) return 'grid-cols-4'; // Perfil, Clínica, Equipe, WhatsApp
+    if (isAdmin || profissional) return 'grid-cols-6'; // Todas as abas
+    return 'grid-cols-4';
   };
 
   return (
@@ -135,12 +71,13 @@ export default function Configuracoes() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className={`grid w-full ${isRecepcionista ? 'grid-cols-4' : (isAdmin || profissional) ? 'grid-cols-6' : 'grid-cols-5'}`}>
+        <TabsList className={`grid w-full ${getGridCols()}`}>
           <TabsTrigger value="perfil">
             <User className="mr-2 h-4 w-4" />
             Perfil
           </TabsTrigger>
-          {(isAdmin || profissional) && (
+          {/* Clínica visível para Admin, Profissionais e Secretárias */}
+          {(isAdmin || profissional || isRecepcionista) && (
             <TabsTrigger value="clinica">
               <Building className="mr-2 h-4 w-4" />
               Clínica
@@ -166,7 +103,7 @@ export default function Configuracoes() {
           )}
         </TabsList>
 
-        {/* Aba Perfil */}
+        {/* Aba Perfil - Apenas informações básicas do próprio usuário */}
         <TabsContent value="perfil">
           <div className="space-y-6">
             <PerfilBasico 
@@ -187,40 +124,17 @@ export default function Configuracoes() {
           </div>
         </TabsContent>
 
-        {/* Aba Clínica (para admin e profissionais) */}
-        {(isAdmin || profissional) && (
+        {/* Aba Clínica - Configurações da clínica e profissionais */}
+        {(isAdmin || profissional || isRecepcionista) && (
           <TabsContent value="clinica">
             <div className="space-y-6">
-              <ConfiguracaoClinica />
-
-              {profissional && (
-                <>
-                  <InformacoesProfissionais
-                    profileData={profileData}
-                    setProfileData={setProfileData}
-                    handleServicoChange={handleServicoChange}
-                  />
-
-                  <ServicosPrecos
-                    profileData={profileData}
-                    setProfileData={setProfileData}
-                    addServicoPreco={addServicoPreco}
-                    removeServicoPreco={removeServicoPreco}
-                    updateServicoPreco={updateServicoPreco}
-                    handleFormaPagamentoChange={handleFormaPagamentoChange}
-                    addPlanoSaude={addPlanoSaude}
-                    removePlanoSaude={removePlanoSaude}
-                    updatePlanoSaude={updatePlanoSaude}
-                  />
-
-                  <div className="flex justify-end">
-                    <Button onClick={handleSaveProfile} disabled={loading}>
-                      <Save className="mr-2 h-4 w-4" />
-                      {loading ? 'Salvando...' : 'Salvar Alterações'}
-                    </Button>
-                  </div>
-                </>
+              {/* Configurações gerais da clínica (apenas para admin/profissional) */}
+              {(isAdmin || profissional) && !isRecepcionista && (
+                <ConfiguracaoClinica />
               )}
+
+              {/* Configurações dos profissionais */}
+              <ConfiguracoesProfissional />
             </div>
           </TabsContent>
         )}
