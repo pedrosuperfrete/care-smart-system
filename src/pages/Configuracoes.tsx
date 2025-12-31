@@ -37,6 +37,8 @@ export default function Configuracoes() {
     servicos_precos: (profissional?.servicos_precos as Array<{nome: string, preco: string}>) || [],
     formas_pagamento: (profissional?.formas_pagamento as string[]) || [],
     planos_saude: (profissional?.planos_saude as string[]) || [],
+    pix_chave: (profissional as any)?.pix_chave || '',
+    conta_bancaria: (profissional as any)?.conta_bancaria || '',
   });
 
   const handleSaveProfile = async () => {
@@ -57,6 +59,8 @@ export default function Configuracoes() {
           servicos_precos: profileData.servicos_precos,
           formas_pagamento: profileData.formas_pagamento,
           planos_saude: profileData.planos_saude,
+          pix_chave: profileData.pix_chave?.trim() ? profileData.pix_chave.trim() : null,
+          conta_bancaria: profileData.conta_bancaria?.trim() ? profileData.conta_bancaria.trim() : null,
         };
 
         await updateProfissional(updateData);
