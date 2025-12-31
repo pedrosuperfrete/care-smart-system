@@ -177,40 +177,51 @@ export default function Configuracoes() {
             />
 
             {profissional && (
-              <>
-                <InformacoesProfissionais
-                  profileData={profileData}
-                  setProfileData={setProfileData}
-                  handleServicoChange={handleServicoChange}
-                />
-
-                <ServicosPrecos
-                  profileData={profileData}
-                  setProfileData={setProfileData}
-                  addServicoPreco={addServicoPreco}
-                  removeServicoPreco={removeServicoPreco}
-                  updateServicoPreco={updateServicoPreco}
-                  handleFormaPagamentoChange={handleFormaPagamentoChange}
-                  addPlanoSaude={addPlanoSaude}
-                  removePlanoSaude={removePlanoSaude}
-                  updatePlanoSaude={updatePlanoSaude}
-                />
-              </>
+              <div className="flex justify-end">
+                <Button onClick={handleSaveProfile} disabled={loading}>
+                  <Save className="mr-2 h-4 w-4" />
+                  {loading ? 'Salvando...' : 'Salvar Alterações'}
+                </Button>
+              </div>
             )}
-
-            <div className="flex justify-end">
-              <Button onClick={handleSaveProfile} disabled={loading}>
-                <Save className="mr-2 h-4 w-4" />
-                {loading ? 'Salvando...' : 'Salvar Alterações'}
-              </Button>
-            </div>
           </div>
         </TabsContent>
 
         {/* Aba Clínica (para admin e profissionais) */}
         {(isAdmin || profissional) && (
           <TabsContent value="clinica">
-            <ConfiguracaoClinica />
+            <div className="space-y-6">
+              <ConfiguracaoClinica />
+
+              {profissional && (
+                <>
+                  <InformacoesProfissionais
+                    profileData={profileData}
+                    setProfileData={setProfileData}
+                    handleServicoChange={handleServicoChange}
+                  />
+
+                  <ServicosPrecos
+                    profileData={profileData}
+                    setProfileData={setProfileData}
+                    addServicoPreco={addServicoPreco}
+                    removeServicoPreco={removeServicoPreco}
+                    updateServicoPreco={updateServicoPreco}
+                    handleFormaPagamentoChange={handleFormaPagamentoChange}
+                    addPlanoSaude={addPlanoSaude}
+                    removePlanoSaude={removePlanoSaude}
+                    updatePlanoSaude={updatePlanoSaude}
+                  />
+
+                  <div className="flex justify-end">
+                    <Button onClick={handleSaveProfile} disabled={loading}>
+                      <Save className="mr-2 h-4 w-4" />
+                      {loading ? 'Salvando...' : 'Salvar Alterações'}
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
           </TabsContent>
         )}
 
