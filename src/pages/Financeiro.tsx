@@ -509,6 +509,12 @@ export default function Financeiro() {
         }}
         pagamento={detalhesModal.pagamento}
       />
+        </TabsContent>
+
+        <TabsContent value="custos" className="mt-4">
+          <CustosRentabilidade />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
