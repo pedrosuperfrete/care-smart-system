@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useClinica } from './useClinica';
@@ -320,5 +321,171 @@ export function useRentabilidade() {
     calcularAtendimentosParaMetaPorServico,
     servicos,
     custos,
+  };
+}
+
+// Hook para analisar mix de serviços com base nos agendamentos
+export function useMixServicos() {
+  const { data: clinica } = useClinica();
+  const rentabilidade = useRentabilidade();
+
+  // Buscar agendamentos realizados dos últimos 3 meses
+  const agendamentosQuery = useQuery({
+    queryKey: ['mix-servicos', clinica?.id],
+    queryFn: async () => {
+      if (!clinica?.id) return [];
+
+      const tresMesesAtras = new Date();
+      tresMesesAtras.setMonth(tresMesesAtras.getMonth() - 3);
+
+      const { data, error } = await supabase
+        .from('agendamentos')
+        .select(`
+          id,
+          tipo_servico,
+          data_inicio,
+          status,
+          valor,
+          profissionais!inner(clinica_id)
+        `)
+        .eq('profissionais.clinica_id', clinica.id)
+        .gte('data_inicio', tresMesesAtras.toISOString())
+        .in('status', ['realizado', 'confirmado']);
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!clinica?.id,
+  });
+
+  const agendamentos = agendamentosQuery.data || [];
+
+  // Calcular distribuição de serviços por mês
+  const distribuicaoMensal = useMemo(() => {
+    const distribuicao: Record<string, { total: number; porServico: Record<string, number> }> = {};
+    
+    agendamentos.forEach(ag => {
+      const mes = new Date(ag.data_inicio).toISOString().slice(0, 7); // YYYY-MM
+      if (!distribuicao[mes]) {
+        distribuicao[mes] = { total: 0, porServico: {} };
+      }
+      distribuicao[mes].total++;
+      distribuicao[mes].porServico[ag.tipo_servico] = (distribuicao[mes].porServico[ag.tipo_servico] || 0) + 1;
+    });
+
+    return distribuicao;
+  }, [agendamentos]);
+
+  // Calcular mix atual (percentuais)
+  const mixAtual = useMemo(() => {
+    const totalGeral = agendamentos.length;
+    if (totalGeral === 0) return [];
+
+    const contagem: Record<string, number> = {};
+    agendamentos.forEach(ag => {
+      contagem[ag.tipo_servico] = (contagem[ag.tipo_servico] || 0) + 1;
+    });
+
+    return Object.entries(contagem).map(([servico, quantidade]) => {
+      const rentabilidadeServico = rentabilidade.rentabilidadePorServico.find(s => s.nome === servico);
+      return {
+        servico,
+        quantidade,
+        percentual: (quantidade / totalGeral) * 100,
+        margem: rentabilidadeServico?.margem || 0,
+        margemPercentual: rentabilidadeServico?.margemPercentual || 0,
+        preco: rentabilidadeServico?.preco || 0,
+        receitaTotal: quantidade * (rentabilidadeServico?.preco || 0),
+        lucroTotal: quantidade * (rentabilidadeServico?.margem || 0),
+      };
+    }).sort((a, b) => b.quantidade - a.quantidade);
+  }, [agendamentos, rentabilidade.rentabilidadePorServico]);
+
+  // Gerar sugestões de otimização
+  const sugestoesOtimizacao = useMemo(() => {
+    if (mixAtual.length < 2) return [];
+
+    const sugestoes: Array<{
+      tipo: 'aumentar' | 'diminuir' | 'manter';
+      servico: string;
+      motivo: string;
+      impactoEstimado: number;
+      percentualAtual: number;
+      margemServico: number;
+    }> = [];
+
+    // Ordenar por margem
+    const servicosPorMargem = [...mixAtual].sort((a, b) => b.margem - a.margem);
+    const margemMediaMix = mixAtual.reduce((sum, s) => sum + (s.margem * s.percentual / 100), 0);
+
+    servicosPorMargem.forEach((servico, index) => {
+      // Serviços mais rentáveis (top 30% por margem) que estão sub-representados
+      if (index < servicosPorMargem.length * 0.3 && servico.margem > margemMediaMix) {
+        if (servico.percentual < 40) {
+          const aumentoPotencial = Math.min(10, 40 - servico.percentual);
+          sugestoes.push({
+            tipo: 'aumentar',
+            servico: servico.servico,
+            motivo: `Margem de R$ ${servico.margem.toFixed(0)} por atendimento, acima da média do mix.`,
+            impactoEstimado: aumentoPotencial * servico.margem / 100 * agendamentos.length / 3,
+            percentualAtual: servico.percentual,
+            margemServico: servico.margem,
+          });
+        }
+      }
+
+      // Serviços menos rentáveis (bottom 30% por margem) que estão sobre-representados
+      if (index >= servicosPorMargem.length * 0.7 && servico.margem < margemMediaMix) {
+        if (servico.percentual > 20 && servico.margem < margemMediaMix * 0.7) {
+          const reducaoPotencial = Math.min(10, servico.percentual - 15);
+          const servicoMaisRentavel = servicosPorMargem[0];
+          const ganhoMigracao = (servicoMaisRentavel.margem - servico.margem) * reducaoPotencial / 100 * agendamentos.length / 3;
+          
+          sugestoes.push({
+            tipo: 'diminuir',
+            servico: servico.servico,
+            motivo: `Margem de R$ ${servico.margem.toFixed(0)} está abaixo da média. Considere migrar para "${servicoMaisRentavel.servico}".`,
+            impactoEstimado: ganhoMigracao,
+            percentualAtual: servico.percentual,
+            margemServico: servico.margem,
+          });
+        }
+      }
+    });
+
+    return sugestoes.sort((a, b) => Math.abs(b.impactoEstimado) - Math.abs(a.impactoEstimado));
+  }, [mixAtual, agendamentos.length]);
+
+  // Calcular métricas de performance do mix atual
+  const performanceMix = useMemo(() => {
+    if (mixAtual.length === 0) return null;
+
+    const receitaTotal = mixAtual.reduce((sum, s) => sum + s.receitaTotal, 0);
+    const lucroTotal = mixAtual.reduce((sum, s) => sum + s.lucroTotal, 0);
+    const margemPonderada = receitaTotal > 0 ? (lucroTotal / receitaTotal) * 100 : 0;
+    const atendimentosMensais = agendamentos.length / 3;
+
+    // Calcular mix "ideal" (maximizando rentabilidade)
+    const servicoMaisRentavel = rentabilidade.servicoMaisRentavel;
+    const lucroIdeal = servicoMaisRentavel ? agendamentos.length * servicoMaisRentavel.margem / 3 : 0;
+    const eficienciaMix = lucroIdeal > 0 ? (lucroTotal / 3 / lucroIdeal) * 100 : 0;
+
+    return {
+      receitaMensal: receitaTotal / 3,
+      lucroMensal: lucroTotal / 3,
+      margemPonderada,
+      atendimentosMensais,
+      eficienciaMix,
+      potencialGanhoOtimizacao: (lucroIdeal - lucroTotal / 3) * 0.3, // 30% de captura realista
+    };
+  }, [mixAtual, agendamentos.length, rentabilidade.servicoMaisRentavel]);
+
+  return {
+    isLoading: agendamentosQuery.isLoading || rentabilidade.isLoading,
+    mixAtual,
+    distribuicaoMensal,
+    sugestoesOtimizacao,
+    performanceMix,
+    totalAtendimentos: agendamentos.length,
   };
 }

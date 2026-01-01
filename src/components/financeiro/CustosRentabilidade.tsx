@@ -26,9 +26,13 @@ import {
   Building2,
   Zap,
   Lightbulb,
-  Users
+  Users,
+  ArrowUpCircle,
+  ArrowDownCircle,
+  BarChart3,
+  PieChart
 } from 'lucide-react';
-import { useCustos, useRentabilidade, CustoInput } from '@/hooks/useCustos';
+import { useCustos, useRentabilidade, useMixServicos, CustoInput } from '@/hooks/useCustos';
 import { useTiposServicos } from '@/hooks/useTiposServicos';
 import { formatCurrency } from '@/lib/utils';
 import {
@@ -67,6 +71,7 @@ export function CustosRentabilidade() {
   const { custos, isLoading: custosLoading, criarCusto, deletarCusto } = useCustos();
   const { data: tiposServicos = [] } = useTiposServicos();
   const rentabilidade = useRentabilidade();
+  const mixServicos = useMixServicos();
   
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -361,6 +366,140 @@ export function CustosRentabilidade() {
                     </div>
                   </CardContent>
                 </Card>
+              )}
+
+              {/* Otimização de Mix de Serviços */}
+              {mixServicos.totalAtendimentos > 0 && (
+                <>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <PieChart className="h-5 w-5" />
+                        Mix de Serviços (últimos 3 meses)
+                      </CardTitle>
+                      <CardDescription>
+                        Distribuição dos seus atendimentos e sugestões de otimização
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-6">
+                        {/* Performance do Mix */}
+                        {mixServicos.performanceMix && (
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="text-center p-3 bg-muted/50 rounded-lg">
+                              <p className="text-xs text-muted-foreground">Atend./mês</p>
+                              <p className="text-xl font-bold">{Math.round(mixServicos.performanceMix.atendimentosMensais)}</p>
+                            </div>
+                            <div className="text-center p-3 bg-muted/50 rounded-lg">
+                              <p className="text-xs text-muted-foreground">Receita/mês</p>
+                              <p className="text-xl font-bold text-primary">R$ {formatCurrency(mixServicos.performanceMix.receitaMensal)}</p>
+                            </div>
+                            <div className="text-center p-3 bg-muted/50 rounded-lg">
+                              <p className="text-xs text-muted-foreground">Lucro/mês</p>
+                              <p className={`text-xl font-bold ${mixServicos.performanceMix.lucroMensal > 0 ? 'text-success' : 'text-destructive'}`}>
+                                R$ {formatCurrency(mixServicos.performanceMix.lucroMensal)}
+                              </p>
+                            </div>
+                            <div className="text-center p-3 bg-muted/50 rounded-lg">
+                              <p className="text-xs text-muted-foreground">Margem média</p>
+                              <p className="text-xl font-bold">{mixServicos.performanceMix.margemPonderada.toFixed(1)}%</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Distribuição por serviço */}
+                        <div className="space-y-3">
+                          <h4 className="text-sm font-medium flex items-center gap-2">
+                            <BarChart3 className="h-4 w-4" />
+                            Distribuição atual
+                          </h4>
+                          {mixServicos.mixAtual.map((item) => (
+                            <div key={item.servico} className="space-y-1">
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="font-medium">{item.servico}</span>
+                                <div className="flex items-center gap-3">
+                                  <span className="text-muted-foreground">{item.quantidade} atend.</span>
+                                  <Badge variant={item.margem > 0 ? 'default' : 'destructive'} className="min-w-[70px] justify-center">
+                                    {item.percentual.toFixed(0)}%
+                                  </Badge>
+                                </div>
+                              </div>
+                              <Progress 
+                                value={item.percentual} 
+                                className="h-2"
+                              />
+                              <div className="flex justify-between text-xs text-muted-foreground">
+                                <span>Margem: R$ {formatCurrency(item.margem)}/atend.</span>
+                                <span>Lucro total: R$ {formatCurrency(item.lucroTotal)}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Sugestões de Otimização */}
+                  {mixServicos.sugestoesOtimizacao.length > 0 && (
+                    <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-primary">
+                          <Lightbulb className="h-5 w-5" />
+                          Sugestões de Otimização
+                        </CardTitle>
+                        <CardDescription>
+                          Com base na rentabilidade de cada serviço e seu mix atual
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          {mixServicos.sugestoesOtimizacao.map((sugestao, index) => (
+                            <div 
+                              key={index} 
+                              className={`flex items-start gap-3 p-4 rounded-lg border ${
+                                sugestao.tipo === 'aumentar' 
+                                  ? 'bg-success/5 border-success/20' 
+                                  : 'bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-900/30'
+                              }`}
+                            >
+                              {sugestao.tipo === 'aumentar' ? (
+                                <ArrowUpCircle className="h-5 w-5 text-success mt-0.5 shrink-0" />
+                              ) : (
+                                <ArrowDownCircle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-medium">{sugestao.servico}</span>
+                                  <Badge 
+                                    variant="outline" 
+                                    className={sugestao.tipo === 'aumentar' ? 'border-success/50 text-success' : 'border-amber-500/50 text-amber-600'}
+                                  >
+                                    {sugestao.tipo === 'aumentar' ? 'Aumentar' : 'Reduzir'} (atual: {sugestao.percentualAtual.toFixed(0)}%)
+                                  </Badge>
+                                </div>
+                                <p className="text-sm text-muted-foreground mt-1">{sugestao.motivo}</p>
+                                {sugestao.impactoEstimado > 0 && (
+                                  <p className="text-sm font-medium text-success mt-2">
+                                    Impacto estimado: +R$ {formatCurrency(sugestao.impactoEstimado)}/mês
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+
+                          {mixServicos.performanceMix && mixServicos.performanceMix.potencialGanhoOtimizacao > 0 && (
+                            <div className="mt-4 p-4 bg-primary/10 rounded-lg text-center">
+                              <p className="text-sm text-muted-foreground">Potencial de ganho com otimização do mix</p>
+                              <p className="text-2xl font-bold text-primary">
+                                +R$ {formatCurrency(mixServicos.performanceMix.potencialGanhoOtimizacao)}/mês
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </>
               )}
             </>
           )}
