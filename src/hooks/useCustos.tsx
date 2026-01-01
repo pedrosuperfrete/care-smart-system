@@ -286,6 +286,25 @@ export function useRentabilidade() {
     return Math.ceil((custoFixoTotal + meta) / margemMedia);
   };
 
+  // Calcular break-even para um serviço específico
+  const calcularBreakEvenPorServico = (servicoId: string) => {
+    const servicoRentabilidade = rentabilidadePorServico.find(s => s.id === servicoId);
+    if (!servicoRentabilidade || servicoRentabilidade.margem <= 0) return { breakEven: Infinity, margem: 0 };
+    
+    return {
+      breakEven: Math.ceil(custoFixoTotal / servicoRentabilidade.margem),
+      margem: servicoRentabilidade.margem,
+    };
+  };
+
+  // Calcular atendimentos para meta por serviço específico
+  const calcularAtendimentosParaMetaPorServico = (meta: number, servicoId: string) => {
+    const servicoRentabilidade = rentabilidadePorServico.find(s => s.id === servicoId);
+    if (!servicoRentabilidade || servicoRentabilidade.margem <= 0) return Infinity;
+    
+    return Math.ceil((custoFixoTotal + meta) / servicoRentabilidade.margem);
+  };
+
   return {
     isLoading: custosLoading || servicosQuery.isLoading,
     custoFixoTotal,
@@ -297,6 +316,8 @@ export function useRentabilidade() {
     servicoMaisRentavel: servicosOrdenados[0] || null,
     servicoMenosRentavel: servicosOrdenados[servicosOrdenados.length - 1] || null,
     calcularAtendimentosParaMeta,
+    calcularBreakEvenPorServico,
+    calcularAtendimentosParaMetaPorServico,
     servicos,
     custos,
   };

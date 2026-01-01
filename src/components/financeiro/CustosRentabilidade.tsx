@@ -71,6 +71,7 @@ export function CustosRentabilidade() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [metaMensal, setMetaMensal] = useState(5000);
+  const [servicoSelecionado, setServicoSelecionado] = useState<string>('todos');
   
   // Form state
   const [formData, setFormData] = useState<CustoInput>({
@@ -120,7 +121,18 @@ export function CustosRentabilidade() {
     });
   };
 
-  const atendimentosParaMeta = rentabilidade.calcularAtendimentosParaMeta(metaMensal);
+  // Dados calculados com base no serviço selecionado
+  const dadosServicoSelecionado = servicoSelecionado !== 'todos' 
+    ? rentabilidade.calcularBreakEvenPorServico(servicoSelecionado)
+    : { breakEven: rentabilidade.breakEven, margem: rentabilidade.margemMedia };
+  
+  const atendimentosParaMeta = servicoSelecionado !== 'todos'
+    ? rentabilidade.calcularAtendimentosParaMetaPorServico(metaMensal, servicoSelecionado)
+    : rentabilidade.calcularAtendimentosParaMeta(metaMensal);
+
+  const servicoInfo = servicoSelecionado !== 'todos' 
+    ? rentabilidade.rentabilidadePorServico.find(s => s.id === servicoSelecionado)
+    : null;
 
   if (custosLoading || rentabilidade.isLoading) {
     return (
@@ -225,6 +237,33 @@ export function CustosRentabilidade() {
                 </Card>
               </div>
 
+              {/* Seletor de Serviço */}
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="text-sm font-medium">Calcular para qual serviço?</Label>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Selecione um serviço específico ou veja a média de todos
+                      </p>
+                    </div>
+                    <Select value={servicoSelecionado} onValueChange={setServicoSelecionado}>
+                      <SelectTrigger className="w-[250px]">
+                        <SelectValue placeholder="Selecione um serviço" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">Média de todos os serviços</SelectItem>
+                        {tiposServicos.filter(s => s.preco && s.preco > 0).map(servico => (
+                          <SelectItem key={servico.id} value={servico.id}>
+                            {servico.nome} (R$ {formatCurrency(servico.preco || 0)})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Card de Break-even */}
               <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
                 <CardContent className="pt-6">
@@ -233,19 +272,30 @@ export function CustosRentabilidade() {
                       <div className="flex items-center gap-2 mb-2">
                         <Target className="h-5 w-5 text-primary" />
                         <h3 className="font-semibold">Ponto de Equilíbrio</h3>
+                        {servicoInfo && (
+                          <Badge variant="outline" className="ml-2">{servicoInfo.nome}</Badge>
+                        )}
                       </div>
                       <p className="text-3xl font-bold text-primary mb-1">
-                        {rentabilidade.breakEven} atendimentos/mês
+                        {dadosServicoSelecionado.breakEven === Infinity ? '∞' : dadosServicoSelecionado.breakEven} atendimentos/mês
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        É o mínimo que você precisa atender para cobrir todos os seus custos e não ter prejuízo.
+                        {servicoSelecionado === 'todos' 
+                          ? 'É o mínimo que você precisa atender (média) para cobrir todos os seus custos.'
+                          : `É o mínimo de "${servicoInfo?.nome}" que você precisa fazer para cobrir todos os custos.`
+                        }
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="text-sm text-muted-foreground">Margem por atendimento</p>
-                      <p className="text-xl font-bold text-success">
-                        R$ {formatCurrency(rentabilidade.margemMedia)}
+                      <p className={`text-xl font-bold ${dadosServicoSelecionado.margem > 0 ? 'text-success' : 'text-destructive'}`}>
+                        R$ {formatCurrency(dadosServicoSelecionado.margem)}
                       </p>
+                      {servicoInfo && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Preço: R$ {formatCurrency(servicoInfo.preco)}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -257,9 +307,15 @@ export function CustosRentabilidade() {
                   <CardTitle className="flex items-center gap-2">
                     <Users className="h-5 w-5" />
                     Quantos pacientes para sua meta?
+                    {servicoInfo && (
+                      <Badge variant="outline" className="ml-2 font-normal">{servicoInfo.nome}</Badge>
+                    )}
                   </CardTitle>
                   <CardDescription>
-                    Digite quanto você quer ganhar por mês (já descontando os custos)
+                    {servicoSelecionado === 'todos' 
+                      ? 'Digite quanto você quer ganhar por mês (já descontando os custos)'
+                      : `Quantos atendimentos de "${servicoInfo?.nome}" você precisa fazer`
+                    }
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -277,12 +333,14 @@ export function CustosRentabilidade() {
                         />
                       </div>
                     </div>
-                    <div className="text-center px-8 py-4 bg-muted rounded-lg">
+                    <div className="text-center px-8 py-4 bg-muted rounded-lg min-w-[160px]">
                       <p className="text-sm text-muted-foreground mb-1">Você precisa de</p>
                       <p className="text-3xl font-bold text-primary">
                         {atendimentosParaMeta === Infinity ? '∞' : atendimentosParaMeta}
                       </p>
-                      <p className="text-sm text-muted-foreground">atendimentos/mês</p>
+                      <p className="text-sm text-muted-foreground">
+                        {servicoSelecionado === 'todos' ? 'atendimentos/mês' : `${servicoInfo?.nome?.toLowerCase() || 'sessões'}/mês`}
+                      </p>
                     </div>
                   </div>
                 </CardContent>
