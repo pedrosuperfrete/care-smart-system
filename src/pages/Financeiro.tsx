@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { DollarSign, TrendingUp, Calendar, Search, CheckCircle, Clock, XCircle, Receipt, CreditCard, MessageSquare, FileText, Calculator } from 'lucide-react';
+import { DollarSign, TrendingUp, Calendar, Search, CheckCircle, Clock, XCircle, Receipt, CreditCard, MessageSquare, FileText, Calculator, Wallet } from 'lucide-react';
 import { usePagamentos, useFinanceiroStats, useMarcarPago } from '@/hooks/useFinanceiro';
 import { useCreatePagamento } from '@/hooks/useCreatePagamento';
 import { useAuth } from '@/hooks/useAuth';
@@ -16,6 +16,7 @@ import { ReciboModal } from '@/components/financeiro/ReciboModal';
 import { CobrancaModal } from '@/components/financeiro/CobrancaModal';
 import { DateFilter } from '@/components/financeiro/DateFilter';
 import { CustosRentabilidade } from '@/components/financeiro/CustosRentabilidade';
+import { FluxoCaixa } from '@/components/financeiro/FluxoCaixa';
 import { toast } from 'sonner';
 import { NovoPagamentoModal } from '@/components/financeiro/NovoPagamentoModal';
 import { DetalhesAgendamentoModal } from '@/components/financeiro/DetalhesAgendamentoModal';
@@ -203,6 +204,10 @@ export default function Financeiro() {
           <TabsTrigger value="pagamentos" className="flex items-center gap-2">
             <DollarSign className="h-4 w-4" />
             Pagamentos
+          </TabsTrigger>
+          <TabsTrigger value="fluxo" className="flex items-center gap-2">
+            <Wallet className="h-4 w-4" />
+            Fluxo de Caixa
           </TabsTrigger>
           <TabsTrigger value="custos" className="flex items-center gap-2">
             <Calculator className="h-4 w-4" />
@@ -509,6 +514,10 @@ export default function Financeiro() {
         }}
         pagamento={detalhesModal.pagamento}
       />
+        </TabsContent>
+
+        <TabsContent value="fluxo" className="mt-4">
+          <FluxoCaixa />
         </TabsContent>
 
         <TabsContent value="custos" className="mt-4">

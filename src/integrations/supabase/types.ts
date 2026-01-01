@@ -241,6 +241,50 @@ export type Database = {
           },
         ]
       }
+      despesas_avulsas: {
+        Row: {
+          atualizado_em: string
+          categoria: string
+          clinica_id: string
+          criado_em: string
+          data_pagamento: string
+          descricao: string
+          id: string
+          observacoes: string | null
+          valor: number
+        }
+        Insert: {
+          atualizado_em?: string
+          categoria?: string
+          clinica_id: string
+          criado_em?: string
+          data_pagamento?: string
+          descricao: string
+          id?: string
+          observacoes?: string | null
+          valor?: number
+        }
+        Update: {
+          atualizado_em?: string
+          categoria?: string
+          clinica_id?: string
+          criado_em?: string
+          data_pagamento?: string
+          descricao?: string
+          id?: string
+          observacoes?: string | null
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "despesas_avulsas_clinica_id_fkey"
+            columns: ["clinica_id"]
+            isOneToOne: false
+            referencedRelation: "clinicas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documentos: {
         Row: {
           arquivo_url: string
