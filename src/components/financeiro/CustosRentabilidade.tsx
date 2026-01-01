@@ -565,7 +565,7 @@ export function CustosRentabilidade() {
 
       {/* Modal de novo custo */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] max-h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Cadastrar Custo</DialogTitle>
             <DialogDescription>
@@ -573,7 +573,7 @@ export function CustosRentabilidade() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4 overflow-y-auto flex-1">
             <div className="space-y-2">
               <Label htmlFor="nome">Nome do custo *</Label>
               <Input
