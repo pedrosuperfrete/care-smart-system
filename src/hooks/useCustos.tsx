@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useClinica } from './useClinica';
 import { toast } from 'sonner';
+import { formatCurrency } from '@/lib/utils';
 
 export interface Custo {
   id: string;
@@ -407,117 +408,149 @@ export function useMixServicos() {
 
     const servicosPorMargem = [...mixAtual].sort((a, b) => b.margem - a.margem);
     const servicosPorVolume = [...mixAtual].sort((a, b) => b.quantidade - a.quantidade);
-    const totalAtendMensal = agendamentos.length / 3;
+    const totalAtendMensal = Math.max(agendamentos.length / 3, 1);
     
     // Margem média ponderada atual
     const lucroAtualMensal = mixAtual.reduce((sum, s) => sum + s.lucroTotal, 0) / 3;
     const receitaAtualMensal = mixAtual.reduce((sum, s) => sum + s.receitaTotal, 0) / 3;
     const margemPonderadaAtual = receitaAtualMensal > 0 ? (lucroAtualMensal / receitaAtualMensal) * 100 : 0;
 
-    // Identificar oportunidades perdidas
-    const oportunidadesPerdidas: Array<{
+    // Insights e oportunidades
+    const insights: Array<{
       servico: string;
-      tipo: 'alta_margem_baixo_volume' | 'baixa_margem_alto_volume' | 'equilibrado';
-      margem: number;
-      participacao: number;
-      insight: string;
+      tipo: 'oportunidade' | 'problema' | 'dica';
+      prioridade: 'alta' | 'media' | 'baixa';
+      titulo: string;
+      descricao: string;
       acao: string;
       impactoMensal: number;
     }> = [];
 
-    servicosPorMargem.forEach((servico) => {
-      const rankMargem = servicosPorMargem.findIndex(s => s.servico === servico.servico);
-      const rankVolume = servicosPorVolume.findIndex(s => s.servico === servico.servico);
+    // 1. Identificar serviços com prejuízo
+    mixAtual.filter(s => s.margem <= 0).forEach(servico => {
+      const prejuizoMensal = Math.abs(servico.lucroTotal / 3);
+      insights.push({
+        servico: servico.servico,
+        tipo: 'problema',
+        prioridade: 'alta',
+        titulo: `"${servico.servico}" está dando prejuízo`,
+        descricao: `Cada atendimento de "${servico.servico}" custa mais do que você cobra. Você está perdendo R$ ${formatCurrency(Math.abs(servico.margem))} por atendimento.`,
+        acao: `Aumente o preço em pelo menos ${formatCurrency(Math.abs(servico.margem) + 10)} ou reduza os custos associados a este serviço.`,
+        impactoMensal: prejuizoMensal,
+      });
+    });
+
+    // 2. Comparar margens entre serviços
+    if (servicosPorMargem.length >= 2) {
+      const melhor = servicosPorMargem[0];
+      const pior = servicosPorMargem[servicosPorMargem.length - 1];
       
-      // Alta margem mas baixo volume = oportunidade
-      if (rankMargem < servicosPorMargem.length / 2 && rankVolume >= servicosPorVolume.length / 2) {
-        const servicoMenorMargem = servicosPorMargem[servicosPorMargem.length - 1];
-        const atendimentosMigraveis = Math.min(servicoMenorMargem.quantidade / 3, totalAtendMensal * 0.15);
-        const ganhoMigracao = atendimentosMigraveis * (servico.margem - servicoMenorMargem.margem);
-        
-        if (ganhoMigracao > 50) {
-          oportunidadesPerdidas.push({
-            servico: servico.servico,
-            tipo: 'alta_margem_baixo_volume',
-            margem: servico.margem,
-            participacao: servico.percentual,
-            insight: `Você tem um serviço "estrela" com ${servico.margemPercentual.toFixed(0)}% de margem, mas ele representa apenas ${servico.percentual.toFixed(0)}% dos seus atendimentos.`,
-            acao: `Se 15% dos pacientes de "${servicoMenorMargem.servico}" migrarem para "${servico.servico}", você ganharia +R$ ${ganhoMigracao.toFixed(0)}/mês`,
-            impactoMensal: ganhoMigracao,
+      if (melhor.margem > 0 && pior.margem >= 0 && melhor.margem > pior.margem * 1.5) {
+        // Se o melhor tem margem bem maior que o pior
+        if (pior.percentual > melhor.percentual) {
+          // Se o pior representa mais atendimentos
+          const atendimentosPotenciais = Math.ceil((pior.quantidade / 3) * 0.2); // 20% dos atendimentos
+          const ganho = atendimentosPotenciais * (melhor.margem - pior.margem);
+          
+          insights.push({
+            servico: melhor.servico,
+            tipo: 'oportunidade',
+            prioridade: 'alta',
+            titulo: `Migre pacientes para "${melhor.servico}"`,
+            descricao: `"${melhor.servico}" tem margem ${((melhor.margem / Math.max(pior.margem, 1)) * 100 - 100).toFixed(0)}% maior que "${pior.servico}", mas representa apenas ${melhor.percentual.toFixed(0)}% dos atendimentos.`,
+            acao: `Se 20% dos pacientes de "${pior.servico}" migrarem para "${melhor.servico}", você ganharia +R$ ${formatCurrency(ganho)}/mês.`,
+            impactoMensal: ganho,
           });
         }
       }
-      
-      // Baixa margem e alto volume = problema
-      if (rankMargem >= servicosPorMargem.length / 2 && rankVolume < servicosPorVolume.length / 2) {
-        const servicoMaiorMargem = servicosPorMargem[0];
-        const perdaPotencial = (servico.quantidade / 3) * (servicoMaiorMargem.margem - servico.margem) * 0.1;
+    }
+
+    // 3. Sugestão de aumento de preço para serviços populares com margem baixa
+    servicosPorVolume.forEach(servico => {
+      if (servico.margem > 0 && servico.margemPercentual < 30 && servico.percentual >= 30) {
+        const aumentoSugerido = servico.preco * 0.1; // 10% de aumento
+        const impacto = (servico.quantidade / 3) * aumentoSugerido;
         
-        if (servico.margem < servicoMaiorMargem.margem * 0.5 && perdaPotencial > 100) {
-          oportunidadesPerdidas.push({
-            servico: servico.servico,
-            tipo: 'baixa_margem_alto_volume',
-            margem: servico.margem,
-            participacao: servico.percentual,
-            insight: `"${servico.servico}" tem margem de apenas R$ ${servico.margem.toFixed(0)}, mas domina ${servico.percentual.toFixed(0)}% da sua agenda.`,
-            acao: servico.margem <= 0 
-              ? `Reveja o preço ou custos deste serviço - cada atendimento está dando prejuízo!`
-              : `Considere aumentar o preço ou oferecer um upgrade para "${servicoMaiorMargem.servico}" durante as consultas.`,
-            impactoMensal: servico.margem <= 0 ? Math.abs(servico.lucroTotal / 3) : perdaPotencial,
-          });
-        }
+        insights.push({
+          servico: servico.servico,
+          tipo: 'dica',
+          prioridade: 'media',
+          titulo: `Reveja o preço de "${servico.servico}"`,
+          descricao: `Este serviço representa ${servico.percentual.toFixed(0)}% dos seus atendimentos, mas tem margem de apenas ${servico.margemPercentual.toFixed(0)}%.`,
+          acao: `Um aumento de 10% no preço (de R$ ${formatCurrency(servico.preco)} para R$ ${formatCurrency(servico.preco * 1.1)}) geraria +R$ ${formatCurrency(impacto)}/mês.`,
+          impactoMensal: impacto,
+        });
       }
     });
 
-    // Cenário otimizado realista (30% de melhoria possível)
-    const mixOtimizado = servicosPorMargem.map((s, idx) => {
-      let novaParticipacao = s.percentual;
-      if (idx === 0 && s.percentual < 50) {
-        novaParticipacao = Math.min(50, s.percentual + 15);
-      } else if (idx === servicosPorMargem.length - 1 && s.percentual > 20) {
-        novaParticipacao = Math.max(10, s.percentual - 15);
+    // 4. Dica para o serviço mais rentável
+    if (servicosPorMargem[0]?.margem > 0 && servicosPorMargem[0]?.percentual < 40) {
+      const melhor = servicosPorMargem[0];
+      const atendimentosExtras = Math.ceil(totalAtendMensal * 0.1); // 10% mais atendimentos
+      const ganhoPotencial = atendimentosExtras * melhor.margem;
+      
+      insights.push({
+        servico: melhor.servico,
+        tipo: 'oportunidade',
+        prioridade: 'media',
+        titulo: `Promova mais "${melhor.servico}"`,
+        descricao: `Este é seu serviço mais rentável com R$ ${formatCurrency(melhor.margem)} de lucro por atendimento, mas representa apenas ${melhor.percentual.toFixed(0)}% da agenda.`,
+        acao: `Aumente a visibilidade deste serviço no marketing e ofereça-o durante outras consultas. +10% de volume = +R$ ${formatCurrency(ganhoPotencial)}/mês.`,
+        impactoMensal: ganhoPotencial,
+      });
+    }
+
+    // Ordenar insights por prioridade e impacto
+    const oportunidadesOrdenadas = insights.sort((a, b) => {
+      const prioridadeOrdem = { alta: 0, media: 1, baixa: 2 };
+      if (prioridadeOrdem[a.prioridade] !== prioridadeOrdem[b.prioridade]) {
+        return prioridadeOrdem[a.prioridade] - prioridadeOrdem[b.prioridade];
       }
-      return {
-        ...s,
-        novaParticipacao,
-        novoLucro: (novaParticipacao / 100) * totalAtendMensal * s.margem,
-      };
+      return b.impactoMensal - a.impactoMensal;
     });
 
-    const lucroOtimizadoMensal = mixOtimizado.reduce((sum, s) => sum + s.novoLucro, 0);
-    const ganhoOtimizacao = lucroOtimizadoMensal - lucroAtualMensal;
+    // Calcular potencial total de otimização
+    const ganhoOtimizacao = oportunidadesOrdenadas
+      .filter(i => i.tipo !== 'problema')
+      .reduce((sum, i) => sum + i.impactoMensal, 0);
 
     // Diagnóstico geral
     let diagnostico: 'otimo' | 'bom' | 'atencao' | 'critico' = 'bom';
     let mensagemDiagnostico = '';
     
     const temPrejuizo = mixAtual.some(s => s.margem <= 0);
-    const concentracaoBaixaMargem = servicosPorVolume[0]?.margem < servicosPorMargem[0]?.margem * 0.5;
+    const todasMargensBaixas = mixAtual.every(s => s.margemPercentual < 25);
+    const servicoMaisPopularNaoERentavel = servicosPorVolume[0] && servicosPorMargem[0] && 
+      servicosPorVolume[0].servico !== servicosPorMargem[0].servico && 
+      servicosPorVolume[0].margem < servicosPorMargem[0].margem * 0.6;
     
     if (temPrejuizo) {
       diagnostico = 'critico';
       mensagemDiagnostico = 'Você tem serviços dando prejuízo! Reveja preços ou custos urgentemente.';
-    } else if (concentracaoBaixaMargem && servicosPorVolume[0]?.percentual > 50) {
+    } else if (todasMargensBaixas) {
+      diagnostico = 'atencao';
+      mensagemDiagnostico = 'Suas margens estão baixas em geral. Considere rever seus preços ou reduzir custos.';
+    } else if (servicoMaisPopularNaoERentavel) {
       diagnostico = 'atencao';
       mensagemDiagnostico = 'Seu serviço mais popular não é o mais rentável. Há espaço para melhorar.';
-    } else if (ganhoOtimizacao < lucroAtualMensal * 0.1) {
+    } else if (oportunidadesOrdenadas.length === 0 || ganhoOtimizacao < lucroAtualMensal * 0.05) {
       diagnostico = 'otimo';
-      mensagemDiagnostico = 'Seu mix está bem equilibrado! Continue assim.';
+      mensagemDiagnostico = 'Seu mix está bem equilibrado! Continue monitorando.';
     } else {
       diagnostico = 'bom';
-      mensagemDiagnostico = 'Seu mix está razoável, mas há oportunidades de melhoria.';
+      mensagemDiagnostico = 'Seu mix está razoável. Veja as oportunidades abaixo para melhorar.';
     }
 
     return {
       diagnostico,
       mensagemDiagnostico,
-      oportunidades: oportunidadesPerdidas.sort((a, b) => b.impactoMensal - a.impactoMensal),
+      oportunidades: oportunidadesOrdenadas,
       lucroAtualMensal,
-      lucroOtimizadoMensal,
+      lucroOtimizadoMensal: lucroAtualMensal + ganhoOtimizacao,
       ganhoOtimizacao,
       margemPonderadaAtual,
       servicoEstrela: servicosPorMargem[0],
-      servicoProblematico: mixAtual.find(s => s.margem <= 0) || (concentracaoBaixaMargem ? servicosPorVolume[0] : null),
+      servicoProblematico: mixAtual.find(s => s.margem <= 0) || null,
     };
   }, [mixAtual, agendamentos.length]);
 

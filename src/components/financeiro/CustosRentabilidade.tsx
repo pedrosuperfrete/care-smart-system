@@ -455,28 +455,38 @@ export function CustosRentabilidade() {
                           <div 
                             key={idx} 
                             className={`p-4 rounded-lg border ${
-                              op.tipo === 'alta_margem_baixo_volume' 
+                              op.tipo === 'oportunidade' 
                                 ? 'bg-blue-50/50 border-blue-200 dark:bg-blue-950/20 dark:border-blue-800' 
+                                : op.tipo === 'problema'
+                                ? 'bg-destructive/10 border-destructive/30'
                                 : 'bg-amber-50/50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-800'
                             }`}
                           >
                             <div className="flex items-start gap-3">
                               <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${
-                                op.tipo === 'alta_margem_baixo_volume' 
+                                op.tipo === 'oportunidade' 
                                   ? 'bg-blue-100 dark:bg-blue-900' 
+                                  : op.tipo === 'problema'
+                                  ? 'bg-destructive/20'
                                   : 'bg-amber-100 dark:bg-amber-900'
                               }`}>
-                                {op.tipo === 'alta_margem_baixo_volume' 
+                                {op.tipo === 'oportunidade' 
                                   ? <ArrowUpCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                                  : <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                                  : op.tipo === 'problema'
+                                  ? <AlertTriangle className="h-4 w-4 text-destructive" />
+                                  : <Lightbulb className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                                 }
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm text-muted-foreground">{op.insight}</p>
-                                <p className="text-sm font-medium mt-2">{op.acao}</p>
+                                <p className="font-medium text-sm mb-1">{op.titulo}</p>
+                                <p className="text-sm text-muted-foreground">{op.descricao}</p>
+                                <p className="text-sm font-medium mt-2 text-primary">{op.acao}</p>
                                 {op.impactoMensal > 0 && (
-                                  <Badge variant="outline" className="mt-2 border-success/50 text-success bg-success/10">
-                                    Impacto: +R$ {formatCurrency(op.impactoMensal)}/mês
+                                  <Badge 
+                                    variant="outline" 
+                                    className={`mt-2 ${op.tipo === 'problema' ? 'border-destructive/50 text-destructive bg-destructive/10' : 'border-success/50 text-success bg-success/10'}`}
+                                  >
+                                    {op.tipo === 'problema' ? 'Prejuízo' : 'Impacto'}: {op.tipo === 'problema' ? '-' : '+'}R$ {formatCurrency(op.impactoMensal)}/mês
                                   </Badge>
                                 )}
                               </div>
