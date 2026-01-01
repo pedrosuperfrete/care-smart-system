@@ -152,6 +152,95 @@ export type Database = {
         }
         Relationships: []
       }
+      custos: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          clinica_id: string
+          criado_em: string
+          descricao: string | null
+          frequencia: string
+          id: string
+          nome: string
+          tipo: string
+          valor: number
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          clinica_id: string
+          criado_em?: string
+          descricao?: string | null
+          frequencia?: string
+          id?: string
+          nome: string
+          tipo: string
+          valor?: number
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          clinica_id?: string
+          criado_em?: string
+          descricao?: string | null
+          frequencia?: string
+          id?: string
+          nome?: string
+          tipo?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custos_clinica_id_fkey"
+            columns: ["clinica_id"]
+            isOneToOne: false
+            referencedRelation: "clinicas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custos_servicos: {
+        Row: {
+          criado_em: string
+          custo_id: string
+          id: string
+          percentual_rateio: number | null
+          tipo_aplicacao: string
+          tipo_servico_id: string
+        }
+        Insert: {
+          criado_em?: string
+          custo_id: string
+          id?: string
+          percentual_rateio?: number | null
+          tipo_aplicacao?: string
+          tipo_servico_id: string
+        }
+        Update: {
+          criado_em?: string
+          custo_id?: string
+          id?: string
+          percentual_rateio?: number | null
+          tipo_aplicacao?: string
+          tipo_servico_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custos_servicos_custo_id_fkey"
+            columns: ["custo_id"]
+            isOneToOne: false
+            referencedRelation: "custos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custos_servicos_tipo_servico_id_fkey"
+            columns: ["tipo_servico_id"]
+            isOneToOne: false
+            referencedRelation: "tipos_servicos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documentos: {
         Row: {
           arquivo_url: string
