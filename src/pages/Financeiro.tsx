@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,14 +6,16 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { DollarSign, TrendingUp, Calendar, Search, CheckCircle, Clock, XCircle, Receipt, CreditCard, MessageSquare, FileText } from 'lucide-react';
+import { DollarSign, TrendingUp, Calendar, Search, CheckCircle, Clock, XCircle, Receipt, CreditCard, MessageSquare, FileText, Calculator } from 'lucide-react';
 import { usePagamentos, useFinanceiroStats, useMarcarPago } from '@/hooks/useFinanceiro';
 import { useCreatePagamento } from '@/hooks/useCreatePagamento';
 import { useAuth } from '@/hooks/useAuth';
 import { ReciboModal } from '@/components/financeiro/ReciboModal';
 import { CobrancaModal } from '@/components/financeiro/CobrancaModal';
 import { DateFilter } from '@/components/financeiro/DateFilter';
+import { CustosRentabilidade } from '@/components/financeiro/CustosRentabilidade';
 import { toast } from 'sonner';
 import { NovoPagamentoModal } from '@/components/financeiro/NovoPagamentoModal';
 import { DetalhesAgendamentoModal } from '@/components/financeiro/DetalhesAgendamentoModal';
@@ -184,6 +185,8 @@ export default function Financeiro() {
 
   const statsData = stats || { totalRecebido: 0, totalPendente: 0, totalVencido: 0, receitaMensal: 0 };
 
+  const [activeTab, setActiveTab] = useState('pagamentos');
+
   return (
     <div className="p-8 space-y-6">
       <div className="flex justify-between items-center">
@@ -194,6 +197,20 @@ export default function Financeiro() {
           </p>
         </div>
       </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="pagamentos" className="flex items-center gap-2">
+            <DollarSign className="h-4 w-4" />
+            Pagamentos
+          </TabsTrigger>
+          <TabsTrigger value="custos" className="flex items-center gap-2">
+            <Calculator className="h-4 w-4" />
+            Custos e Rentabilidade
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="pagamentos" className="space-y-6 mt-4">
 
       {/* Filtro de Datas */}
       <DateFilter 
