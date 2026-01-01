@@ -1037,6 +1037,50 @@ export type Database = {
           },
         ]
       }
+      whatsapp_mensagens_proativas: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          conteudo_mensagem: string
+          criado_em: string
+          id: string
+          nome_mensagem: string
+          profissional_id: string
+          tipo_mensagem: string
+          trigger_descricao: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          conteudo_mensagem: string
+          criado_em?: string
+          id?: string
+          nome_mensagem: string
+          profissional_id: string
+          tipo_mensagem: string
+          trigger_descricao?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          conteudo_mensagem?: string
+          criado_em?: string
+          id?: string
+          nome_mensagem?: string
+          profissional_id?: string
+          tipo_mensagem?: string
+          trigger_descricao?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_mensagens_proativas_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profissionais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_profissionais: {
         Row: {
           api_key_n8n: string | null

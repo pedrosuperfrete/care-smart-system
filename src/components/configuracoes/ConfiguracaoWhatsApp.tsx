@@ -5,13 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MessageCircle, CheckCircle, XCircle, Settings, User, Plus, Trash2 } from 'lucide-react';
+import { MessageCircle, CheckCircle, XCircle, Settings, User, Plus, Trash2, Send } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { HorarioAtendimento } from './HorarioAtendimento';
 import { Checkbox } from '@/components/ui/checkbox';
+import { MensagensProativasTab } from './MensagensProativasTab';
 
 interface WhatsappProfissional {
   id: string;
@@ -171,9 +172,9 @@ export function ConfiguracaoWhatsApp() {
       <Card>
         <CardContent className="pt-6">
           <div className="animate-pulse space-y-4">
-            <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-            <div className="h-10 bg-gray-200 rounded"></div>
-            <div className="h-10 bg-gray-200 rounded"></div>
+            <div className="h-4 bg-muted rounded w-1/4"></div>
+            <div className="h-10 bg-muted rounded"></div>
+            <div className="h-10 bg-muted rounded"></div>
           </div>
         </CardContent>
       </Card>
@@ -280,6 +281,75 @@ export function ConfiguracaoWhatsApp() {
     setFormasPagamento(newFormas);
   };
 
+  // Conteúdo do formulário WhatsApp
+  const WhatsAppFormContent = () => (
+    <>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="numero">Número do WhatsApp</Label>
+          <Input
+            id="numero"
+            type="tel"
+            placeholder="5511999999999 (apenas números)"
+            value={numeroTelefone}
+            onChange={(e) => setNumeroTelefone(e.target.value)}
+            className="font-mono"
+          />
+          <p className="text-sm text-muted-foreground">
+            Digite o número completo com código do país e DDD, apenas números (ex: 5511999999999)
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="api-key">API Key N8N (Opcional)</Label>
+          <Input
+            id="api-key"
+            type="password"
+            placeholder="Deixe em branco se usar configuração global"
+            value={apiKeyN8N}
+            onChange={(e) => setApiKeyN8N(e.target.value)}
+          />
+          <p className="text-sm text-muted-foreground">
+            Chave de API específica para este profissional. Deixe em branco para usar a configuração global do N8N.
+          </p>
+        </div>
+
+        <div className="flex space-x-2">
+          <Button 
+            type="submit" 
+            disabled={salvarConfiguracao.isPending}
+          >
+            <Settings className="mr-2 h-4 w-4" />
+            {salvarConfiguracao.isPending ? 'Salvando...' : 'Salvar Configuração'}
+          </Button>
+          
+          {isConectado && (
+            <Button 
+              type="button"
+              variant="outline"
+              onClick={() => desativarConfiguracao.mutate()}
+              disabled={desativarConfiguracao.isPending}
+            >
+              {desativarConfiguracao.isPending ? 'Desativando...' : 'Desativar'}
+            </Button>
+          )}
+        </div>
+      </form>
+
+      {isConectado && (
+        <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg dark:bg-green-950/20 dark:border-green-900">
+          <h4 className="font-medium text-green-900 mb-2 dark:text-green-100">Integração Ativa</h4>
+          <p className="text-sm text-green-700 mb-2 dark:text-green-300">
+            WhatsApp conectado: <span className="font-mono font-medium">+{configuracao.numero_telefone}</span>
+          </p>
+          <p className="text-sm text-green-700 dark:text-green-300">
+            Os pacientes podem enviar mensagens para este número para agendar, reagendar ou cancelar consultas automaticamente.
+          </p>
+        </div>
+      )}
+    </>
+  );
+
   return (
     <Card>
       <CardHeader>
@@ -295,87 +365,28 @@ export function ConfiguracaoWhatsApp() {
       <CardContent>
         {perfilIncompleto ? (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="whatsapp" className="flex items-center gap-2">
                 <MessageCircle className="h-4 w-4" />
-                1. Integração WhatsApp
+                1. Integração
               </TabsTrigger>
               <TabsTrigger value="perfil" className="flex items-center gap-2">
                 <User className="h-4 w-4" />
-                2. Completar Perfil
+                2. Perfil
+              </TabsTrigger>
+              <TabsTrigger value="mensagens" className="flex items-center gap-2">
+                <Send className="h-4 w-4" />
+                3. Mensagens
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="whatsapp" className="space-y-4 mt-4">
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
-                <p className="text-sm text-amber-800">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4 dark:bg-amber-950/20 dark:border-amber-900">
+                <p className="text-sm text-amber-800 dark:text-amber-200">
                   <strong>Atenção:</strong> Complete seu perfil na próxima aba para aproveitar todos os recursos.
                 </p>
               </div>
-
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="numero">Número do WhatsApp</Label>
-                  <Input
-                    id="numero"
-                    type="tel"
-                    placeholder="5511999999999 (apenas números)"
-                    value={numeroTelefone}
-                    onChange={(e) => setNumeroTelefone(e.target.value)}
-                    className="font-mono"
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    Digite o número completo com código do país e DDD, apenas números (ex: 5511999999999)
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="api-key">API Key N8N (Opcional)</Label>
-                  <Input
-                    id="api-key"
-                    type="password"
-                    placeholder="Deixe em branco se usar configuração global"
-                    value={apiKeyN8N}
-                    onChange={(e) => setApiKeyN8N(e.target.value)}
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    Chave de API específica para este profissional. Deixe em branco para usar a configuração global do N8N.
-                  </p>
-                </div>
-
-                <div className="flex space-x-2">
-                  <Button 
-                    type="submit" 
-                    disabled={salvarConfiguracao.isPending}
-                  >
-                    <Settings className="mr-2 h-4 w-4" />
-                    {salvarConfiguracao.isPending ? 'Salvando...' : 'Salvar Configuração'}
-                  </Button>
-                  
-                  {isConectado && (
-                    <Button 
-                      type="button"
-                      variant="outline"
-                      onClick={() => desativarConfiguracao.mutate()}
-                      disabled={desativarConfiguracao.isPending}
-                    >
-                      {desativarConfiguracao.isPending ? 'Desativando...' : 'Desativar'}
-                    </Button>
-                  )}
-                </div>
-              </form>
-
-              {isConectado && (
-                <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <h4 className="font-medium text-green-900 mb-2">Integração Ativa</h4>
-                  <p className="text-sm text-green-700 mb-2">
-                    WhatsApp conectado: <span className="font-mono font-medium">+{configuracao.numero_telefone}</span>
-                  </p>
-                  <p className="text-sm text-green-700">
-                    Os pacientes podem enviar mensagens para este número para agendar, reagendar ou cancelar consultas automaticamente.
-                  </p>
-                </div>
-              )}
+              <WhatsAppFormContent />
             </TabsContent>
 
             <TabsContent value="perfil" className="space-y-6 mt-4">
@@ -520,89 +531,47 @@ export function ConfiguracaoWhatsApp() {
                 Salvar e Completar Perfil
               </Button>
             </TabsContent>
+
+            <TabsContent value="mensagens" className="mt-4">
+              <MensagensProativasTab />
+            </TabsContent>
           </Tabs>
         ) : (
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <Badge variant={isConectado ? "default" : "secondary"} className="flex items-center space-x-1">
-                {isConectado ? (
-                  <>
-                    <CheckCircle className="h-3 w-3" />
-                    <span>Integrado</span>
-                  </>
-                ) : (
-                  <>
-                    <XCircle className="h-3 w-3" />
-                    <span>Desconectado</span>
-                  </>
-                )}
-              </Badge>
-            </div>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="whatsapp" className="flex items-center gap-2">
+                <MessageCircle className="h-4 w-4" />
+                Integração
+              </TabsTrigger>
+              <TabsTrigger value="mensagens" className="flex items-center gap-2">
+                <Send className="h-4 w-4" />
+                Mensagens Proativas
+              </TabsTrigger>
+            </TabsList>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="numero">Número do WhatsApp</Label>
-                <Input
-                  id="numero"
-                  type="tel"
-                  placeholder="5511999999999 (apenas números)"
-                  value={numeroTelefone}
-                  onChange={(e) => setNumeroTelefone(e.target.value)}
-                  className="font-mono"
-                />
-                <p className="text-sm text-muted-foreground">
-                  Digite o número completo com código do país e DDD, apenas números (ex: 5511999999999)
-                </p>
+            <TabsContent value="whatsapp" className="space-y-4 mt-4">
+              <div className="flex items-center justify-between mb-4">
+                <Badge variant={isConectado ? "default" : "secondary"} className="flex items-center space-x-1">
+                  {isConectado ? (
+                    <>
+                      <CheckCircle className="h-3 w-3" />
+                      <span>Integrado</span>
+                    </>
+                  ) : (
+                    <>
+                      <XCircle className="h-3 w-3" />
+                      <span>Desconectado</span>
+                    </>
+                  )}
+                </Badge>
               </div>
+              <WhatsAppFormContent />
+            </TabsContent>
 
-              <div className="space-y-2">
-                <Label htmlFor="api-key">API Key N8N (Opcional)</Label>
-                <Input
-                  id="api-key"
-                  type="password"
-                  placeholder="Deixe em branco se usar configuração global"
-                  value={apiKeyN8N}
-                  onChange={(e) => setApiKeyN8N(e.target.value)}
-                />
-                <p className="text-sm text-muted-foreground">
-                  Chave de API específica para este profissional. Deixe em branco para usar a configuração global do N8N.
-                </p>
-              </div>
-
-              <div className="flex space-x-2">
-                <Button 
-                  type="submit" 
-                  disabled={salvarConfiguracao.isPending}
-                >
-                  <Settings className="mr-2 h-4 w-4" />
-                  {salvarConfiguracao.isPending ? 'Salvando...' : 'Salvar Configuração'}
-                </Button>
-                
-                {isConectado && (
-                  <Button 
-                    type="button"
-                    variant="outline"
-                    onClick={() => desativarConfiguracao.mutate()}
-                    disabled={desativarConfiguracao.isPending}
-                  >
-                    {desativarConfiguracao.isPending ? 'Desativando...' : 'Desativar'}
-                  </Button>
-                )}
-              </div>
-            </form>
-
-            {isConectado && (
-              <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                <h4 className="font-medium text-green-900 mb-2">Integração Ativa</h4>
-                <p className="text-sm text-green-700 mb-2">
-                  WhatsApp conectado: <span className="font-mono font-medium">+{configuracao.numero_telefone}</span>
-                </p>
-                <p className="text-sm text-green-700">
-                  Os pacientes podem enviar mensagens para este número para agendar, reagendar ou cancelar consultas automaticamente.
-                </p>
-              </div>
-            )}
-          </div>
+            <TabsContent value="mensagens" className="mt-4">
+              <MensagensProativasTab />
+            </TabsContent>
+          </Tabs>
         )}
       </CardContent>
     </Card>
