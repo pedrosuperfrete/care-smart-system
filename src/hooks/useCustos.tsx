@@ -401,59 +401,124 @@ export function useMixServicos() {
     }).sort((a, b) => b.quantidade - a.quantidade);
   }, [agendamentos, rentabilidade.rentabilidadePorServico]);
 
-  // Gerar sugestões de otimização
-  const sugestoesOtimizacao = useMemo(() => {
-    if (mixAtual.length < 2) return [];
+  // Análise inteligente de mix
+  const analiseInteligente = useMemo(() => {
+    if (mixAtual.length === 0) return null;
 
-    const sugestoes: Array<{
-      tipo: 'aumentar' | 'diminuir' | 'manter';
+    const servicosPorMargem = [...mixAtual].sort((a, b) => b.margem - a.margem);
+    const servicosPorVolume = [...mixAtual].sort((a, b) => b.quantidade - a.quantidade);
+    const totalAtendMensal = agendamentos.length / 3;
+    
+    // Margem média ponderada atual
+    const lucroAtualMensal = mixAtual.reduce((sum, s) => sum + s.lucroTotal, 0) / 3;
+    const receitaAtualMensal = mixAtual.reduce((sum, s) => sum + s.receitaTotal, 0) / 3;
+    const margemPonderadaAtual = receitaAtualMensal > 0 ? (lucroAtualMensal / receitaAtualMensal) * 100 : 0;
+
+    // Identificar oportunidades perdidas
+    const oportunidadesPerdidas: Array<{
       servico: string;
-      motivo: string;
-      impactoEstimado: number;
-      percentualAtual: number;
-      margemServico: number;
+      tipo: 'alta_margem_baixo_volume' | 'baixa_margem_alto_volume' | 'equilibrado';
+      margem: number;
+      participacao: number;
+      insight: string;
+      acao: string;
+      impactoMensal: number;
     }> = [];
 
-    // Ordenar por margem
-    const servicosPorMargem = [...mixAtual].sort((a, b) => b.margem - a.margem);
-    const margemMediaMix = mixAtual.reduce((sum, s) => sum + (s.margem * s.percentual / 100), 0);
-
-    servicosPorMargem.forEach((servico, index) => {
-      // Serviços mais rentáveis (top 30% por margem) que estão sub-representados
-      if (index < servicosPorMargem.length * 0.3 && servico.margem > margemMediaMix) {
-        if (servico.percentual < 40) {
-          const aumentoPotencial = Math.min(10, 40 - servico.percentual);
-          sugestoes.push({
-            tipo: 'aumentar',
+    servicosPorMargem.forEach((servico) => {
+      const rankMargem = servicosPorMargem.findIndex(s => s.servico === servico.servico);
+      const rankVolume = servicosPorVolume.findIndex(s => s.servico === servico.servico);
+      
+      // Alta margem mas baixo volume = oportunidade
+      if (rankMargem < servicosPorMargem.length / 2 && rankVolume >= servicosPorVolume.length / 2) {
+        const servicoMenorMargem = servicosPorMargem[servicosPorMargem.length - 1];
+        const atendimentosMigraveis = Math.min(servicoMenorMargem.quantidade / 3, totalAtendMensal * 0.15);
+        const ganhoMigracao = atendimentosMigraveis * (servico.margem - servicoMenorMargem.margem);
+        
+        if (ganhoMigracao > 50) {
+          oportunidadesPerdidas.push({
             servico: servico.servico,
-            motivo: `Margem de R$ ${servico.margem.toFixed(0)} por atendimento, acima da média do mix.`,
-            impactoEstimado: aumentoPotencial * servico.margem / 100 * agendamentos.length / 3,
-            percentualAtual: servico.percentual,
-            margemServico: servico.margem,
+            tipo: 'alta_margem_baixo_volume',
+            margem: servico.margem,
+            participacao: servico.percentual,
+            insight: `Você tem um serviço "estrela" com ${servico.margemPercentual.toFixed(0)}% de margem, mas ele representa apenas ${servico.percentual.toFixed(0)}% dos seus atendimentos.`,
+            acao: `Se 15% dos pacientes de "${servicoMenorMargem.servico}" migrarem para "${servico.servico}", você ganharia +R$ ${ganhoMigracao.toFixed(0)}/mês`,
+            impactoMensal: ganhoMigracao,
           });
         }
       }
-
-      // Serviços menos rentáveis (bottom 30% por margem) que estão sobre-representados
-      if (index >= servicosPorMargem.length * 0.7 && servico.margem < margemMediaMix) {
-        if (servico.percentual > 20 && servico.margem < margemMediaMix * 0.7) {
-          const reducaoPotencial = Math.min(10, servico.percentual - 15);
-          const servicoMaisRentavel = servicosPorMargem[0];
-          const ganhoMigracao = (servicoMaisRentavel.margem - servico.margem) * reducaoPotencial / 100 * agendamentos.length / 3;
-          
-          sugestoes.push({
-            tipo: 'diminuir',
+      
+      // Baixa margem e alto volume = problema
+      if (rankMargem >= servicosPorMargem.length / 2 && rankVolume < servicosPorVolume.length / 2) {
+        const servicoMaiorMargem = servicosPorMargem[0];
+        const perdaPotencial = (servico.quantidade / 3) * (servicoMaiorMargem.margem - servico.margem) * 0.1;
+        
+        if (servico.margem < servicoMaiorMargem.margem * 0.5 && perdaPotencial > 100) {
+          oportunidadesPerdidas.push({
             servico: servico.servico,
-            motivo: `Margem de R$ ${servico.margem.toFixed(0)} está abaixo da média. Considere migrar para "${servicoMaisRentavel.servico}".`,
-            impactoEstimado: ganhoMigracao,
-            percentualAtual: servico.percentual,
-            margemServico: servico.margem,
+            tipo: 'baixa_margem_alto_volume',
+            margem: servico.margem,
+            participacao: servico.percentual,
+            insight: `"${servico.servico}" tem margem de apenas R$ ${servico.margem.toFixed(0)}, mas domina ${servico.percentual.toFixed(0)}% da sua agenda.`,
+            acao: servico.margem <= 0 
+              ? `Reveja o preço ou custos deste serviço - cada atendimento está dando prejuízo!`
+              : `Considere aumentar o preço ou oferecer um upgrade para "${servicoMaiorMargem.servico}" durante as consultas.`,
+            impactoMensal: servico.margem <= 0 ? Math.abs(servico.lucroTotal / 3) : perdaPotencial,
           });
         }
       }
     });
 
-    return sugestoes.sort((a, b) => Math.abs(b.impactoEstimado) - Math.abs(a.impactoEstimado));
+    // Cenário otimizado realista (30% de melhoria possível)
+    const mixOtimizado = servicosPorMargem.map((s, idx) => {
+      let novaParticipacao = s.percentual;
+      if (idx === 0 && s.percentual < 50) {
+        novaParticipacao = Math.min(50, s.percentual + 15);
+      } else if (idx === servicosPorMargem.length - 1 && s.percentual > 20) {
+        novaParticipacao = Math.max(10, s.percentual - 15);
+      }
+      return {
+        ...s,
+        novaParticipacao,
+        novoLucro: (novaParticipacao / 100) * totalAtendMensal * s.margem,
+      };
+    });
+
+    const lucroOtimizadoMensal = mixOtimizado.reduce((sum, s) => sum + s.novoLucro, 0);
+    const ganhoOtimizacao = lucroOtimizadoMensal - lucroAtualMensal;
+
+    // Diagnóstico geral
+    let diagnostico: 'otimo' | 'bom' | 'atencao' | 'critico' = 'bom';
+    let mensagemDiagnostico = '';
+    
+    const temPrejuizo = mixAtual.some(s => s.margem <= 0);
+    const concentracaoBaixaMargem = servicosPorVolume[0]?.margem < servicosPorMargem[0]?.margem * 0.5;
+    
+    if (temPrejuizo) {
+      diagnostico = 'critico';
+      mensagemDiagnostico = 'Você tem serviços dando prejuízo! Reveja preços ou custos urgentemente.';
+    } else if (concentracaoBaixaMargem && servicosPorVolume[0]?.percentual > 50) {
+      diagnostico = 'atencao';
+      mensagemDiagnostico = 'Seu serviço mais popular não é o mais rentável. Há espaço para melhorar.';
+    } else if (ganhoOtimizacao < lucroAtualMensal * 0.1) {
+      diagnostico = 'otimo';
+      mensagemDiagnostico = 'Seu mix está bem equilibrado! Continue assim.';
+    } else {
+      diagnostico = 'bom';
+      mensagemDiagnostico = 'Seu mix está razoável, mas há oportunidades de melhoria.';
+    }
+
+    return {
+      diagnostico,
+      mensagemDiagnostico,
+      oportunidades: oportunidadesPerdidas.sort((a, b) => b.impactoMensal - a.impactoMensal),
+      lucroAtualMensal,
+      lucroOtimizadoMensal,
+      ganhoOtimizacao,
+      margemPonderadaAtual,
+      servicoEstrela: servicosPorMargem[0],
+      servicoProblematico: mixAtual.find(s => s.margem <= 0) || (concentracaoBaixaMargem ? servicosPorVolume[0] : null),
+    };
   }, [mixAtual, agendamentos.length]);
 
   // Calcular métricas de performance do mix atual
@@ -484,7 +549,7 @@ export function useMixServicos() {
     isLoading: agendamentosQuery.isLoading || rentabilidade.isLoading,
     mixAtual,
     distribuicaoMensal,
-    sugestoesOtimizacao,
+    analiseInteligente,
     performanceMix,
     totalAtendimentos: agendamentos.length,
   };

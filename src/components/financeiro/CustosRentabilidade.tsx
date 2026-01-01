@@ -27,10 +27,7 @@ import {
   Zap,
   Lightbulb,
   Users,
-  ArrowUpCircle,
-  ArrowDownCircle,
-  BarChart3,
-  PieChart
+  ArrowUpCircle
 } from 'lucide-react';
 import { useCustos, useRentabilidade, useMixServicos, CustoInput } from '@/hooks/useCustos';
 import { useTiposServicos } from '@/hooks/useTiposServicos';
@@ -368,138 +365,138 @@ export function CustosRentabilidade() {
                 </Card>
               )}
 
-              {/* Otimização de Mix de Serviços */}
-              {mixServicos.totalAtendimentos > 0 && (
-                <>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <PieChart className="h-5 w-5" />
-                        Mix de Serviços (últimos 3 meses)
-                      </CardTitle>
-                      <CardDescription>
-                        Distribuição dos seus atendimentos e sugestões de otimização
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-6">
-                        {/* Performance do Mix */}
-                        {mixServicos.performanceMix && (
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div className="text-center p-3 bg-muted/50 rounded-lg">
-                              <p className="text-xs text-muted-foreground">Atend./mês</p>
-                              <p className="text-xl font-bold">{Math.round(mixServicos.performanceMix.atendimentosMensais)}</p>
-                            </div>
-                            <div className="text-center p-3 bg-muted/50 rounded-lg">
-                              <p className="text-xs text-muted-foreground">Receita/mês</p>
-                              <p className="text-xl font-bold text-primary">R$ {formatCurrency(mixServicos.performanceMix.receitaMensal)}</p>
-                            </div>
-                            <div className="text-center p-3 bg-muted/50 rounded-lg">
-                              <p className="text-xs text-muted-foreground">Lucro/mês</p>
-                              <p className={`text-xl font-bold ${mixServicos.performanceMix.lucroMensal > 0 ? 'text-success' : 'text-destructive'}`}>
-                                R$ {formatCurrency(mixServicos.performanceMix.lucroMensal)}
-                              </p>
-                            </div>
-                            <div className="text-center p-3 bg-muted/50 rounded-lg">
-                              <p className="text-xs text-muted-foreground">Margem média</p>
-                              <p className="text-xl font-bold">{mixServicos.performanceMix.margemPonderada.toFixed(1)}%</p>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Distribuição por serviço */}
-                        <div className="space-y-3">
-                          <h4 className="text-sm font-medium flex items-center gap-2">
-                            <BarChart3 className="h-4 w-4" />
-                            Distribuição atual
-                          </h4>
-                          {mixServicos.mixAtual.map((item) => (
-                            <div key={item.servico} className="space-y-1">
-                              <div className="flex items-center justify-between text-sm">
-                                <span className="font-medium">{item.servico}</span>
-                                <div className="flex items-center gap-3">
-                                  <span className="text-muted-foreground">{item.quantidade} atend.</span>
-                                  <Badge variant={item.margem > 0 ? 'default' : 'destructive'} className="min-w-[70px] justify-center">
-                                    {item.percentual.toFixed(0)}%
-                                  </Badge>
-                                </div>
-                              </div>
-                              <Progress 
-                                value={item.percentual} 
-                                className="h-2"
-                              />
-                              <div className="flex justify-between text-xs text-muted-foreground">
-                                <span>Margem: R$ {formatCurrency(item.margem)}/atend.</span>
-                                <span>Lucro total: R$ {formatCurrency(item.lucroTotal)}</span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Sugestões de Otimização */}
-                  {mixServicos.sugestoesOtimizacao.length > 0 && (
-                    <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-primary">
-                          <Lightbulb className="h-5 w-5" />
-                          Sugestões de Otimização
+              {/* Inteligência de Mix de Serviços */}
+              {mixServicos.totalAtendimentos > 0 && mixServicos.analiseInteligente && (
+                <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 via-transparent to-transparent">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          <Lightbulb className="h-5 w-5 text-primary" />
+                          Inteligência de Mix
                         </CardTitle>
                         <CardDescription>
-                          Com base na rentabilidade de cada serviço e seu mix atual
+                          Análise baseada em {mixServicos.totalAtendimentos} atendimentos dos últimos 3 meses
                         </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          {mixServicos.sugestoesOtimizacao.map((sugestao, index) => (
-                            <div 
-                              key={index} 
-                              className={`flex items-start gap-3 p-4 rounded-lg border ${
-                                sugestao.tipo === 'aumentar' 
-                                  ? 'bg-success/5 border-success/20' 
-                                  : 'bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-900/30'
-                              }`}
-                            >
-                              {sugestao.tipo === 'aumentar' ? (
-                                <ArrowUpCircle className="h-5 w-5 text-success mt-0.5 shrink-0" />
-                              ) : (
-                                <ArrowDownCircle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
-                              )}
+                      </div>
+                      {/* Diagnóstico Badge */}
+                      <Badge 
+                        variant={
+                          mixServicos.analiseInteligente.diagnostico === 'otimo' ? 'default' :
+                          mixServicos.analiseInteligente.diagnostico === 'bom' ? 'secondary' :
+                          mixServicos.analiseInteligente.diagnostico === 'atencao' ? 'outline' : 'destructive'
+                        }
+                        className={`text-sm px-3 py-1 ${
+                          mixServicos.analiseInteligente.diagnostico === 'otimo' ? 'bg-success text-success-foreground' :
+                          mixServicos.analiseInteligente.diagnostico === 'critico' ? '' : ''
+                        }`}
+                      >
+                        {mixServicos.analiseInteligente.diagnostico === 'otimo' ? '✨ Mix Otimizado' :
+                         mixServicos.analiseInteligente.diagnostico === 'bom' ? '👍 Mix Bom' :
+                         mixServicos.analiseInteligente.diagnostico === 'atencao' ? '⚠️ Precisa Atenção' : '🚨 Crítico'}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Mensagem principal */}
+                    <div className={`p-4 rounded-lg border ${
+                      mixServicos.analiseInteligente.diagnostico === 'critico' ? 'bg-destructive/10 border-destructive/30' :
+                      mixServicos.analiseInteligente.diagnostico === 'atencao' ? 'bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-800' :
+                      'bg-muted/50 border-transparent'
+                    }`}>
+                      <p className="text-sm font-medium">{mixServicos.analiseInteligente.mensagemDiagnostico}</p>
+                    </div>
+
+                    {/* Cards de comparação: Atual vs Otimizado */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-4 rounded-lg border bg-muted/30">
+                        <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Lucro Atual</p>
+                        <p className="text-2xl font-bold">R$ {formatCurrency(mixServicos.analiseInteligente.lucroAtualMensal)}<span className="text-sm font-normal text-muted-foreground">/mês</span></p>
+                        <p className="text-xs text-muted-foreground mt-1">Margem média: {mixServicos.analiseInteligente.margemPonderadaAtual.toFixed(1)}%</p>
+                      </div>
+                      
+                      {mixServicos.analiseInteligente.ganhoOtimizacao > 50 && (
+                        <div className="p-4 rounded-lg border-2 border-success/30 bg-success/5">
+                          <p className="text-xs text-success uppercase tracking-wide mb-2">Potencial com Otimização</p>
+                          <p className="text-2xl font-bold text-success">R$ {formatCurrency(mixServicos.analiseInteligente.lucroOtimizadoMensal)}<span className="text-sm font-normal text-success/70">/mês</span></p>
+                          <p className="text-xs text-success mt-1">+R$ {formatCurrency(mixServicos.analiseInteligente.ganhoOtimizacao)}/mês possível</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Serviço Estrela */}
+                    {mixServicos.analiseInteligente.servicoEstrela && (
+                      <div className="flex items-center gap-4 p-4 rounded-lg border bg-success/5 border-success/20">
+                        <div className="h-12 w-12 rounded-full bg-success/20 flex items-center justify-center shrink-0">
+                          <TrendingUp className="h-6 w-6 text-success" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-success font-medium">🌟 Serviço Estrela</span>
+                          </div>
+                          <p className="font-bold text-lg">{mixServicos.analiseInteligente.servicoEstrela.servico}</p>
+                          <p className="text-sm text-muted-foreground">
+                            R$ {formatCurrency(mixServicos.analiseInteligente.servicoEstrela.margem)} de lucro por atendimento • 
+                            {mixServicos.analiseInteligente.servicoEstrela.percentual.toFixed(0)}% da sua agenda
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Oportunidades de melhoria */}
+                    {mixServicos.analiseInteligente.oportunidades.length > 0 && (
+                      <div className="space-y-3">
+                        <h4 className="font-medium flex items-center gap-2 text-primary">
+                          <Target className="h-4 w-4" />
+                          Ações para melhorar sua lucratividade
+                        </h4>
+                        
+                        {mixServicos.analiseInteligente.oportunidades.slice(0, 3).map((op, idx) => (
+                          <div 
+                            key={idx} 
+                            className={`p-4 rounded-lg border ${
+                              op.tipo === 'alta_margem_baixo_volume' 
+                                ? 'bg-blue-50/50 border-blue-200 dark:bg-blue-950/20 dark:border-blue-800' 
+                                : 'bg-amber-50/50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-800'
+                            }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${
+                                op.tipo === 'alta_margem_baixo_volume' 
+                                  ? 'bg-blue-100 dark:bg-blue-900' 
+                                  : 'bg-amber-100 dark:bg-amber-900'
+                              }`}>
+                                {op.tipo === 'alta_margem_baixo_volume' 
+                                  ? <ArrowUpCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                  : <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                                }
+                              </div>
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="font-medium">{sugestao.servico}</span>
-                                  <Badge 
-                                    variant="outline" 
-                                    className={sugestao.tipo === 'aumentar' ? 'border-success/50 text-success' : 'border-amber-500/50 text-amber-600'}
-                                  >
-                                    {sugestao.tipo === 'aumentar' ? 'Aumentar' : 'Reduzir'} (atual: {sugestao.percentualAtual.toFixed(0)}%)
+                                <p className="text-sm text-muted-foreground">{op.insight}</p>
+                                <p className="text-sm font-medium mt-2">{op.acao}</p>
+                                {op.impactoMensal > 0 && (
+                                  <Badge variant="outline" className="mt-2 border-success/50 text-success bg-success/10">
+                                    Impacto: +R$ {formatCurrency(op.impactoMensal)}/mês
                                   </Badge>
-                                </div>
-                                <p className="text-sm text-muted-foreground mt-1">{sugestao.motivo}</p>
-                                {sugestao.impactoEstimado > 0 && (
-                                  <p className="text-sm font-medium text-success mt-2">
-                                    Impacto estimado: +R$ {formatCurrency(sugestao.impactoEstimado)}/mês
-                                  </p>
                                 )}
                               </div>
                             </div>
-                          ))}
+                          </div>
+                        ))}
+                      </div>
+                    )}
 
-                          {mixServicos.performanceMix && mixServicos.performanceMix.potencialGanhoOtimizacao > 0 && (
-                            <div className="mt-4 p-4 bg-primary/10 rounded-lg text-center">
-                              <p className="text-sm text-muted-foreground">Potencial de ganho com otimização do mix</p>
-                              <p className="text-2xl font-bold text-primary">
-                                +R$ {formatCurrency(mixServicos.performanceMix.potencialGanhoOtimizacao)}/mês
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                </>
+                    {/* Se não há oportunidades significativas */}
+                    {mixServicos.analiseInteligente.oportunidades.length === 0 && mixServicos.analiseInteligente.diagnostico === 'otimo' && (
+                      <div className="text-center py-4">
+                        <CheckCircle className="h-10 w-10 text-success mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">
+                          Seu mix de serviços está bem equilibrado. Continue monitorando mensalmente.
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               )}
             </>
           )}
