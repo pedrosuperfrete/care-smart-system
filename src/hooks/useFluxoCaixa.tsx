@@ -208,17 +208,22 @@ export function useFluxoCaixa(mesesAtras: number = 6) {
     enabled: !!agendamentosIdsQuery.data && agendamentosIdsQuery.data.length > 0,
   });
 
-  // Buscar despesas avulsas
+  // Buscar despesas avulsas - buscar todas que possam ter parcelas no período
+  // Para isso, buscamos despesas que iniciaram até 12 meses antes (máximo de parcelas possíveis)
   const despesasAvulsasQuery = useQuery({
-    queryKey: ['fluxo-caixa-despesas', clinica?.id, dataInicio.toISOString()],
+    queryKey: ['fluxo-caixa-despesas', clinica?.id, dataInicio.toISOString(), dataFim.toISOString()],
     queryFn: async () => {
       if (!clinica?.id) return [];
+
+      // Buscar despesas que possam ter parcelas no período
+      // Uma despesa pode ter até 12 parcelas, então buscamos 12 meses antes do início
+      const dataInicioExtendida = subMonths(dataInicio, 12);
 
       const { data, error } = await supabase
         .from('despesas_avulsas')
         .select('*')
         .eq('clinica_id', clinica.id)
-        .gte('data_pagamento', dataInicio.toISOString())
+        .gte('data_pagamento', dataInicioExtendida.toISOString())
         .lte('data_pagamento', dataFim.toISOString());
 
       if (error) throw error;
