@@ -90,19 +90,25 @@ export function AnaliseServicoRealizado({
       // Valor total recebido
       const valorTotal = atendimentosServico.reduce((acc, ag) => acc + (ag.valor || servico.preco), 0);
       
-      // Margem unitária (preço - custos variáveis)
-      const margemUnitaria = servico.preco - servico.custoVariavel;
+      // Margem unitária = preço - custos variáveis - custo fixo proporcional por atendimento
+      // O custoFixoProporcional vem do useRentabilidade que já rateia entre todos os serviços
+      const margemUnitaria = servico.preco - servico.custoVariavel - servico.custoFixoProporcional;
       
       // Calcular % de participação no total
       const totalAtendimentos = agendamentosFiltrados.length || 1;
       const participacao = (quantidade / totalAtendimentos) * 100;
       
       // Custo fixo proporcional ao período e participação
+      // Nota: agora a margemUnitaria já inclui o custoFixoProporcional (rateado por serviço)
+      // mas precisamos ainda considerar o rateio pela participação real no período
       const custoFixoPeriodo = rentabilidade.custoFixoTotal * meses;
       const custoFixoRateado = (custoFixoPeriodo * participacao) / 100;
       
-      // Lucro real do período
-      const lucroTotal = (margemUnitaria * quantidade) - custoFixoRateado;
+      // Lucro real do período usando margem unitária (que já tem custo fixo por serviço embutido)
+      // e subtraindo a diferença de rateio pela participação real vs rateio fixo
+      const custoFixoJaEmbutido = servico.custoFixoProporcional * quantidade;
+      const ajusteCustoFixo = custoFixoRateado - custoFixoJaEmbutido;
+      const lucroTotal = (margemUnitaria * quantidade) - ajusteCustoFixo;
       
       // Margem real por atendimento
       const margemReal = quantidade > 0 ? lucroTotal / quantidade : 0;
@@ -180,7 +186,7 @@ export function AnaliseServicoRealizado({
                       <Info className="h-3 w-3" />
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Lucro por atendimento (preço - custos variáveis)</p>
+                      <p>Lucro por atendimento (preço - custos variáveis - custo fixo rateado)</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
