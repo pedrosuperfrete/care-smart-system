@@ -352,10 +352,10 @@ export default function Financeiro() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Data</TableHead>
                   <TableHead>Paciente</TableHead>
                   <TableHead>Serviço</TableHead>
                   <TableHead>Valor</TableHead>
-                  <TableHead>Data</TableHead>
                   <TableHead>Forma</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Ações</TableHead>
@@ -389,6 +389,7 @@ export default function Financeiro() {
                       className="cursor-pointer hover:bg-muted/50"
                       onClick={() => handleOpenDetalhes(pagamento)}
                     >
+                      <TableCell>{dataCriacao}</TableCell>
                       <TableCell className="font-medium">
                         {pacienteNome}
                       </TableCell>
@@ -414,7 +415,6 @@ export default function Financeiro() {
                         </div>
                       </TableCell>
                       <TableCell>R$ {formatCurrency(valorTotal)}</TableCell>
-                      <TableCell>{dataCriacao}</TableCell>
                       <TableCell className="capitalize">{formaPagamento}</TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         {getStatusBadge(status)}
