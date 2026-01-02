@@ -5,9 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Save, CreditCard } from 'lucide-react';
+import { Save } from 'lucide-react';
 import { useClinica } from '@/hooks/useClinica';
-import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -17,20 +16,15 @@ export function ConfiguracaoClinica() {
   const [formData, setFormData] = useState({
     nome: '',
     cnpj: '',
-    endereco: '',
-    taxa_cartao_credito: 0,
-    taxa_cartao_debito: 0
+    endereco: ''
   });
 
   useEffect(() => {
-    console.log('ConfiguracaoClinica - clinica data:', clinica);
     if (clinica) {
       setFormData({
         nome: clinica.nome || '',
         cnpj: clinica.cnpj || '',
-        endereco: clinica.endereco || '',
-        taxa_cartao_credito: clinica.taxa_cartao_credito || 0,
-        taxa_cartao_debito: clinica.taxa_cartao_debito || 0
+        endereco: clinica.endereco || ''
       });
     }
   }, [clinica]);
@@ -45,9 +39,7 @@ export function ConfiguracaoClinica() {
         .update({
           nome: formData.nome,
           cnpj: formData.cnpj,
-          endereco: formData.endereco || null,
-          taxa_cartao_credito: formData.taxa_cartao_credito,
-          taxa_cartao_debito: formData.taxa_cartao_debito
+          endereco: formData.endereco || null
         })
         .eq('id', clinica.id);
 
@@ -97,44 +89,6 @@ export function ConfiguracaoClinica() {
               value={formData.endereco}
               onChange={(e) => setFormData({...formData, endereco: e.target.value})}
             />
-          </div>
-        </div>
-
-        <Separator className="my-6" />
-
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5 text-muted-foreground" />
-            <h3 className="font-medium">Taxas de Cartão</h3>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Configure as taxas cobradas pelas maquininhas para descontar automaticamente do fluxo de caixa.
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Taxa Cartão de Crédito (%)</Label>
-              <Input 
-                type="number"
-                step="0.01"
-                min="0"
-                max="100"
-                placeholder="Ex: 3.5" 
-                value={formData.taxa_cartao_credito}
-                onChange={(e) => setFormData({...formData, taxa_cartao_credito: parseFloat(e.target.value) || 0})}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Taxa Cartão de Débito (%)</Label>
-              <Input 
-                type="number"
-                step="0.01"
-                min="0"
-                max="100"
-                placeholder="Ex: 1.5" 
-                value={formData.taxa_cartao_debito}
-                onChange={(e) => setFormData({...formData, taxa_cartao_debito: parseFloat(e.target.value) || 0})}
-              />
-            </div>
           </div>
         </div>
 
