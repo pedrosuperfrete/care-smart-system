@@ -153,22 +153,51 @@ export function useFluxoCaixa(mesesAtras: number = 6) {
   const dataInicio = startOfMonth(subMonths(hoje, mesesAtras - 1));
   const dataFim = endOfMonth(hoje);
 
-  // Buscar receitas (pagamentos recebidos)
-  const receitasQuery = useQuery({
-    queryKey: ['fluxo-caixa-receitas', clinica?.id, dataInicio.toISOString()],
+  // Primeiro buscar IDs dos profissionais da clínica
+  const profissionaisQuery = useQuery({
+    queryKey: ['fluxo-caixa-profissionais', clinica?.id],
     queryFn: async () => {
       if (!clinica?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('profissionais')
+        .select('id')
+        .eq('clinica_id', clinica.id)
+        .eq('ativo', true);
+
+      if (error) throw error;
+      return (data || []).map(p => p.id);
+    },
+    enabled: !!clinica?.id,
+  });
+
+  // Buscar agendamentos para depois filtrar os pagamentos
+  const agendamentosIdsQuery = useQuery({
+    queryKey: ['fluxo-caixa-agendamentos-ids', profissionaisQuery.data],
+    queryFn: async () => {
+      if (!profissionaisQuery.data || profissionaisQuery.data.length === 0) return [];
+      
+      const { data, error } = await supabase
+        .from('agendamentos')
+        .select('id')
+        .in('profissional_id', profissionaisQuery.data);
+
+      if (error) throw error;
+      return (data || []).map(a => a.id);
+    },
+    enabled: !!profissionaisQuery.data && profissionaisQuery.data.length > 0,
+  });
+
+  // Buscar receitas (pagamentos recebidos) usando os IDs de agendamentos
+  const receitasQuery = useQuery({
+    queryKey: ['fluxo-caixa-receitas', agendamentosIdsQuery.data, dataInicio.toISOString()],
+    queryFn: async () => {
+      if (!agendamentosIdsQuery.data || agendamentosIdsQuery.data.length === 0) return [];
 
       const { data, error } = await supabase
         .from('pagamentos')
-        .select(`
-          *,
-          agendamentos!inner(
-            profissional_id,
-            profissionais!inner(clinica_id)
-          )
-        `)
-        .eq('agendamentos.profissionais.clinica_id', clinica.id)
+        .select('*')
+        .in('agendamento_id', agendamentosIdsQuery.data)
         .eq('status', 'pago')
         .gte('data_pagamento', dataInicio.toISOString())
         .lte('data_pagamento', dataFim.toISOString());
@@ -176,7 +205,7 @@ export function useFluxoCaixa(mesesAtras: number = 6) {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!clinica?.id,
+    enabled: !!agendamentosIdsQuery.data && agendamentosIdsQuery.data.length > 0,
   });
 
   // Buscar despesas avulsas
@@ -200,17 +229,14 @@ export function useFluxoCaixa(mesesAtras: number = 6) {
 
   // Buscar atendimentos realizados para calcular custos variáveis
   const atendimentosQuery = useQuery({
-    queryKey: ['fluxo-caixa-atendimentos', clinica?.id, dataInicio.toISOString()],
+    queryKey: ['fluxo-caixa-atendimentos', profissionaisQuery.data, dataInicio.toISOString()],
     queryFn: async () => {
-      if (!clinica?.id) return [];
+      if (!profissionaisQuery.data || profissionaisQuery.data.length === 0) return [];
 
       const { data, error } = await supabase
         .from('agendamentos')
-        .select(`
-          *,
-          profissionais!inner(clinica_id)
-        `)
-        .eq('profissionais.clinica_id', clinica.id)
+        .select('*')
+        .in('profissional_id', profissionaisQuery.data)
         .eq('status', 'realizado')
         .gte('data_inicio', dataInicio.toISOString())
         .lte('data_inicio', dataFim.toISOString());
@@ -218,7 +244,7 @@ export function useFluxoCaixa(mesesAtras: number = 6) {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!clinica?.id,
+    enabled: !!profissionaisQuery.data && profissionaisQuery.data.length > 0,
   });
 
   // Calcular custos fixos e variáveis
@@ -333,7 +359,7 @@ export function useFluxoCaixa(mesesAtras: number = 6) {
   const mediaDespesaMensal = totalDespesas / meses.length;
 
   return {
-    isLoading: receitasQuery.isLoading || despesasAvulsasQuery.isLoading || atendimentosQuery.isLoading,
+    isLoading: profissionaisQuery.isLoading || agendamentosIdsQuery.isLoading || receitasQuery.isLoading || despesasAvulsasQuery.isLoading || atendimentosQuery.isLoading,
     fluxoMensal,
     totalReceitas,
     totalReceitasBrutas,
