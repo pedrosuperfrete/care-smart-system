@@ -2,8 +2,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useClinica } from './useClinica';
 import { useCustos } from './useCustos';
+import { useCustosPagamentosRange } from './useCustosPagamentos';
 import { toast } from 'sonner';
-import { startOfMonth, endOfMonth, format, eachMonthOfInterval, subMonths, addMonths } from 'date-fns';
+import { startOfMonth, endOfMonth, format, eachMonthOfInterval, subMonths, addMonths, isBefore, isAfter, isSameMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export interface DespesaAvulsa {
@@ -35,6 +36,9 @@ export interface FluxoMensal {
   receitaBruta: number;
   taxasCartao: number;
   despesasFixas: number;
+  despesasFixasReal: number; // Valor real confirmado
+  despesasFixasEstimado: number; // Valor estimado
+  isEstimado: boolean; // Se usa estimativa ou valor real
   despesasVariaveis: number;
   despesasAvulsas: number;
   totalDespesas: number;
@@ -147,6 +151,7 @@ export function useDespesasAvulsas(startDate?: Date, endDate?: Date) {
 export function useFluxoCaixa(mesesAtras: number = 6) {
   const { data: clinica } = useClinica();
   const { custos } = useCustos();
+  const { pagamentos: pagamentosCustosRange, pagamentosPorMes } = useCustosPagamentosRange(mesesAtras);
 
   // Calcular período
   const hoje = new Date();
@@ -252,10 +257,9 @@ export function useFluxoCaixa(mesesAtras: number = 6) {
     enabled: !!profissionaisQuery.data && profissionaisQuery.data.length > 0,
   });
 
-  // Calcular custos fixos e variáveis
-  const custoFixoMensal = custos
-    .filter(c => c.tipo === 'fixo' && c.frequencia === 'mensal')
-    .reduce((sum, c) => sum + Number(c.valor_estimado), 0);
+  // Calcular custos fixos estimados e variáveis
+  const custosFixosMensais = custos.filter(c => c.tipo === 'fixo' && c.frequencia === 'mensal');
+  const custoFixoEstimado = custosFixosMensais.reduce((sum, c) => sum + Number(c.valor_estimado), 0);
 
   const custoVariavelPorAtendimento = custos
     .filter(c => c.tipo === 'variavel' && c.frequencia === 'por_atendimento')
@@ -301,6 +305,9 @@ export function useFluxoCaixa(mesesAtras: number = 6) {
   const fluxoMensal: FluxoMensal[] = meses.map(mes => {
     const mesKey = format(mes, 'yyyy-MM');
     const mesFormatado = format(mes, 'MMM/yy', { locale: ptBR });
+    const mesAtualCalendario = isSameMonth(mes, hoje);
+    const mesFuturo = isAfter(startOfMonth(mes), endOfMonth(hoje));
+    const mesPassado = isBefore(endOfMonth(mes), startOfMonth(hoje));
     
     // Receita bruta do mês
     const receitaBrutaMes = receitasBrutasPorMes[mesKey] || 0;
@@ -335,8 +342,37 @@ export function useFluxoCaixa(mesesAtras: number = 6) {
     // Custo variável total (baseado em atendimentos)
     const despesasVariaveisMes = atendimentosMes * custoVariavelPorAtendimento;
 
+    // ============= LÓGICA DE CUSTOS FIXOS: REAL vs ESTIMADO =============
+    // Buscar pagamentos confirmados para este mês
+    const pagamentosDoMes = pagamentosPorMes[mesKey] || [];
+    
+    // Calcular valor real pago (pagamentos confirmados)
+    let despesasFixasReal = 0;
+    const custosConfirmados = new Set<string>();
+    
+    pagamentosDoMes.forEach(pag => {
+      if (pag.status === 'pago') {
+        despesasFixasReal += Number(pag.valor_pago);
+        custosConfirmados.add(pag.custo_id);
+      }
+    });
+    
+    // Calcular estimativa para custos não confirmados
+    let despesasFixasEstimado = 0;
+    custosFixosMensais.forEach(custo => {
+      if (!custosConfirmados.has(custo.id)) {
+        despesasFixasEstimado += Number(custo.valor_estimado);
+      }
+    });
+    
+    // Determinar se este mês usa valores estimados
+    const isEstimado = mesFuturo || (mesAtualCalendario && despesasFixasEstimado > 0) || (!mesPassado && custosConfirmados.size < custosFixosMensais.length);
+    
+    // Valor total de despesas fixas (real + estimado para não confirmados)
+    const despesasFixas = despesasFixasReal + despesasFixasEstimado;
+
     // Taxas de cartão entram como despesa variável adicional
-    const totalDespesas = custoFixoMensal + despesasVariaveisMes + despesasAvulsasMes + taxasCartaoMes;
+    const totalDespesas = despesasFixas + despesasVariaveisMes + despesasAvulsasMes + taxasCartaoMes;
     const saldo = receitaBrutaMes - totalDespesas;
 
     return {
@@ -345,7 +381,10 @@ export function useFluxoCaixa(mesesAtras: number = 6) {
       receitas: receitaLiquidaMes,
       receitaBruta: receitaBrutaMes,
       taxasCartao: taxasCartaoMes,
-      despesasFixas: custoFixoMensal,
+      despesasFixas,
+      despesasFixasReal,
+      despesasFixasEstimado,
+      isEstimado,
       despesasVariaveis: despesasVariaveisMes + taxasCartaoMes,
       despesasAvulsas: despesasAvulsasMes,
       totalDespesas,
@@ -373,7 +412,7 @@ export function useFluxoCaixa(mesesAtras: number = 6) {
     saldoTotal,
     mediaReceitaMensal,
     mediaDespesaMensal,
-    custoFixoMensal,
+    custoFixoMensal: custoFixoEstimado,
     custoVariavelPorAtendimento,
     taxaCredito,
     taxaDebito,
