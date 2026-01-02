@@ -105,13 +105,7 @@ export function FluxoCaixa() {
   });
   
   const chartData = fluxo.fluxoMensal.map((m, index) => {
-    // Para meses futuros, usar saldo previsto
     saldoAcumulado += m.saldo;
-    
-    // Saídas previstas para meses futuros
-    const saidasMes = m.isFuturo 
-      ? -(m.despesasFixas + m.despesasAvulsas + m.taxasPrevistas)
-      : -m.totalDespesas;
     
     // Para o saldo previsto, precisamos continuar do último saldo real
     if (m.isFuturo) {
@@ -119,25 +113,28 @@ export function FluxoCaixa() {
     }
     
     // Para conectar as linhas, o primeiro mês futuro também precisa ter o valor do último real
-    const isFirstFutureMonth = m.isFuturo && (index === 0 || !fluxo.fluxoMensal[index - 1]?.isFuturo);
     const isLastRealMonth = !m.isFuturo && (index === fluxo.fluxoMensal.length - 1 || fluxo.fluxoMensal[index + 1]?.isFuturo);
+    
+    // Entradas: sempre sólidas (passado = realizadas, futuro = confirmadas/contratadas)
+    const entradas = m.isFuturo ? m.receitaPrevista : m.receitaBruta;
+    
+    // Saídas: passado = realizadas (sólido), futuro = estimadas (com opacidade)
+    const saidasRealizadas = m.isFuturo ? null : -m.totalDespesas;
+    const saidasEstimadas = m.isFuturo ? -(m.despesasFixas + m.despesasAvulsas + m.taxasPrevistas) : null;
     
     return {
       name: m.mesFormatado,
-      // Meses passados: entradas reais
-      Entradas: m.isFuturo ? null : m.receitaBruta,
-      // Meses futuros: entradas previstas
-      'Entradas Previstas': m.isFuturo ? m.receitaPrevista : null,
-      // Meses passados: saídas reais
-      Saídas: m.isFuturo ? null : -m.totalDespesas,
-      // Meses futuros: saídas previstas
-      'Saídas Previstas': m.isFuturo ? saidasMes : null,
-      // Saldo acumulado - linha contínua que muda de estilo
-      // O último mês real também aparece no "Saldo Previsto" para conectar
+      // Entradas são sempre "certas" - passadas ou contratadas
+      Entradas: entradas,
+      // Saídas passadas (realizadas)
+      Saídas: saidasRealizadas,
+      // Saídas futuras (estimadas)
+      'Saídas Estimadas': saidasEstimadas,
+      // Saldo acumulado
       'Saldo Acumulado': !m.isFuturo ? saldoAcumulado : null,
       'Saldo Previsto': m.isFuturo 
         ? (ultimoSaldoReal + saldoAcumuladoPrevisto)
-        : (isLastRealMonth ? saldoAcumulado : null), // Conectar no último mês real
+        : (isLastRealMonth ? saldoAcumulado : null),
       isFuturo: m.isFuturo,
     };
   });
@@ -301,12 +298,12 @@ export function FluxoCaixa() {
               />
               <Legend />
               <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeWidth={1} />
-              {/* Barras de valores reais (passado) */}
+              {/* Entradas - sempre sólidas (passado e futuro são confirmadas) */}
               <Bar dataKey="Entradas" name="Entradas" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} stackId="stack" />
+              {/* Saídas realizadas (passado) */}
               <Bar dataKey="Saídas" name="Saídas" fill="hsl(var(--destructive))" radius={[0, 0, 4, 4]} stackId="stack" />
-              {/* Barras de previsão (futuro) - com opacidade reduzida */}
-              <Bar dataKey="Entradas Previstas" name="Entradas Previstas" fill="hsl(var(--success))" fillOpacity={0.5} radius={[4, 4, 0, 0]} stackId="stackFuturo" />
-              <Bar dataKey="Saídas Previstas" name="Saídas Previstas" fill="hsl(var(--destructive))" fillOpacity={0.5} radius={[0, 0, 4, 4]} stackId="stackFuturo" />
+              {/* Saídas estimadas (futuro) - com opacidade reduzida */}
+              <Bar dataKey="Saídas Estimadas" name="Saídas Estimadas" fill="hsl(var(--destructive))" fillOpacity={0.5} radius={[0, 0, 4, 4]} stackId="stack" />
               {/* Linha de saldo real */}
               <Line 
                 type="monotone" 
