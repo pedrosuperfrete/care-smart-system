@@ -55,46 +55,6 @@ export function RentabilidadeComAbas() {
 
   return (
     <div className="space-y-6">
-      {/* Cards principais */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-1">
-              <Building2 className="h-4 w-4" />
-              Custos Fixos Mensais
-            </div>
-            <div className="text-2xl font-bold">
-              R$ {formatCurrency(rentabilidade.custoFixoTotal)}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-1">
-              <Zap className="h-4 w-4" />
-              Custo por Atendimento
-            </div>
-            <div className="text-2xl font-bold">
-              R$ {formatCurrency(rentabilidade.custoVariavelPorAtendimento)}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-1">
-              <DollarSign className="h-4 w-4" />
-              Ticket Médio
-            </div>
-            <div className="text-2xl font-bold">
-              R$ {formatCurrency(rentabilidade.ticketMedio)}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Sub-abas */}
       <Tabs value={activeSubTab} onValueChange={setActiveSubTab}>
         <TabsList>
           <TabsTrigger value="servicos" className="flex items-center gap-2">
