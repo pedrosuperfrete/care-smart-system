@@ -48,6 +48,9 @@ export interface FluxoMensal {
   saldo: number;
   saldoPrevisto: number; // Saldo considerando receitas previstas
   atendimentosRealizados: number;
+  impostoEstimado: number; // Imposto estimado baseado na taxa_imposto da clínica
+  saldoFinal: number; // Saldo após impostos
+  saldoFinalPrevisto: number; // Saldo previsto após impostos
 }
 
 const categoriasDespesa = [
@@ -456,6 +459,15 @@ export function useFluxoCaixa(mesesAtras: number = 6, mesesFuturos: number = 3) 
     const receitaTotalPrevista = receitaBrutaMes + receitaPrevistaMes;
     const saldoPrevisto = receitaTotalPrevista - despesasPrevistas;
 
+    // Calcular imposto estimado baseado na taxa_imposto da clínica
+    const taxaImposto = Number(clinica?.taxa_imposto) || 0;
+    const receitaParaImposto = mesFuturo ? receitaPrevistaMes : receitaBrutaMes;
+    const impostoEstimado = (receitaParaImposto * taxaImposto) / 100;
+    
+    // Saldo final após impostos
+    const saldoFinal = saldo - impostoEstimado;
+    const saldoFinalPrevisto = saldoPrevisto - impostoEstimado;
+
     return {
       mes: mesKey,
       mesFormatado,
@@ -475,6 +487,9 @@ export function useFluxoCaixa(mesesAtras: number = 6, mesesFuturos: number = 3) 
       saldo,
       saldoPrevisto,
       atendimentosRealizados: atendimentosMes,
+      impostoEstimado,
+      saldoFinal,
+      saldoFinalPrevisto,
     };
   });
 

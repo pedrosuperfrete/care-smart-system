@@ -350,70 +350,91 @@ export function FluxoCaixa() {
                 <TableHead className="text-right">Despesas Variáveis</TableHead>
                 <TableHead className="text-right">Despesas Avulsas</TableHead>
                 <TableHead className="text-right">Saldo</TableHead>
+                <TableHead className="text-right">Imposto</TableHead>
+                <TableHead className="text-right">Saldo Final</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {fluxo.fluxoMensal.map((mes) => (
-                <TableRow 
-                  key={mes.mes} 
-                  className={mes.isFuturo ? 'bg-primary/5 border-dashed' : ''}
-                >
-                  <TableCell className="font-medium capitalize">
-                    <div className="flex items-center gap-2">
-                      {mes.mesFormatado}
-                      {mes.isFuturo && (
-                        <Badge variant="outline" className="border-primary text-primary text-xs">
-                          Previsão
-                        </Badge>
+              {fluxo.fluxoMensal.map((mes) => {
+                const saldoExibido = mes.isFuturo ? mes.saldoPrevisto : mes.saldo;
+                const saldoFinalExibido = mes.isFuturo ? mes.saldoFinalPrevisto : mes.saldoFinal;
+                
+                return (
+                  <TableRow 
+                    key={mes.mes} 
+                    className={mes.isFuturo ? 'bg-primary/5 border-dashed' : ''}
+                  >
+                    <TableCell className="font-medium capitalize">
+                      <div className="flex items-center gap-2">
+                        {mes.mesFormatado}
+                        {mes.isFuturo && (
+                          <Badge variant="outline" className="border-primary text-primary text-xs">
+                            Previsão
+                          </Badge>
+                        )}
+                        {mes.isEstimado && !mes.isFuturo && (
+                          <Badge variant="outline" className="text-xs">
+                            Estimado
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className={mes.isFuturo ? 'text-primary' : 'text-success'}>
+                        R$ {formatCurrency(mes.isFuturo ? mes.receitaPrevista : mes.receitaBruta)}
+                      </div>
+                      {mes.isFuturo && mes.receitaPrevista > 0 && (
+                        <span className="text-xs text-muted-foreground">parcelas a receber</span>
                       )}
-                      {mes.isEstimado && !mes.isFuturo && (
-                        <Badge variant="outline" className="text-xs">
-                          Estimado
-                        </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="text-muted-foreground">
+                        R$ {formatCurrency(mes.despesasFixas)}
+                      </div>
+                      {mes.isEstimado && (
+                        <span className="text-xs text-muted-foreground/70">
+                          {mes.despesasFixasReal > 0 && `R$ ${formatCurrency(mes.despesasFixasReal)} confirmado`}
+                        </span>
                       )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className={mes.isFuturo ? 'text-primary' : 'text-success'}>
-                      R$ {formatCurrency(mes.isFuturo ? mes.receitaPrevista : mes.receitaBruta)}
-                    </div>
-                    {mes.isFuturo && mes.receitaPrevista > 0 && (
-                      <span className="text-xs text-muted-foreground">parcelas a receber</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="text-muted-foreground">
-                      R$ {formatCurrency(mes.despesasFixas)}
-                    </div>
-                    {mes.isEstimado && (
-                      <span className="text-xs text-muted-foreground/70">
-                        {mes.despesasFixasReal > 0 && `R$ ${formatCurrency(mes.despesasFixasReal)} confirmado`}
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right text-muted-foreground">
-                    {mes.isFuturo ? (
-                      <span className="text-muted-foreground/50">—</span>
-                    ) : (
-                      <>
-                        R$ {formatCurrency(mes.despesasVariaveis)}
-                        <span className="text-xs ml-1">({mes.atendimentosRealizados} atend.)</span>
-                      </>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right text-muted-foreground">
-                    R$ {formatCurrency(mes.despesasAvulsas)}
-                  </TableCell>
-                  <TableCell className={`text-right font-bold ${
-                    (mes.isFuturo ? mes.saldoPrevisto : mes.saldo) >= 0 
-                      ? (mes.isFuturo ? 'text-primary' : 'text-success')
-                      : 'text-destructive'
-                  }`}>
-                    {(mes.isFuturo ? mes.saldoPrevisto : mes.saldo) >= 0 ? '+' : ''}
-                    R$ {formatCurrency(mes.isFuturo ? mes.saldoPrevisto : mes.saldo)}
-                  </TableCell>
-                </TableRow>
-              ))}
+                    </TableCell>
+                    <TableCell className="text-right text-muted-foreground">
+                      {mes.isFuturo ? (
+                        <span className="text-muted-foreground/50">—</span>
+                      ) : (
+                        <>
+                          R$ {formatCurrency(mes.despesasVariaveis)}
+                          <span className="text-xs ml-1">({mes.atendimentosRealizados} atend.)</span>
+                        </>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right text-muted-foreground">
+                      R$ {formatCurrency(mes.despesasAvulsas)}
+                    </TableCell>
+                    <TableCell className={`text-right font-medium ${
+                      saldoExibido >= 0 
+                        ? (mes.isFuturo ? 'text-primary' : 'text-muted-foreground')
+                        : 'text-destructive'
+                    }`}>
+                      {saldoExibido >= 0 ? '' : ''}
+                      R$ {formatCurrency(saldoExibido)}
+                    </TableCell>
+                    <TableCell className="text-right text-warning">
+                      {mes.impostoEstimado > 0 ? (
+                        <>R$ {formatCurrency(mes.impostoEstimado)}</>
+                      ) : (
+                        <span className="text-muted-foreground/50">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell className={`text-right font-bold ${
+                      saldoFinalExibido >= 0 
+                        ? 'text-success'
+                        : 'text-destructive'
+                    }`}>
+                      R$ {formatCurrency(saldoFinalExibido)}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>
