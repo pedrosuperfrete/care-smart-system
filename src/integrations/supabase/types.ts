@@ -257,6 +257,7 @@ export type Database = {
           descricao: string
           id: string
           observacoes: string | null
+          parcelas: number | null
           valor: number
         }
         Insert: {
@@ -268,6 +269,7 @@ export type Database = {
           descricao: string
           id?: string
           observacoes?: string | null
+          parcelas?: number | null
           valor?: number
         }
         Update: {
@@ -279,6 +281,7 @@ export type Database = {
           descricao?: string
           id?: string
           observacoes?: string | null
+          parcelas?: number | null
           valor?: number
         }
         Relationships: [

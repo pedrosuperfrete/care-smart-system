@@ -56,6 +56,7 @@ export function FluxoCaixa() {
     valor: 0,
     categoria: 'Outros',
     data_pagamento: new Date(),
+    parcelas: 1,
   });
 
   const handleSubmit = () => {
@@ -71,6 +72,7 @@ export function FluxoCaixa() {
       valor: 0,
       categoria: 'Outros',
       data_pagamento: new Date(),
+      parcelas: 1,
     });
   };
 
@@ -307,6 +309,7 @@ export function FluxoCaixa() {
                   <TableHead>Descrição</TableHead>
                   <TableHead>Categoria</TableHead>
                   <TableHead className="text-right">Valor</TableHead>
+                  <TableHead className="text-right">Parcelas</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
@@ -322,6 +325,11 @@ export function FluxoCaixa() {
                     </TableCell>
                     <TableCell className="text-right font-medium text-destructive">
                       R$ {formatCurrency(despesa.valor)}
+                    </TableCell>
+                    <TableCell className="text-right text-muted-foreground">
+                      {(despesa.parcelas || 1) > 1 
+                        ? `${despesa.parcelas}x de R$ ${formatCurrency(despesa.valor / (despesa.parcelas || 1))}`
+                        : 'À vista'}
                     </TableCell>
                     <TableCell>
                       <Button
@@ -363,7 +371,7 @@ export function FluxoCaixa() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="valor">Valor *</Label>
+                <Label htmlFor="valor">Valor Total *</Label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">R$</span>
                   <Input
@@ -378,7 +386,24 @@ export function FluxoCaixa() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="data">Data do pagamento</Label>
+                <Label htmlFor="parcelas">Parcelas</Label>
+                <Input
+                  id="parcelas"
+                  type="number"
+                  min="1"
+                  max="48"
+                  value={formData.parcelas || 1}
+                  onChange={(e) => setFormData({ 
+                    ...formData, 
+                    parcelas: Math.max(1, parseInt(e.target.value) || 1) 
+                  })}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="data">Data 1ª parcela</Label>
                 <Input
                   id="data"
                   type="date"
@@ -389,6 +414,15 @@ export function FluxoCaixa() {
                   })}
                 />
               </div>
+              
+              {(formData.parcelas || 1) > 1 && (
+                <div className="space-y-2">
+                  <Label>Valor por parcela</Label>
+                  <div className="flex items-center h-10 px-3 rounded-md border bg-muted text-muted-foreground">
+                    R$ {(formData.valor / (formData.parcelas || 1)).toFixed(2).replace('.', ',')}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
