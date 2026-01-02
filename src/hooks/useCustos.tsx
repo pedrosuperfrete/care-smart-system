@@ -149,17 +149,57 @@ export function useCustos() {
 
   // Atualizar custo
   const atualizarCusto = useMutation({
-    mutationFn: async ({ id, ...data }: Partial<Custo> & { id: string }) => {
+    mutationFn: async ({ id, aplicacao, servicos_ids, percentual_rateio, ...data }: Partial<CustoInput> & { id: string }) => {
+      if (!clinica?.id) throw new Error('Clínica não encontrada');
+
+      // 1. Atualizar dados básicos do custo
       const { error } = await supabase
         .from('custos')
         .update(data)
         .eq('id', id);
 
       if (error) throw error;
+
+      // 2. Deletar associações antigas
+      await supabase
+        .from('custos_servicos')
+        .delete()
+        .eq('custo_id', id);
+
+      // 3. Se for "todos", buscar todos os serviços e associar
+      if (aplicacao === 'todos') {
+        const { data: servicos } = await supabase
+          .from('tipos_servicos')
+          .select('id')
+          .eq('clinica_id', clinica.id)
+          .eq('ativo', true);
+
+        if (servicos && servicos.length > 0) {
+          const associacoes = servicos.map(s => ({
+            custo_id: id,
+            tipo_servico_id: s.id,
+            tipo_aplicacao: 'integral' as const,
+            percentual_rateio: 100,
+          }));
+
+          await supabase.from('custos_servicos').insert(associacoes);
+        }
+      } else if (aplicacao === 'especificos' && servicos_ids?.length) {
+        // 4. Se for "específicos", associar apenas aos serviços selecionados
+        const associacoes = servicos_ids.map(servicoId => ({
+          custo_id: id,
+          tipo_servico_id: servicoId,
+          tipo_aplicacao: percentual_rateio && percentual_rateio < 100 ? 'rateio' as const : 'integral' as const,
+          percentual_rateio: percentual_rateio || 100,
+        }));
+
+        await supabase.from('custos_servicos').insert(associacoes);
+      }
     },
     onSuccess: () => {
       toast.success('Custo atualizado!');
       queryClient.invalidateQueries({ queryKey: ['custos'] });
+      queryClient.invalidateQueries({ queryKey: ['custos-servicos'] });
     },
     onError: (error) => {
       console.error('Erro ao atualizar custo:', error);
