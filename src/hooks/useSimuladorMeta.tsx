@@ -288,22 +288,25 @@ export function useSimuladorMeta(metaLiquidaDesejada: number) {
     
     mixHistorico.forEach(mix => {
       const servicoRent = rentabilidade.rentabilidadePorServico.find(s => s.nome === mix.nome);
-      if (!servicoRent) return;
-
-      const preco = servicoRent.preco;
-      const custoVariavel = servicoRent.custoVariavel;
+      
+      // Se não encontrar no cadastro, usar ticket médio histórico do próprio agendamento
+      const preco = servicoRent?.preco ?? mix.ticketMedio;
+      const custoVariavel = servicoRent?.custoVariavel ?? 0;
       const taxaCartao = preco * taxaCartaoPonderada;
       
-      // Usar o custo fixo proporcional calculado pelo useRentabilidade
-      // (que já rateia custos fixos gerais + custos específicos do serviço)
-      const custoFixoPorAtendimento = servicoRent.custoFixoProporcional;
+      // Usar o custo fixo proporcional calculado pelo useRentabilidade ou ratear igualmente
+      const custoFixoPorAtendimento = servicoRent?.custoFixoProporcional ?? 
+        (custoFixoTotal / Math.max(mixHistorico.reduce((sum, m) => sum + m.volumeMensal, 0), 1));
       
       // Margem de contribuição = preço - custos variáveis - taxa cartão - custo fixo alocado
       // Esta é a margem real por atendimento após todos os custos
       const lucroLiquidoUnitario = preco - custoVariavel - taxaCartao - custoFixoPorAtendimento;
       
+      // Pular serviços sem nome ou sem preço
+      if (!mix.nome || preco <= 0) return;
+      
       servicosComMargem.push({
-        id: servicoRent.id,
+        id: servicoRent?.id ?? mix.nome,
         nome: mix.nome,
         preco,
         volumeMensal: mix.volumeMensal,
