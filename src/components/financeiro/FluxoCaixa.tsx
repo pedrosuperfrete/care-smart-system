@@ -95,16 +95,32 @@ export function FluxoCaixa() {
   // Calcular saldo acumulado para a linha
   let saldoAcumulado = 0;
   let saldoAcumuladoPrevisto = 0;
-  const chartData = fluxo.fluxoMensal.map(m => {
+  let ultimoSaldoReal = 0;
+  
+  // Primeiro passo: encontrar o último mês não-futuro para ter o saldo base
+  fluxo.fluxoMensal.forEach(m => {
+    if (!m.isFuturo) {
+      ultimoSaldoReal += m.saldo;
+    }
+  });
+  
+  const chartData = fluxo.fluxoMensal.map((m, index) => {
     // Para meses futuros, usar saldo previsto
-    const saldoMes = m.isFuturo ? m.saldoPrevisto : m.saldo;
     saldoAcumulado += m.saldo;
-    saldoAcumuladoPrevisto += m.isFuturo ? m.saldoPrevisto : m.saldo;
     
     // Saídas previstas para meses futuros
     const saidasMes = m.isFuturo 
       ? -(m.despesasFixas + m.despesasAvulsas + m.taxasPrevistas)
       : -m.totalDespesas;
+    
+    // Para o saldo previsto, precisamos continuar do último saldo real
+    if (m.isFuturo) {
+      saldoAcumuladoPrevisto += m.saldoPrevisto;
+    }
+    
+    // Para conectar as linhas, o primeiro mês futuro também precisa ter o valor do último real
+    const isFirstFutureMonth = m.isFuturo && (index === 0 || !fluxo.fluxoMensal[index - 1]?.isFuturo);
+    const isLastRealMonth = !m.isFuturo && (index === fluxo.fluxoMensal.length - 1 || fluxo.fluxoMensal[index + 1]?.isFuturo);
     
     return {
       name: m.mesFormatado,
@@ -116,9 +132,12 @@ export function FluxoCaixa() {
       Saídas: m.isFuturo ? null : -m.totalDespesas,
       // Meses futuros: saídas previstas
       'Saídas Previstas': m.isFuturo ? saidasMes : null,
-      // Saldo acumulado real (até o presente) e previsto (futuro)
-      'Saldo Acumulado': m.isFuturo ? null : saldoAcumulado,
-      'Saldo Previsto': m.isFuturo ? saldoAcumuladoPrevisto : null,
+      // Saldo acumulado - linha contínua que muda de estilo
+      // O último mês real também aparece no "Saldo Previsto" para conectar
+      'Saldo Acumulado': !m.isFuturo ? saldoAcumulado : null,
+      'Saldo Previsto': m.isFuturo 
+        ? (ultimoSaldoReal + saldoAcumuladoPrevisto)
+        : (isLastRealMonth ? saldoAcumulado : null), // Conectar no último mês real
       isFuturo: m.isFuturo,
     };
   });
