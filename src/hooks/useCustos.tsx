@@ -223,37 +223,85 @@ export function useRentabilidade() {
 
   const servicos = servicosQuery.data || [];
 
-  // Calcular custo total mensal (custos fixos)
+  // Identificar custos que estão associados a serviços específicos
+  const custosComAssociacaoEspecifica = new Set(custosServicos.map(cs => cs.custo_id));
+  
+  // Custos fixos gerais (aplicados a todos - não têm associação específica ou estão em todos os serviços)
+  const custosFixosGerais = custos.filter(c => {
+    if (c.tipo !== 'fixo' || c.frequencia !== 'mensal') return false;
+    
+    // Se não tem nenhuma associação específica, é geral
+    if (!custosComAssociacaoEspecifica.has(c.id)) return true;
+    
+    // Se tem associação com todos os serviços, também é geral (será rateado)
+    const associacoesDesteCusto = custosServicos.filter(cs => cs.custo_id === c.id);
+    return associacoesDesteCusto.length >= servicos.length;
+  });
+  
+  const custoFixoGeral = custosFixosGerais.reduce((sum, c) => sum + Number(c.valor), 0);
+  
+  // Custos fixos específicos (associados a serviços específicos, não a todos)
+  const custosFixosEspecificos = custos.filter(c => {
+    if (c.tipo !== 'fixo' || c.frequencia !== 'mensal') return false;
+    if (!custosComAssociacaoEspecifica.has(c.id)) return false;
+    
+    const associacoesDesteCusto = custosServicos.filter(cs => cs.custo_id === c.id);
+    return associacoesDesteCusto.length > 0 && associacoesDesteCusto.length < servicos.length;
+  });
+
+  // Calcular custo total mensal (custos fixos - para exibição geral)
   const custoFixoTotal = custos
     .filter(c => c.tipo === 'fixo' && c.frequencia === 'mensal')
     .reduce((sum, c) => sum + Number(c.valor), 0);
 
-  // Calcular custo variável médio por atendimento
-  const custoVariavelPorAtendimento = custos
-    .filter(c => c.tipo === 'variavel' && c.frequencia === 'por_atendimento')
-    .reduce((sum, c) => sum + Number(c.valor), 0);
+  // Calcular custo variável médio por atendimento (custos gerais - aplicados a todos)
+  const custosVariaveisGerais = custos.filter(c => {
+    if (c.tipo !== 'variavel' || c.frequencia !== 'por_atendimento') return false;
+    if (!custosComAssociacaoEspecifica.has(c.id)) return true;
+    const associacoesDesteCusto = custosServicos.filter(cs => cs.custo_id === c.id);
+    return associacoesDesteCusto.length >= servicos.length;
+  });
+  
+  const custoVariavelPorAtendimento = custosVariaveisGerais.reduce((sum, c) => sum + Number(c.valor), 0);
 
   // Calcular rentabilidade por serviço
   const rentabilidadePorServico = servicos.map(servico => {
     const preco = Number(servico.preco) || 0;
     
-    // Custos fixos alocados a este serviço
+    // Custos associados a este serviço específico
     const custosServicoDeste = custosServicos.filter(cs => cs.tipo_servico_id === servico.id);
     const custoIdsAssociados = custosServicoDeste.map(cs => cs.custo_id);
     
-    // Calcular custo fixo proporcional (rateio simples por número de serviços)
+    // 1. Custo fixo geral rateado entre todos os serviços
     const totalServicosComCustos = servicos.length || 1;
-    const custoFixoProporcional = custoFixoTotal / totalServicosComCustos;
+    const custoFixoGeralRateado = custoFixoGeral / totalServicosComCustos;
     
-    // Custos variáveis específicos deste serviço
+    // 2. Custos fixos específicos deste serviço (não rateados - 100% para os serviços vinculados)
+    const custoFixoEspecifico = custosFixosEspecificos
+      .filter(c => custoIdsAssociados.includes(c.id))
+      .reduce((sum, c) => {
+        const associacao = custosServicoDeste.find(cs => cs.custo_id === c.id);
+        const percentual = associacao?.percentual_rateio || 100;
+        // Ratear entre os serviços vinculados a este custo
+        const servicosVinculados = custosServicos.filter(cs => cs.custo_id === c.id).length || 1;
+        return sum + (Number(c.valor) * percentual / 100) / servicosVinculados;
+      }, 0);
+    
+    // 3. Custos variáveis específicos deste serviço
     const custosVariaveisEspecificos = custos
-      .filter(c => c.tipo === 'variavel' && custoIdsAssociados.includes(c.id))
+      .filter(c => c.tipo === 'variavel' && c.frequencia === 'por_atendimento' && custoIdsAssociados.includes(c.id))
+      .filter(c => {
+        // Verificar se é custo específico (não está em todos os serviços)
+        const associacoesDesteCusto = custosServicos.filter(cs => cs.custo_id === c.id);
+        return associacoesDesteCusto.length < servicos.length;
+      })
       .reduce((sum, c) => {
         const associacao = custosServicoDeste.find(cs => cs.custo_id === c.id);
         const percentual = associacao?.percentual_rateio || 100;
         return sum + (Number(c.valor) * percentual / 100);
       }, 0);
 
+    const custoFixoProporcional = custoFixoGeralRateado + custoFixoEspecifico;
     const custoTotal = custoFixoProporcional + custoVariavelPorAtendimento + custosVariaveisEspecificos;
     const margem = preco - custoTotal;
     const margemPercentual = preco > 0 ? (margem / preco) * 100 : 0;
