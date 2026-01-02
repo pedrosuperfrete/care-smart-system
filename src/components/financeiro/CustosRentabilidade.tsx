@@ -107,7 +107,7 @@ export function CustosRentabilidade() {
     }
     
     if (editingCusto) {
-      // Atualizar custo existente
+      // Atualizar custo existente com associações de serviços
       atualizarCusto.mutate({
         id: editingCusto,
         nome: formData.nome,
@@ -115,6 +115,9 @@ export function CustosRentabilidade() {
         tipo: formData.tipo,
         frequencia: formData.frequencia,
         descricao: formData.descricao || null,
+        aplicacao: formData.aplicacao,
+        servicos_ids: formData.servicos_ids,
+        percentual_rateio: formData.percentual_rateio,
       });
     } else {
       // Criar novo custo
