@@ -40,6 +40,7 @@ export function GerenciarTiposServicos() {
   const [novoTipo, setNovoTipo] = useState({ 
     nome: '', 
     preco: '',
+    descricao: '',
     percentualFalta: '',
     percentualAgendamento: '',
     profissionalId: ''
@@ -48,6 +49,7 @@ export function GerenciarTiposServicos() {
   const [editForm, setEditForm] = useState({ 
     nome: '', 
     preco: '',
+    descricao: '',
     percentualFalta: '',
     percentualAgendamento: ''
   });
@@ -62,7 +64,7 @@ export function GerenciarTiposServicos() {
   });
 
   const handleCriarTipo = async () => {
-    if (!novoTipo.nome.trim()) return;
+    if (!novoTipo.nome.trim() || !novoTipo.preco) return;
     
     // Determinar profissional_id e clinica_id baseado na seleção
     let profissionalIdFinal: string | undefined = undefined;
@@ -87,7 +89,8 @@ export function GerenciarTiposServicos() {
     
     const data = {
       nome: novoTipo.nome.trim(),
-      preco: novoTipo.preco ? parseFloat(novoTipo.preco) : undefined,
+      preco: parseFloat(novoTipo.preco),
+      descricao: novoTipo.descricao.trim() || undefined,
       percentual_cobranca_falta: novoTipo.percentualFalta ? parseFloat(novoTipo.percentualFalta) : undefined,
       percentual_cobranca_agendamento: novoTipo.percentualAgendamento ? parseFloat(novoTipo.percentualAgendamento) : undefined,
       profissional_id: profissionalIdFinal,
@@ -95,7 +98,7 @@ export function GerenciarTiposServicos() {
     };
     
     await createMutation.mutateAsync(data);
-    setNovoTipo({ nome: '', preco: '', percentualFalta: '', percentualAgendamento: '', profissionalId: '' });
+    setNovoTipo({ nome: '', preco: '', descricao: '', percentualFalta: '', percentualAgendamento: '', profissionalId: '' });
     setShowCreateDialog(false);
   };
 
@@ -104,6 +107,7 @@ export function GerenciarTiposServicos() {
     setEditForm({
       nome: tipo.nome,
       preco: tipo.preco?.toString() || '',
+      descricao: tipo.descricao || '',
       percentualFalta: tipo.percentual_cobranca_falta?.toString() || '',
       percentualAgendamento: tipo.percentual_cobranca_agendamento?.toString() || ''
     });
@@ -111,11 +115,12 @@ export function GerenciarTiposServicos() {
   };
 
   const handleSalvarEdicao = async () => {
-    if (!editandoTipo || !editForm.nome.trim()) return;
+    if (!editandoTipo || !editForm.nome.trim() || !editForm.preco) return;
     
     const data = {
       nome: editForm.nome.trim(),
-      preco: editForm.preco ? parseFloat(editForm.preco) : undefined,
+      preco: parseFloat(editForm.preco),
+      descricao: editForm.descricao.trim() || undefined,
       percentual_cobranca_falta: editForm.percentualFalta ? parseFloat(editForm.percentualFalta) : null,
       percentual_cobranca_agendamento: editForm.percentualAgendamento ? parseFloat(editForm.percentualAgendamento) : null
     };
@@ -225,14 +230,26 @@ export function GerenciarTiposServicos() {
                 </div>
                 
                 <div>
-                  <Label htmlFor="preco">Preço (R$)</Label>
+                  <Label htmlFor="preco">Preço (R$) *</Label>
                   <Input
                     id="preco"
                     type="number"
                     step="0.01"
+                    min="0"
                     placeholder="0,00"
                     value={novoTipo.preco}
                     onChange={(e) => setNovoTipo(prev => ({ ...prev, preco: e.target.value }))}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="descricao">Descrição</Label>
+                  <Input
+                    id="descricao"
+                    placeholder="Descreva o serviço (opcional)"
+                    value={novoTipo.descricao}
+                    onChange={(e) => setNovoTipo(prev => ({ ...prev, descricao: e.target.value }))}
                   />
                 </div>
 
@@ -313,7 +330,7 @@ export function GerenciarTiposServicos() {
                   </Button>
                   <Button 
                     onClick={handleCriarTipo}
-                    disabled={!novoTipo.nome.trim() || createMutation.isPending || (deveMostrarSelectProfissional && !novoTipo.profissionalId)}
+                    disabled={!novoTipo.nome.trim() || !novoTipo.preco || createMutation.isPending || (deveMostrarSelectProfissional && !novoTipo.profissionalId)}
                   >
                     {createMutation.isPending ? 'Criando...' : 'Criar'}
                   </Button>
@@ -417,13 +434,25 @@ export function GerenciarTiposServicos() {
             </div>
             
             <div>
-              <Label htmlFor="edit-preco">Preço (R$)</Label>
+              <Label htmlFor="edit-preco">Preço (R$) *</Label>
               <Input
                 id="edit-preco"
                 type="number"
                 step="0.01"
+                min="0"
                 value={editForm.preco}
                 onChange={(e) => setEditForm(prev => ({ ...prev, preco: e.target.value }))}
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="edit-descricao">Descrição</Label>
+              <Input
+                id="edit-descricao"
+                placeholder="Descreva o serviço (opcional)"
+                value={editForm.descricao}
+                onChange={(e) => setEditForm(prev => ({ ...prev, descricao: e.target.value }))}
               />
             </div>
 
@@ -504,7 +533,7 @@ export function GerenciarTiposServicos() {
               </Button>
               <Button 
                 onClick={handleSalvarEdicao}
-                disabled={!editForm.nome.trim() || updateMutation.isPending}
+                disabled={!editForm.nome.trim() || !editForm.preco || updateMutation.isPending}
               >
                 {updateMutation.isPending ? 'Salvando...' : 'Salvar'}
               </Button>

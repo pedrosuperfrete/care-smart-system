@@ -965,6 +965,7 @@ export type Database = {
           atualizado_em: string
           clinica_id: string | null
           criado_em: string
+          descricao: string | null
           id: string
           nome: string
           percentual_cobranca_agendamento: number | null
@@ -977,6 +978,7 @@ export type Database = {
           atualizado_em?: string
           clinica_id?: string | null
           criado_em?: string
+          descricao?: string | null
           id?: string
           nome: string
           percentual_cobranca_agendamento?: number | null
@@ -989,6 +991,7 @@ export type Database = {
           atualizado_em?: string
           clinica_id?: string | null
           criado_em?: string
+          descricao?: string | null
           id?: string
           nome?: string
           percentual_cobranca_agendamento?: number | null
