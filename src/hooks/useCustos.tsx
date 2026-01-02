@@ -9,7 +9,7 @@ export interface Custo {
   id: string;
   clinica_id: string;
   nome: string;
-  valor: number;
+  valor_estimado: number;
   tipo: 'fixo' | 'variavel';
   frequencia: 'mensal' | 'por_atendimento' | 'ocasional';
   descricao: string | null;
@@ -29,7 +29,7 @@ export interface CustoServico {
 
 export interface CustoInput {
   nome: string;
-  valor: number;
+  valor_estimado: number;
   tipo: 'fixo' | 'variavel';
   frequencia: 'mensal' | 'por_atendimento' | 'ocasional';
   descricao?: string;
@@ -93,7 +93,7 @@ export function useCustos() {
         .insert({
           clinica_id: clinica.id,
           nome: input.nome,
-          valor: input.valor,
+          valor_estimado: input.valor_estimado,
           tipo: input.tipo,
           frequencia: input.frequencia,
           descricao: input.descricao || null,
@@ -278,7 +278,7 @@ export function useRentabilidade() {
     return associacoesDesteCusto.length >= servicos.length;
   });
   
-  const custoFixoGeral = custosFixosGerais.reduce((sum, c) => sum + Number(c.valor), 0);
+  const custoFixoGeral = custosFixosGerais.reduce((sum, c) => sum + Number(c.valor_estimado), 0);
   
   // Custos fixos específicos (associados a serviços específicos, não a todos)
   const custosFixosEspecificos = custos.filter(c => {
@@ -292,7 +292,7 @@ export function useRentabilidade() {
   // Calcular custo total mensal (custos fixos - para exibição geral)
   const custoFixoTotal = custos
     .filter(c => c.tipo === 'fixo' && c.frequencia === 'mensal')
-    .reduce((sum, c) => sum + Number(c.valor), 0);
+    .reduce((sum, c) => sum + Number(c.valor_estimado), 0);
 
   // Calcular custo variável médio por atendimento (custos gerais - aplicados a todos)
   const custosVariaveisGerais = custos.filter(c => {
@@ -302,7 +302,7 @@ export function useRentabilidade() {
     return associacoesDesteCusto.length >= servicos.length;
   });
   
-  const custoVariavelPorAtendimento = custosVariaveisGerais.reduce((sum, c) => sum + Number(c.valor), 0);
+  const custoVariavelPorAtendimento = custosVariaveisGerais.reduce((sum, c) => sum + Number(c.valor_estimado), 0);
 
   // Calcular rentabilidade por serviço
   const rentabilidadePorServico = servicos.map(servico => {
@@ -324,7 +324,7 @@ export function useRentabilidade() {
         const percentual = associacao?.percentual_rateio || 100;
         // Ratear entre os serviços vinculados a este custo
         const servicosVinculados = custosServicos.filter(cs => cs.custo_id === c.id).length || 1;
-        return sum + (Number(c.valor) * percentual / 100) / servicosVinculados;
+        return sum + (Number(c.valor_estimado) * percentual / 100) / servicosVinculados;
       }, 0);
     
     // 3. Custos variáveis específicos deste serviço
@@ -338,7 +338,7 @@ export function useRentabilidade() {
       .reduce((sum, c) => {
         const associacao = custosServicoDeste.find(cs => cs.custo_id === c.id);
         const percentual = associacao?.percentual_rateio || 100;
-        return sum + (Number(c.valor) * percentual / 100);
+        return sum + (Number(c.valor_estimado) * percentual / 100);
       }, 0);
 
     const custoFixoProporcional = custoFixoGeralRateado + custoFixoEspecifico;

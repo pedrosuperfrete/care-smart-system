@@ -255,11 +255,11 @@ export function useFluxoCaixa(mesesAtras: number = 6) {
   // Calcular custos fixos e variáveis
   const custoFixoMensal = custos
     .filter(c => c.tipo === 'fixo' && c.frequencia === 'mensal')
-    .reduce((sum, c) => sum + Number(c.valor), 0);
+    .reduce((sum, c) => sum + Number(c.valor_estimado), 0);
 
   const custoVariavelPorAtendimento = custos
     .filter(c => c.tipo === 'variavel' && c.frequencia === 'por_atendimento')
-    .reduce((sum, c) => sum + Number(c.valor), 0);
+    .reduce((sum, c) => sum + Number(c.valor_estimado), 0);
 
   // Taxas de cartão da clínica
   const taxaCredito = Number(clinica?.taxa_cartao_credito) || 0;
