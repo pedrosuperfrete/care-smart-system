@@ -11,7 +11,7 @@ export interface Custo {
   nome: string;
   valor_estimado: number;
   tipo: 'fixo' | 'variavel';
-  frequencia: 'mensal' | 'por_atendimento' | 'ocasional';
+  frequencia: 'mensal' | 'ocasional';
   descricao: string | null;
   ativo: boolean;
   criado_em: string;
@@ -31,7 +31,7 @@ export interface CustoInput {
   nome: string;
   valor_estimado: number;
   tipo: 'fixo' | 'variavel';
-  frequencia: 'mensal' | 'por_atendimento' | 'ocasional';
+  frequencia: 'mensal' | 'ocasional';
   descricao?: string;
   aplicacao: 'todos' | 'especificos';
   servicos_ids?: string[];
@@ -294,9 +294,9 @@ export function useRentabilidade() {
     .filter(c => c.tipo === 'fixo' && c.frequencia === 'mensal')
     .reduce((sum, c) => sum + Number(c.valor_estimado), 0);
 
-  // Calcular custo variável médio por atendimento (custos gerais - aplicados a todos)
+  // Calcular custo variável médio mensal (custos gerais - aplicados a todos)
   const custosVariaveisGerais = custos.filter(c => {
-    if (c.tipo !== 'variavel' || c.frequencia !== 'por_atendimento') return false;
+    if (c.tipo !== 'variavel' || c.frequencia !== 'mensal') return false;
     if (!custosComAssociacaoEspecifica.has(c.id)) return true;
     const associacoesDesteCusto = custosServicos.filter(cs => cs.custo_id === c.id);
     return associacoesDesteCusto.length >= servicos.length;
@@ -329,7 +329,7 @@ export function useRentabilidade() {
     
     // 3. Custos variáveis específicos deste serviço
     const custosVariaveisEspecificos = custos
-      .filter(c => c.tipo === 'variavel' && c.frequencia === 'por_atendimento' && custoIdsAssociados.includes(c.id))
+      .filter(c => c.tipo === 'variavel' && c.frequencia === 'mensal' && custoIdsAssociados.includes(c.id))
       .filter(c => {
         // Verificar se é custo específico (não está em todos os serviços)
         const associacoesDesteCusto = custosServicos.filter(cs => cs.custo_id === c.id);
