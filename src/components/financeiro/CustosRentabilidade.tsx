@@ -64,13 +64,14 @@ const custosSugeridos = {
 };
 
 export function CustosRentabilidade() {
-  const { custos, custosServicos, isLoading: custosLoading, criarCusto, deletarCusto } = useCustos();
+  const { custos, custosServicos, isLoading: custosLoading, criarCusto, atualizarCusto, deletarCusto } = useCustos();
   const { data: tiposServicos = [] } = useTiposServicos();
   const rentabilidade = useRentabilidade();
   const mixServicos = useMixServicos();
   
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingCusto, setEditingCusto] = useState<string | null>(null);
   const [metaMensal, setMetaMensal] = useState(5000);
   const [servicoSelecionado, setServicoSelecionado] = useState<string>('todos');
   
@@ -104,9 +105,47 @@ export function CustosRentabilidade() {
     if (!formData.nome || formData.valor <= 0) {
       return;
     }
-    criarCusto.mutate(formData);
+    
+    if (editingCusto) {
+      // Atualizar custo existente
+      atualizarCusto.mutate({
+        id: editingCusto,
+        nome: formData.nome,
+        valor: formData.valor,
+        tipo: formData.tipo,
+        frequencia: formData.frequencia,
+        descricao: formData.descricao || null,
+      });
+    } else {
+      // Criar novo custo
+      criarCusto.mutate(formData);
+    }
+    
     setIsDialogOpen(false);
+    setEditingCusto(null);
     resetForm();
+  };
+
+  const handleEditCusto = (custo: typeof custos[0]) => {
+    // Verificar quais serviços estão vinculados a este custo
+    const servicosVinculados = custosServicos
+      .filter(cs => cs.custo_id === custo.id)
+      .map(cs => cs.tipo_servico_id);
+    
+    const aplicaTodos = servicosVinculados.length === 0 || servicosVinculados.length >= tiposServicos.length;
+    
+    setFormData({
+      nome: custo.nome,
+      valor: custo.valor,
+      tipo: custo.tipo as 'fixo' | 'variavel',
+      frequencia: custo.frequencia as 'mensal' | 'por_atendimento' | 'ocasional',
+      descricao: custo.descricao || '',
+      aplicacao: aplicaTodos ? 'todos' : 'especificos',
+      servicos_ids: servicosVinculados,
+      percentual_rateio: 100,
+    });
+    setEditingCusto(custo.id);
+    setIsDialogOpen(true);
   };
 
   const resetForm = () => {
@@ -120,6 +159,7 @@ export function CustosRentabilidade() {
       servicos_ids: [],
       percentual_rateio: 100,
     });
+    setEditingCusto(null);
   };
 
   // Dados calculados com base no serviço selecionado
@@ -591,13 +631,22 @@ export function CustosRentabilidade() {
                             R$ {formatCurrency(custo.valor)}
                           </TableCell>
                           <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => deletarCusto.mutate(custo.id)}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleEditCusto(custo)}
+                              >
+                                <Edit2 className="h-4 w-4 text-muted-foreground" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => deletarCusto.mutate(custo.id)}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       );
@@ -798,13 +847,19 @@ export function CustosRentabilidade() {
         </TabsContent>
       </Tabs>
 
-      {/* Modal de novo custo */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      {/* Modal de novo/editar custo */}
+      <Dialog open={isDialogOpen} onOpenChange={(open) => {
+        setIsDialogOpen(open);
+        if (!open) {
+          setEditingCusto(null);
+          resetForm();
+        }
+      }}>
         <DialogContent className="sm:max-w-[500px] max-h-[85vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle>Cadastrar Custo</DialogTitle>
+            <DialogTitle>{editingCusto ? 'Editar Custo' : 'Cadastrar Custo'}</DialogTitle>
             <DialogDescription>
-              Adicione um novo custo fixo ou variável
+              {editingCusto ? 'Altere os dados do custo' : 'Adicione um novo custo fixo ou variável'}
             </DialogDescription>
           </DialogHeader>
 
@@ -938,11 +993,15 @@ export function CustosRentabilidade() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+            <Button variant="outline" onClick={() => {
+              setIsDialogOpen(false);
+              setEditingCusto(null);
+              resetForm();
+            }}>
               Cancelar
             </Button>
-            <Button onClick={handleSubmit} disabled={criarCusto.isPending}>
-              {criarCusto.isPending ? 'Salvando...' : 'Salvar'}
+            <Button onClick={handleSubmit} disabled={criarCusto.isPending || atualizarCusto.isPending}>
+              {(criarCusto.isPending || atualizarCusto.isPending) ? 'Salvando...' : editingCusto ? 'Atualizar' : 'Salvar'}
             </Button>
           </DialogFooter>
         </DialogContent>
