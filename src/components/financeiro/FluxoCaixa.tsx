@@ -245,7 +245,7 @@ export function FluxoCaixa() {
               <Legend />
               <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeWidth={1} />
               <Bar dataKey="Entradas" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} stackId="stack" />
-              <Bar dataKey="Saídas" fill="hsl(var(--muted))" radius={[0, 0, 4, 4]} stackId="stack" />
+              <Bar dataKey="Saídas" fill="hsl(var(--destructive))" radius={[0, 0, 4, 4]} stackId="stack" />
               <Line 
                 type="monotone" 
                 dataKey="Saldo Acumulado" 
