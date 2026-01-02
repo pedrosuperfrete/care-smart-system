@@ -39,15 +39,17 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
   const [pagamentoAtual, setPagamentoAtual] = useState<any>(pagamento);
   const updatePagamento = useUpdatePagamento();
 
-  if (!pagamento) return null;
-
   useEffect(() => {
-    setPagamentoAtual(pagamento);
-    setIsEditing(false);
-    setFormaPagamento('');
-    setDataVencimento(undefined);
-    setParcelasTotais(1);
+    if (pagamento) {
+      setPagamentoAtual(pagamento);
+      setIsEditing(false);
+      setFormaPagamento('');
+      setDataVencimento(undefined);
+      setParcelasTotais(1);
+    }
   }, [pagamento?.id]);
+
+  if (!pagamento) return null;
 
   const agendamento = pagamentoAtual?.agendamentos;
   const paciente = agendamento?.pacientes;
