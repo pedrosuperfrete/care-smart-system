@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Calendar, User, Stethoscope, DollarSign, CreditCard, FileText, Phone, Mail, Pencil, Save, X } from "lucide-react";
 import { useUpdatePagamento } from "@/hooks/useFinanceiro";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -33,6 +35,7 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
   const [isEditing, setIsEditing] = useState(false);
   const [formaPagamento, setFormaPagamento] = useState<string>('');
   const [dataVencimento, setDataVencimento] = useState<Date | undefined>(undefined);
+  const [parcelasTotais, setParcelasTotais] = useState<number>(1);
   const updatePagamento = useUpdatePagamento();
 
   if (!pagamento) return null;
@@ -107,6 +110,7 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
   const handleStartEdit = () => {
     setFormaPagamento(pagamento.forma_pagamento || 'pix');
     setDataVencimento(pagamento.data_vencimento ? new Date(pagamento.data_vencimento) : undefined);
+    setParcelasTotais(pagamento.parcelas_totais || 1);
     setIsEditing(true);
   };
 
@@ -114,6 +118,7 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
     setIsEditing(false);
     setFormaPagamento('');
     setDataVencimento(undefined);
+    setParcelasTotais(1);
   };
 
   const handleSave = async () => {
@@ -123,6 +128,8 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
         data: {
           forma_pagamento: formaPagamento as any,
           data_vencimento: dataVencimento?.toISOString() || null,
+          parcelas_totais: parcelasTotais,
+          parcelado: parcelasTotais > 1,
         },
       });
       setIsEditing(false);
@@ -325,6 +332,25 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
                   </Popover>
                 ) : (
                   <p className="font-medium">{pagamento.data_vencimento ? formatDate(pagamento.data_vencimento) : 'Não informado'}</p>
+                )}
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Parcelas</p>
+                {isEditing ? (
+                  <Input
+                    type="number"
+                    min="1"
+                    max="24"
+                    value={parcelasTotais}
+                    onChange={(e) => setParcelasTotais(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="mt-1"
+                  />
+                ) : (
+                  <p className="font-medium">
+                    {pagamento.parcelas_totais > 1 
+                      ? `${pagamento.parcelas_recebidas || 0}/${pagamento.parcelas_totais}x` 
+                      : 'À vista'}
+                  </p>
                 )}
               </div>
             </div>

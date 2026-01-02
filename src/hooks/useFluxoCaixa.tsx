@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useClinica } from './useClinica';
 import { useCustos } from './useCustos';
 import { toast } from 'sonner';
-import { startOfMonth, endOfMonth, format, eachMonthOfInterval, subMonths } from 'date-fns';
+import { startOfMonth, endOfMonth, format, eachMonthOfInterval, subMonths, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export interface DespesaAvulsa {
@@ -228,14 +228,30 @@ export function useFluxoCaixa(mesesAtras: number = 6) {
   // Gerar fluxo por mês
   const meses = eachMonthOfInterval({ start: dataInicio, end: dataFim });
   
+  // Processar pagamentos parcelados - distribuir receita pelos meses
+  const receitasPorMes: Record<string, number> = {};
+  
+  (receitasQuery.data || []).forEach(p => {
+    if (!p.data_pagamento) return;
+    
+    const parcelasTotais = p.parcelas_totais || 1;
+    const valorParcela = (Number(p.valor_pago) || 0) / parcelasTotais;
+    const dataPagamento = new Date(p.data_pagamento);
+    
+    // Distribuir o valor pelas parcelas
+    for (let i = 0; i < parcelasTotais; i++) {
+      const mesParcela = addMonths(dataPagamento, i);
+      const mesKey = format(mesParcela, 'yyyy-MM');
+      receitasPorMes[mesKey] = (receitasPorMes[mesKey] || 0) + valorParcela;
+    }
+  });
+  
   const fluxoMensal: FluxoMensal[] = meses.map(mes => {
     const mesKey = format(mes, 'yyyy-MM');
     const mesFormatado = format(mes, 'MMM/yy', { locale: ptBR });
     
-    // Receitas do mês
-    const receitasMes = (receitasQuery.data || [])
-      .filter(p => p.data_pagamento && format(new Date(p.data_pagamento), 'yyyy-MM') === mesKey)
-      .reduce((sum, p) => sum + (Number(p.valor_pago) || 0), 0);
+    // Receitas do mês (agora incluindo parcelas distribuídas)
+    const receitasMes = receitasPorMes[mesKey] || 0;
 
     // Atendimentos do mês
     const atendimentosMes = (atendimentosQuery.data || [])
