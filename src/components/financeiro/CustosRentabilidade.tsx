@@ -64,7 +64,7 @@ const custosSugeridos = {
 };
 
 export function CustosRentabilidade() {
-  const { custos, isLoading: custosLoading, criarCusto, deletarCusto } = useCustos();
+  const { custos, custosServicos, isLoading: custosLoading, criarCusto, deletarCusto } = useCustos();
   const { data: tiposServicos = [] } = useTiposServicos();
   const rentabilidade = useRentabilidade();
   const mixServicos = useMixServicos();
@@ -538,38 +538,70 @@ export function CustosRentabilidade() {
                     <TableRow>
                       <TableHead>Nome</TableHead>
                       <TableHead>Tipo</TableHead>
-                      <TableHead>Frequência</TableHead>
+                      <TableHead>Aplica-se a</TableHead>
                       <TableHead className="text-right">Valor</TableHead>
                       <TableHead></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {custos.map((custo) => (
-                      <TableRow key={custo.id}>
-                        <TableCell className="font-medium">{custo.nome}</TableCell>
-                        <TableCell>
-                          <Badge variant={custo.tipo === 'fixo' ? 'default' : 'secondary'}>
-                            {custo.tipo === 'fixo' ? 'Fixo' : 'Variável'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {custo.frequencia === 'mensal' ? 'Mensal' : 
-                           custo.frequencia === 'por_atendimento' ? 'Por atendimento' : 'Ocasional'}
-                        </TableCell>
-                        <TableCell className="text-right font-medium">
-                          R$ {formatCurrency(custo.valor)}
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => deletarCusto.mutate(custo.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {custos.map((custo) => {
+                      // Verificar quais serviços estão vinculados a este custo
+                      const servicosVinculados = custosServicos
+                        .filter(cs => cs.custo_id === custo.id)
+                        .map(cs => tiposServicos.find(s => s.id === cs.tipo_servico_id)?.nome)
+                        .filter(Boolean);
+                      
+                      const aplicaTodos = servicosVinculados.length === 0 || servicosVinculados.length >= tiposServicos.length;
+                      
+                      return (
+                        <TableRow key={custo.id}>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{custo.nome}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {custo.frequencia === 'mensal' ? 'Mensal' : 
+                                 custo.frequencia === 'por_atendimento' ? 'Por atendimento' : 'Ocasional'}
+                              </p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={custo.tipo === 'fixo' ? 'default' : 'secondary'}>
+                              {custo.tipo === 'fixo' ? 'Fixo' : 'Variável'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {aplicaTodos ? (
+                              <span className="text-sm text-muted-foreground">Todos os serviços</span>
+                            ) : (
+                              <div className="flex flex-wrap gap-1">
+                                {servicosVinculados.slice(0, 2).map((nome, idx) => (
+                                  <Badge key={idx} variant="outline" className="text-xs">
+                                    {nome}
+                                  </Badge>
+                                ))}
+                                {servicosVinculados.length > 2 && (
+                                  <Badge variant="outline" className="text-xs">
+                                    +{servicosVinculados.length - 2}
+                                  </Badge>
+                                )}
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
+                            R$ {formatCurrency(custo.valor)}
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => deletarCusto.mutate(custo.id)}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </CardContent>
