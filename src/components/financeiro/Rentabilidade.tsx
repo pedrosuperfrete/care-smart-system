@@ -1,12 +1,11 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Plus, 
   TrendingUp, 
@@ -17,21 +16,22 @@ import {
   Building2,
   Zap,
   Lightbulb,
-  Target,
-  Scale,
-  Info
+  Info,
+  Calendar
 } from 'lucide-react';
-import { useCustos, useRentabilidade, useMixServicos } from '@/hooks/useCustos';
+import { useCustos, useRentabilidade } from '@/hooks/useCustos';
 import { formatCurrency } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { SimuladorMeta } from './SimuladorMeta';
+import { AnaliseServicoRealizado } from './AnaliseServicoRealizado';
+import { useAgendamentos } from '@/hooks/useAgendamentos';
 
 export function Rentabilidade() {
   const { custos, isLoading: custosLoading } = useCustos();
   const rentabilidade = useRentabilidade();
-  const mixServicos = useMixServicos();
+  const { data: agendamentos } = useAgendamentos();
   const navigate = useNavigate();
-  const [metaInput, setMetaInput] = useState(10000);
+  const [periodoSelecionado, setPeriodoSelecionado] = useState('1');
   
   const custosCadastrados = custos.length > 0;
 
@@ -174,195 +174,12 @@ export function Rentabilidade() {
             )}
           </div>
 
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between flex-wrap gap-4">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    Análise Completa por Serviço
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Info className="h-4 w-4 text-muted-foreground" />
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs">
-                          <p>A margem unitária considera apenas custos variáveis. A margem real considera o volume realizado nos últimos 3 meses menos os custos fixos rateados.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </CardTitle>
-                  <CardDescription>
-                    Margem real, quantidade mínima para cobrir custos e quantidade para atingir sua meta
-                  </CardDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="metaTabela" className="text-sm whitespace-nowrap">Meta:</Label>
-                  <div className="relative w-32">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
-                    <Input
-                      id="metaTabela"
-                      type="number"
-                      value={metaInput}
-                      onChange={(e) => setMetaInput(Number(e.target.value) || 0)}
-                      className="pl-8 h-8 text-sm"
-                      min={0}
-                      step={500}
-                    />
-                  </div>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Serviço</TableHead>
-                    <TableHead className="text-right">Preço</TableHead>
-                    <TableHead className="text-right">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger className="flex items-center gap-1 ml-auto">
-                            Margem Unit.
-                            <Info className="h-3 w-3" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Lucro por atendimento (preço - custos variáveis)</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </TableHead>
-                    <TableHead className="text-center">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger className="flex items-center gap-1 mx-auto">
-                            Qtd. Realizada
-                            <Info className="h-3 w-3" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Volume médio mensal dos últimos 3 meses</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </TableHead>
-                    <TableHead className="text-right">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger className="flex items-center gap-1 ml-auto">
-                            Lucro Total
-                            <Info className="h-3 w-3" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Lucro mensal real = (Margem × Qtd.) - Custos Fixos Rateados</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </TableHead>
-                    <TableHead className="text-center">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger className="flex items-center gap-1 mx-auto">
-                            <Scale className="h-3 w-3" />
-                            Mín. Equilíbrio
-                            <Info className="h-3 w-3" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Quantidade mínima para cobrir os custos fixos (só fazendo esse serviço)</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </TableHead>
-                    <TableHead className="text-center">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger className="flex items-center gap-1 mx-auto">
-                            <Target className="h-3 w-3" />
-                            P/ Meta
-                            <Info className="h-3 w-3" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Quantidade para atingir a meta de R$ {formatCurrency(metaInput)} (só fazendo esse serviço)</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rentabilidade.rentabilidadePorServico.map((servico) => {
-                    // Buscar volume histórico do mix
-                    const mixInfo = mixServicos.mixAtual.find(m => m.servico === servico.nome);
-                    const volumeMensal = mixInfo?.quantidade ? Math.round(mixInfo.quantidade / 3) : 0;
-                    
-                    // Margem unitária (preço - custos variáveis, sem custos fixos)
-                    const margemUnitaria = servico.preco - servico.custoVariavel;
-                    
-                    // Lucro total considerando volume e custo fixo proporcional
-                    const custoFixoRateado = (rentabilidade.custoFixoTotal * (mixInfo?.percentual || 0)) / 100;
-                    const lucroTotalReal = (margemUnitaria * volumeMensal) - custoFixoRateado;
-                    
-                    // Quantidade mínima para cobrir custos fixos (break-even só com esse serviço)
-                    const breakEvenServico = rentabilidade.calcularBreakEvenPorServico(servico.id);
-                    const qtdMinima = breakEvenServico.breakEven === Infinity ? '—' : breakEvenServico.breakEven;
-                    
-                    // Quantidade para atingir meta (só com esse serviço)
-                    const qtdParaMeta = rentabilidade.calcularAtendimentosParaMetaPorServico(metaInput, servico.id);
-                    const qtdMetaDisplay = qtdParaMeta === Infinity ? '—' : qtdParaMeta;
-                    
-                    return (
-                      <TableRow key={servico.id}>
-                        <TableCell className="font-medium">{servico.nome}</TableCell>
-                        <TableCell className="text-right">
-                          R$ {formatCurrency(servico.preco)}
-                        </TableCell>
-                        <TableCell className={`text-right font-medium ${margemUnitaria > 0 ? 'text-success' : 'text-destructive'}`}>
-                          R$ {formatCurrency(margemUnitaria)}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {volumeMensal > 0 ? (
-                            <Badge variant="secondary">{volumeMensal}/mês</Badge>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">—</span>
-                          )}
-                        </TableCell>
-                        <TableCell className={`text-right font-medium ${lucroTotalReal > 0 ? 'text-success' : lucroTotalReal < 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
-                          {volumeMensal > 0 ? (
-                            `R$ ${formatCurrency(lucroTotalReal)}`
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {typeof qtdMinima === 'number' ? (
-                            <div className="flex items-center justify-center gap-1">
-                              <Scale className="h-3 w-3 text-amber-500" />
-                              <span className={volumeMensal >= qtdMinima ? 'text-success' : 'text-amber-600'}>
-                                {qtdMinima}
-                              </span>
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground">{qtdMinima}</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {typeof qtdMetaDisplay === 'number' ? (
-                            <div className="flex items-center justify-center gap-1">
-                              <Target className="h-3 w-3 text-primary" />
-                              <span>{qtdMetaDisplay}</span>
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground">{qtdMetaDisplay}</span>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-              <p className="text-xs text-muted-foreground mt-4 italic">
-                * Qtd. Realizada baseada no histórico dos últimos 3 meses. "Mín. Equilíbrio" e "P/ Meta" assumem que você faria apenas esse serviço.
-              </p>
-            </CardContent>
-          </Card>
+          <AnaliseServicoRealizado 
+            rentabilidade={rentabilidade}
+            agendamentos={agendamentos}
+            periodoSelecionado={periodoSelecionado}
+            setPeriodoSelecionado={setPeriodoSelecionado}
+          />
         </>
       )}
 
