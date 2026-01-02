@@ -218,29 +218,27 @@ export function useFluxoCaixa(mesesAtras: number = 6, mesesFuturos: number = 3) 
     enabled: !!agendamentosIdsQuery.data && agendamentosIdsQuery.data.length > 0,
   });
 
-  // Buscar pagamentos parcelados pendentes para previsão de receitas futuras
+  // Buscar pagamentos parcelados para previsão de receitas futuras
   const parcelasFuturasQuery = useQuery({
     queryKey: ['fluxo-caixa-parcelas-futuras', agendamentosIdsQuery.data],
     queryFn: async () => {
       if (!agendamentosIdsQuery.data || agendamentosIdsQuery.data.length === 0) return [];
 
-      // Buscar pagamentos parcelados que ainda têm parcelas pendentes
+      // Buscar todos os pagamentos parcelados (status pago = primeira parcela foi paga)
       const { data, error } = await supabase
         .from('pagamentos')
         .select('*')
         .in('agendamento_id', agendamentosIdsQuery.data)
         .eq('status', 'pago')
         .eq('parcelado', true)
+        .gt('parcelas_totais', 1)
         .not('data_pagamento', 'is', null);
 
       if (error) throw error;
       
-      // Filtrar apenas os que têm parcelas futuras pendentes
-      return (data || []).filter(p => {
-        const parcelasTotais = p.parcelas_totais || 1;
-        const parcelasRecebidas = p.parcelas_recebidas || parcelasTotais;
-        return parcelasRecebidas < parcelasTotais;
-      });
+      console.log('[FluxoCaixa] Pagamentos parcelados encontrados:', data?.length || 0, data);
+      
+      return data || [];
     },
     enabled: !!agendamentosIdsQuery.data && agendamentosIdsQuery.data.length > 0,
   });
@@ -343,11 +341,14 @@ export function useFluxoCaixa(mesesAtras: number = 6, mesesFuturos: number = 3) 
   });
 
   // Processar parcelas futuras (receitas certas a receber)
+  // A lógica: parcela 0 = mês do pagamento, parcela 1 = mês seguinte, etc.
+  // parcelas_recebidas indica quantas já foram creditadas (começando em 1 para a primeira)
   (parcelasFuturasQuery.data || []).forEach(p => {
     if (!p.data_pagamento) return;
     
     const parcelasTotais = p.parcelas_totais || 1;
-    const parcelasRecebidas = p.parcelas_recebidas || 0;
+    // Se parcelas_recebidas é null, assumimos que só a primeira foi recebida
+    const parcelasRecebidas = p.parcelas_recebidas ?? 1;
     const valorParcela = (Number(p.valor_total) || 0) / parcelasTotais;
     const dataPagamento = new Date(p.data_pagamento);
     const formaPagamento = p.forma_pagamento;
@@ -362,17 +363,20 @@ export function useFluxoCaixa(mesesAtras: number = 6, mesesFuturos: number = 3) 
     const taxaParcela = (valorParcela * taxaPercentual) / 100;
     
     // Distribuir parcelas ainda não recebidas (futuras)
+    // i começa em parcelasRecebidas (ex: se 1 foi recebida, começa em 1 = segunda parcela)
     for (let i = parcelasRecebidas; i < parcelasTotais; i++) {
       const mesParcela = addMonths(dataPagamento, i);
       const mesKey = format(mesParcela, 'yyyy-MM');
       
-      // Só adicionar se for mês futuro
-      if (isAfter(mesParcela, hoje) || isSameMonth(mesParcela, hoje)) {
+      // Só adicionar se for mês atual ou futuro
+      if (isAfter(mesParcela, startOfMonth(hoje)) || isSameMonth(mesParcela, hoje)) {
         receitasPrevistasPorMes[mesKey] = (receitasPrevistasPorMes[mesKey] || 0) + valorParcela;
         taxasPrevistasPorMes[mesKey] = (taxasPrevistasPorMes[mesKey] || 0) + taxaParcela;
       }
     }
   });
+  
+  console.log('[FluxoCaixa] Receitas previstas por mês:', receitasPrevistasPorMes);
   
   const fluxoMensal: FluxoMensal[] = meses.map(mes => {
     const mesKey = format(mes, 'yyyy-MM');

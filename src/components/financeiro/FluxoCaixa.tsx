@@ -94,23 +94,31 @@ export function FluxoCaixa() {
 
   // Calcular saldo acumulado para a linha
   let saldoAcumulado = 0;
+  let saldoAcumuladoPrevisto = 0;
   const chartData = fluxo.fluxoMensal.map(m => {
     // Para meses futuros, usar saldo previsto
     const saldoMes = m.isFuturo ? m.saldoPrevisto : m.saldo;
-    saldoAcumulado += saldoMes;
+    saldoAcumulado += m.saldo;
+    saldoAcumuladoPrevisto += m.isFuturo ? m.saldoPrevisto : m.saldo;
     
-    // Entradas: meses futuros mostram receitas previstas
-    const entradas = m.isFuturo 
-      ? m.receitaPrevista 
-      : m.receitaBruta;
+    // Saídas previstas para meses futuros
+    const saidasMes = m.isFuturo 
+      ? -(m.despesasFixas + m.despesasAvulsas + m.taxasPrevistas)
+      : -m.totalDespesas;
     
     return {
       name: m.mesFormatado,
-      Entradas: entradas,
-      'Entradas Previstas': m.isFuturo ? m.receitaPrevista : 0,
-      Saídas: -m.totalDespesas, // Negativo para mostrar para baixo
-      'Saldo Líquido': saldoMes,
-      'Saldo Acumulado': saldoAcumulado,
+      // Meses passados: entradas reais
+      Entradas: m.isFuturo ? null : m.receitaBruta,
+      // Meses futuros: entradas previstas
+      'Entradas Previstas': m.isFuturo ? m.receitaPrevista : null,
+      // Meses passados: saídas reais
+      Saídas: m.isFuturo ? null : -m.totalDespesas,
+      // Meses futuros: saídas previstas
+      'Saídas Previstas': m.isFuturo ? saidasMes : null,
+      // Saldo acumulado real (até o presente) e previsto (futuro)
+      'Saldo Acumulado': m.isFuturo ? null : saldoAcumulado,
+      'Saldo Previsto': m.isFuturo ? saldoAcumuladoPrevisto : null,
       isFuturo: m.isFuturo,
     };
   });
@@ -274,14 +282,32 @@ export function FluxoCaixa() {
               />
               <Legend />
               <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeWidth={1} />
-              <Bar dataKey="Entradas" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} stackId="stack" />
-              <Bar dataKey="Saídas" fill="hsl(var(--destructive))" radius={[0, 0, 4, 4]} stackId="stack" />
+              {/* Barras de valores reais (passado) */}
+              <Bar dataKey="Entradas" name="Entradas" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} stackId="stack" />
+              <Bar dataKey="Saídas" name="Saídas" fill="hsl(var(--destructive))" radius={[0, 0, 4, 4]} stackId="stack" />
+              {/* Barras de previsão (futuro) - com opacidade reduzida */}
+              <Bar dataKey="Entradas Previstas" name="Entradas Previstas" fill="hsl(var(--success))" fillOpacity={0.5} radius={[4, 4, 0, 0]} stackId="stackFuturo" />
+              <Bar dataKey="Saídas Previstas" name="Saídas Previstas" fill="hsl(var(--destructive))" fillOpacity={0.5} radius={[0, 0, 4, 4]} stackId="stackFuturo" />
+              {/* Linha de saldo real */}
               <Line 
                 type="monotone" 
-                dataKey="Saldo Acumulado" 
+                dataKey="Saldo Acumulado"
+                name="Saldo Acumulado"
                 stroke="hsl(var(--primary))" 
                 strokeWidth={2}
                 dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
+                connectNulls={false}
+              />
+              {/* Linha de saldo previsto - tracejada */}
+              <Line 
+                type="monotone" 
+                dataKey="Saldo Previsto"
+                name="Saldo Previsto"
+                stroke="hsl(var(--primary))" 
+                strokeWidth={2}
+                strokeDasharray="5 5"
+                dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4, strokeDasharray: '' }}
+                connectNulls={false}
               />
             </ComposedChart>
           </ResponsiveContainer>
