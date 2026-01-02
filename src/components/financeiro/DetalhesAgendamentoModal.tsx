@@ -49,9 +49,9 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
     }
   }, [pagamento?.id]);
 
-  if (!pagamento) return null;
+  if (!pagamento || !pagamentoAtual) return null;
 
-  const agendamento = pagamentoAtual?.agendamentos;
+  const agendamento = pagamentoAtual.agendamentos;
   const paciente = agendamento?.pacientes;
   const profissional = agendamento?.profissionais;
   const servicosAdicionais = agendamento?.servicos_adicionais as ServicoAdicional[] | null;
