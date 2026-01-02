@@ -100,7 +100,8 @@ export function useSimuladorMeta(metaLiquidaDesejada: number) {
           data_inicio,
           status,
           valor,
-          profissionais!inner(clinica_id)
+          profissionais!inner(clinica_id),
+          pagamentos(forma_pagamento, valor_pago, status)
         `)
         .eq('profissionais.clinica_id', clinica.id)
         .gte('data_inicio', seisMesesAtras.toISOString())
@@ -112,13 +113,53 @@ export function useSimuladorMeta(metaLiquidaDesejada: number) {
     enabled: !!clinica?.id,
   });
 
-  // Taxas de cartão da clínica (média se disponível)
-  const taxaCartaoMedia = useMemo(() => {
+  // Calcular proporção de pagamentos em cartão (com taxa) vs outros meios
+  const proporcaoCartao = useMemo(() => {
+    const agendamentos = agendamentosQuery.data || [];
+    
+    let totalPagamentos = 0;
+    let pagamentosCartaoCredito = 0;
+    let pagamentosCartaoDebito = 0;
+    
+    agendamentos.forEach(ag => {
+      const pagamentos = (ag as any).pagamentos || [];
+      pagamentos.forEach((pag: any) => {
+        if (pag.status === 'pago') {
+          const valor = Number(pag.valor_pago) || 0;
+          totalPagamentos += valor;
+          
+          if (pag.forma_pagamento === 'cartao_credito' || pag.forma_pagamento === 'cartao') {
+            pagamentosCartaoCredito += valor;
+          } else if (pag.forma_pagamento === 'cartao_debito') {
+            pagamentosCartaoDebito += valor;
+          }
+        }
+      });
+    });
+    
+    if (totalPagamentos === 0) {
+      // Se não tem histórico de pagamentos, assume proporção conservadora
+      return { percentualCredito: 0.3, percentualDebito: 0.1 };
+    }
+    
+    return {
+      percentualCredito: pagamentosCartaoCredito / totalPagamentos,
+      percentualDebito: pagamentosCartaoDebito / totalPagamentos,
+    };
+  }, [agendamentosQuery.data]);
+
+  // Taxa de cartão ponderada pela proporção real de uso
+  const taxaCartaoPonderada = useMemo(() => {
     if (!clinica) return 0;
     const taxaCredito = Number(clinica.taxa_cartao_credito) || 0;
     const taxaDebito = Number(clinica.taxa_cartao_debito) || 0;
-    return (taxaCredito * 0.7 + taxaDebito * 0.3) / 100;
-  }, [clinica]);
+    
+    // Aplicar taxa apenas na proporção de pagamentos em cartão
+    const taxaCreditoPonderada = (taxaCredito / 100) * proporcaoCartao.percentualCredito;
+    const taxaDebitoPonderada = (taxaDebito / 100) * proporcaoCartao.percentualDebito;
+    
+    return taxaCreditoPonderada + taxaDebitoPonderada;
+  }, [clinica, proporcaoCartao]);
 
   // Calcular mix histórico por serviço (usando últimos 3 meses)
   const mixHistorico = useMemo(() => {
@@ -247,7 +288,7 @@ export function useSimuladorMeta(metaLiquidaDesejada: number) {
 
       const preco = servicoRent.preco;
       const custoVariavel = servicoRent.custoVariavel;
-      const taxaCartao = preco * taxaCartaoMedia;
+      const taxaCartao = preco * taxaCartaoPonderada;
       
       // Usar o custo fixo proporcional calculado pelo useRentabilidade
       // (que já rateia custos fixos gerais + custos específicos do serviço)
@@ -453,7 +494,7 @@ export function useSimuladorMeta(metaLiquidaDesejada: number) {
       metaViavel,
       alertas,
     };
-  }, [metaLiquidaDesejada, mixHistorico, rentabilidade, taxaCartaoMedia, historicoMensal]);
+  }, [metaLiquidaDesejada, mixHistorico, rentabilidade, taxaCartaoPonderada, historicoMensal]);
 
   return {
     isLoading: agendamentosQuery.isLoading || rentabilidade.isLoading,
