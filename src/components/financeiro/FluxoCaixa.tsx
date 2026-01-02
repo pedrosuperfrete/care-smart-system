@@ -35,8 +35,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
-  BarChart,
+  ComposedChart,
   Bar,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -91,12 +92,18 @@ export function FluxoCaixa() {
     );
   }
 
-  const chartData = fluxo.fluxoMensal.map(m => ({
-    name: m.mesFormatado,
-    'Receita Bruta': m.receitaBruta,
-    Despesas: m.totalDespesas,
-    Saldo: m.saldo,
-  }));
+  // Calcular saldo acumulado para a linha
+  let saldoAcumulado = 0;
+  const chartData = fluxo.fluxoMensal.map(m => {
+    saldoAcumulado += m.saldo;
+    return {
+      name: m.mesFormatado,
+      Entradas: m.receitaBruta,
+      Saídas: -m.totalDespesas, // Negativo para mostrar para baixo
+      'Saldo Líquido': m.saldo,
+      'Saldo Acumulado': saldoAcumulado,
+    };
+  });
 
   return (
     <div className="space-y-6">
@@ -216,8 +223,8 @@ export function FluxoCaixa() {
           <CardDescription>Comparativo de receitas e despesas por mês</CardDescription>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+          <ResponsiveContainer width="100%" height={350}>
+            <ComposedChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }} stackOffset="sign">
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis dataKey="name" className="text-xs" />
               <YAxis 
@@ -225,7 +232,10 @@ export function FluxoCaixa() {
                 className="text-xs"
               />
               <Tooltip 
-                formatter={(value: number) => [`R$ ${formatCurrency(value)}`, '']}
+                formatter={(value: number, name: string) => [
+                  `R$ ${formatCurrency(Math.abs(value))}`, 
+                  name
+                ]}
                 contentStyle={{ 
                   backgroundColor: 'hsl(var(--background))', 
                   border: '1px solid hsl(var(--border))',
@@ -233,10 +243,17 @@ export function FluxoCaixa() {
                 }}
               />
               <Legend />
-              <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" />
-              <Bar dataKey="Receita Bruta" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="Despesas" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} />
-            </BarChart>
+              <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeWidth={1} />
+              <Bar dataKey="Entradas" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} stackId="stack" />
+              <Bar dataKey="Saídas" fill="hsl(var(--muted))" radius={[0, 0, 4, 4]} stackId="stack" />
+              <Line 
+                type="monotone" 
+                dataKey="Saldo Acumulado" 
+                stroke="hsl(var(--primary))" 
+                strokeWidth={2}
+                dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
+              />
+            </ComposedChart>
           </ResponsiveContainer>
         </CardContent>
       </Card>
