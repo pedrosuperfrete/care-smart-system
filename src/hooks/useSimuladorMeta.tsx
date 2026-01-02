@@ -88,10 +88,28 @@ export function useSimuladorMeta(metaLiquidaDesejada: number) {
   const rentabilidade = useRentabilidade();
 
   // Buscar agendamentos realizados dos últimos 6 meses para calcular mix histórico e saldo
-  const agendamentosQuery = useQuery({
-    queryKey: ['simulador-historico', clinica?.id],
+  // Primeiro buscar profissionais da clínica para filtrar agendamentos
+  const profissionaisQuery = useQuery({
+    queryKey: ['profissionais-clinica', clinica?.id],
     queryFn: async () => {
       if (!clinica?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('profissionais')
+        .select('id')
+        .eq('clinica_id', clinica.id)
+        .eq('ativo', true);
+      
+      if (error) throw error;
+      return data?.map(p => p.id) || [];
+    },
+    enabled: !!clinica?.id,
+  });
+
+  const agendamentosQuery = useQuery({
+    queryKey: ['simulador-historico', clinica?.id, profissionaisQuery.data],
+    queryFn: async () => {
+      if (!clinica?.id || !profissionaisQuery.data?.length) return [];
 
       const seisMesesAtras = new Date();
       seisMesesAtras.setMonth(seisMesesAtras.getMonth() - 6);
@@ -104,17 +122,17 @@ export function useSimuladorMeta(metaLiquidaDesejada: number) {
           data_inicio,
           status,
           valor,
-          profissionais!inner(clinica_id),
+          profissional_id,
           pagamentos(forma_pagamento, valor_pago, status)
         `)
-        .eq('profissionais.clinica_id', clinica.id)
+        .in('profissional_id', profissionaisQuery.data)
         .gte('data_inicio', seisMesesAtras.toISOString())
         .eq('status', 'realizado');
 
       if (error) throw error;
       return data || [];
     },
-    enabled: !!clinica?.id,
+    enabled: !!clinica?.id && !!profissionaisQuery.data?.length,
   });
 
   // Calcular proporção de pagamentos em cartão (com taxa) vs outros meios
@@ -519,7 +537,7 @@ export function useSimuladorMeta(metaLiquidaDesejada: number) {
   }, [metaLiquidaDesejada, mixHistorico, rentabilidade, taxaCartaoPonderada, historicoMensal]);
 
   return {
-    isLoading: agendamentosQuery.isLoading || rentabilidade.isLoading,
+    isLoading: profissionaisQuery.isLoading || agendamentosQuery.isLoading || rentabilidade.isLoading,
     resultado,
     temHistorico: mixHistorico.length > 0,
     mixHistorico,
