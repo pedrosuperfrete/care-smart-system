@@ -95,13 +95,23 @@ export function FluxoCaixa() {
   // Calcular saldo acumulado para a linha
   let saldoAcumulado = 0;
   const chartData = fluxo.fluxoMensal.map(m => {
-    saldoAcumulado += m.saldo;
+    // Para meses futuros, usar saldo previsto
+    const saldoMes = m.isFuturo ? m.saldoPrevisto : m.saldo;
+    saldoAcumulado += saldoMes;
+    
+    // Entradas: meses futuros mostram receitas previstas
+    const entradas = m.isFuturo 
+      ? m.receitaPrevista 
+      : m.receitaBruta;
+    
     return {
       name: m.mesFormatado,
-      Entradas: m.receitaBruta,
+      Entradas: entradas,
+      'Entradas Previstas': m.isFuturo ? m.receitaPrevista : 0,
       Saídas: -m.totalDespesas, // Negativo para mostrar para baixo
-      'Saldo Líquido': m.saldo,
+      'Saldo Líquido': saldoMes,
       'Saldo Acumulado': saldoAcumulado,
+      isFuturo: m.isFuturo,
     };
   });
 
@@ -159,6 +169,26 @@ export function FluxoCaixa() {
             </p>
           </CardContent>
         </Card>
+
+        {/* Card de previsão futura */}
+        {fluxo.totalReceitasPrevistas > 0 && (
+          <Card className="border-dashed border-primary/50 bg-primary/5">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-primary" />
+                Previsão de Receitas
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-primary">
+                R$ {formatCurrency(fluxo.totalReceitasPrevistas)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Parcelas a receber (próx. meses)
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader className="pb-2">
@@ -263,7 +293,9 @@ export function FluxoCaixa() {
         <CardHeader>
           <CardTitle>Detalhamento Mensal</CardTitle>
           <CardDescription>
-            Despesas fixas são projetadas automaticamente com base nos custos cadastrados
+            <span className="flex items-center gap-2">
+              Meses futuros mostram <Badge variant="outline" className="border-primary text-primary">previsões</Badge> baseadas em parcelas confirmadas e custos recorrentes
+            </span>
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -280,23 +312,63 @@ export function FluxoCaixa() {
             </TableHeader>
             <TableBody>
               {fluxo.fluxoMensal.map((mes) => (
-                <TableRow key={mes.mes}>
-                  <TableCell className="font-medium capitalize">{mes.mesFormatado}</TableCell>
-                  <TableCell className="text-right text-success">
-                    R$ {formatCurrency(mes.receitaBruta)}
+                <TableRow 
+                  key={mes.mes} 
+                  className={mes.isFuturo ? 'bg-primary/5 border-dashed' : ''}
+                >
+                  <TableCell className="font-medium capitalize">
+                    <div className="flex items-center gap-2">
+                      {mes.mesFormatado}
+                      {mes.isFuturo && (
+                        <Badge variant="outline" className="border-primary text-primary text-xs">
+                          Previsão
+                        </Badge>
+                      )}
+                      {mes.isEstimado && !mes.isFuturo && (
+                        <Badge variant="outline" className="text-xs">
+                          Estimado
+                        </Badge>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className={mes.isFuturo ? 'text-primary' : 'text-success'}>
+                      R$ {formatCurrency(mes.isFuturo ? mes.receitaPrevista : mes.receitaBruta)}
+                    </div>
+                    {mes.isFuturo && mes.receitaPrevista > 0 && (
+                      <span className="text-xs text-muted-foreground">parcelas a receber</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="text-muted-foreground">
+                      R$ {formatCurrency(mes.despesasFixas)}
+                    </div>
+                    {mes.isEstimado && (
+                      <span className="text-xs text-muted-foreground/70">
+                        {mes.despesasFixasReal > 0 && `R$ ${formatCurrency(mes.despesasFixasReal)} confirmado`}
+                      </span>
+                    )}
                   </TableCell>
                   <TableCell className="text-right text-muted-foreground">
-                    R$ {formatCurrency(mes.despesasFixas)}
-                  </TableCell>
-                  <TableCell className="text-right text-muted-foreground">
-                    R$ {formatCurrency(mes.despesasVariaveis)}
-                    <span className="text-xs ml-1">({mes.atendimentosRealizados} atend.)</span>
+                    {mes.isFuturo ? (
+                      <span className="text-muted-foreground/50">—</span>
+                    ) : (
+                      <>
+                        R$ {formatCurrency(mes.despesasVariaveis)}
+                        <span className="text-xs ml-1">({mes.atendimentosRealizados} atend.)</span>
+                      </>
+                    )}
                   </TableCell>
                   <TableCell className="text-right text-muted-foreground">
                     R$ {formatCurrency(mes.despesasAvulsas)}
                   </TableCell>
-                  <TableCell className={`text-right font-bold ${mes.saldo >= 0 ? 'text-success' : 'text-destructive'}`}>
-                    {mes.saldo >= 0 ? '+' : ''}R$ {formatCurrency(mes.saldo)}
+                  <TableCell className={`text-right font-bold ${
+                    (mes.isFuturo ? mes.saldoPrevisto : mes.saldo) >= 0 
+                      ? (mes.isFuturo ? 'text-primary' : 'text-success')
+                      : 'text-destructive'
+                  }`}>
+                    {(mes.isFuturo ? mes.saldoPrevisto : mes.saldo) >= 0 ? '+' : ''}
+                    R$ {formatCurrency(mes.isFuturo ? mes.saldoPrevisto : mes.saldo)}
                   </TableCell>
                 </TableRow>
               ))}
