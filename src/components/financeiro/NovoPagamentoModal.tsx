@@ -29,6 +29,7 @@ const formSchema = z.object({
   data_vencimento: z.date().optional(),
   data_pagamento: z.date().optional(),
   valor_pago: z.number().optional(),
+  parcelas_totais: z.number().min(1).max(24).optional(),
 }).refine((data) => {
   if (data.status === 'pago') {
     return data.data_pagamento && data.valor_pago && data.valor_pago > 0;
@@ -66,6 +67,7 @@ export function NovoPagamentoModal({ open, onOpenChange, onSave }: NovoPagamento
       servico_prestado: '',
       forma_pagamento: 'dinheiro',
       status: 'pendente',
+      parcelas_totais: 1,
     },
   });
 
@@ -95,6 +97,16 @@ export function NovoPagamentoModal({ open, onOpenChange, onSave }: NovoPagamento
   };
 
   const status = form.watch('status');
+  const formaPagamento = form.watch('forma_pagamento');
+  const valorTotal = form.watch('valor_total');
+  const parcelasTotais = form.watch('parcelas_totais') || 1;
+
+  // Resetar parcelas quando mudar forma de pagamento
+  useEffect(() => {
+    if (formaPagamento !== 'cartao_credito') {
+      form.setValue('parcelas_totais', 1);
+    }
+  }, [formaPagamento, form]);
 
   const handleSubmit = async (data: FormData) => {
     setIsLoading(true);
@@ -257,6 +269,37 @@ export function NovoPagamentoModal({ open, onOpenChange, onSave }: NovoPagamento
                 </FormItem>
               )}
             />
+
+            {/* Campo de parcelas - só aparece para cartão de crédito */}
+            {formaPagamento === 'cartao_credito' && (
+              <FormField
+                control={form.control}
+                name="parcelas_totais"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Número de Parcelas</FormLabel>
+                    <FormControl>
+                      <Select 
+                        onValueChange={(value) => field.onChange(parseInt(value))} 
+                        value={String(field.value || 1)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 12 }, (_, i) => i + 1).map((num) => (
+                            <SelectItem key={num} value={String(num)}>
+                              {num}x {valorTotal ? `de R$ ${(valorTotal / num).toFixed(2).replace('.', ',')}` : ''}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <FormField
               control={form.control}
