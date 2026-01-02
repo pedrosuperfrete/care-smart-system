@@ -231,7 +231,7 @@ export function ConfirmacaoCustosMensal() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Custos Fixos do Mês</CardTitle>
+            <CardTitle>Custos Recorrentes do Mês</CardTitle>
             {custosPendentes > 0 && !isMesFuturo && (
               <Button onClick={() => setIsConfirmDialogOpen(true)}>
                 <Check className="h-4 w-4 mr-2" />
@@ -257,6 +257,7 @@ export function ConfirmacaoCustosMensal() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Custo</TableHead>
+                  <TableHead>Tipo</TableHead>
                   <TableHead className="text-right">Valor Estimado</TableHead>
                   <TableHead className="text-right">Valor Real</TableHead>
                   <TableHead className="text-center">Status</TableHead>
@@ -267,6 +268,11 @@ export function ConfirmacaoCustosMensal() {
                 {custosComPagamento.map((item) => (
                   <TableRow key={item.custo_id}>
                     <TableCell className="font-medium">{item.nome}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={item.tipo === 'fixo' ? 'text-primary' : 'text-warning'}>
+                        {item.tipo === 'fixo' ? 'Fixo' : 'Variável'}
+                      </Badge>
+                    </TableCell>
                     <TableCell className="text-right text-muted-foreground">
                       R$ {formatCurrency(item.valor_estimado)}
                     </TableCell>

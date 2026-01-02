@@ -97,9 +97,9 @@ export function useCustosPagamentos(mesReferencia?: string) {
     enabled: !!clinica?.id,
   });
 
-  // Montar lista de custos com status de pagamento
+  // Montar lista de custos com status de pagamento (fixos e variáveis mensais)
   const custosComPagamento: CustoComPagamento[] = custos
-    .filter(c => c.tipo === 'fixo' && c.frequencia === 'mensal')
+    .filter(c => c.frequencia === 'mensal' && c.ativo)
     .map(custo => {
       const pagamento = pagamentosQuery.data?.find(p => p.custo_id === custo.id);
       const ultimoValorPago = ultimosPagamentosQuery.data?.[custo.id] || null;
