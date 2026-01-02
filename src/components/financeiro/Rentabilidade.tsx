@@ -14,23 +14,21 @@ import {
   DollarSign,
   Target,
   AlertTriangle,
-  CheckCircle,
   Calculator,
   Building2,
   Zap,
-  Lightbulb,
-  ArrowUpCircle
+  Lightbulb
 } from 'lucide-react';
-import { useCustos, useRentabilidade, useMixServicos } from '@/hooks/useCustos';
+import { useCustos, useRentabilidade } from '@/hooks/useCustos';
 import { useTiposServicos } from '@/hooks/useTiposServicos';
 import { formatCurrency } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
+import { SimuladorMeta } from './SimuladorMeta';
 
 export function Rentabilidade() {
   const { custos, isLoading: custosLoading } = useCustos();
   const { data: tiposServicos = [] } = useTiposServicos();
   const rentabilidade = useRentabilidade();
-  const mixServicos = useMixServicos();
   const navigate = useNavigate();
   
   const [metaMensal, setMetaMensal] = useState(5000);
@@ -210,12 +208,12 @@ export function Rentabilidade() {
         </CardContent>
       </Card>
 
-      {/* Calculadora de meta */}
+      {/* Calculadora de meta simples */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <Calculator className="h-4 w-4" />
-            Calculadora de Meta
+            Calculadora Rápida de Meta
           </CardTitle>
           <CardDescription>
             Quanto você quer lucrar por mês? Veja quantos atendimentos precisa fazer.
@@ -268,142 +266,8 @@ export function Rentabilidade() {
         </Card>
       )}
 
-      {/* Inteligência de Mix de Serviços */}
-      {mixServicos.totalAtendimentos > 0 && mixServicos.analiseInteligente && (
-        <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 via-transparent to-transparent">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Lightbulb className="h-5 w-5 text-primary" />
-                  Inteligência de Mix
-                </CardTitle>
-                <CardDescription>
-                  Análise baseada em {mixServicos.totalAtendimentos} atendimentos dos últimos 3 meses
-                </CardDescription>
-              </div>
-              <Badge 
-                variant={
-                  mixServicos.analiseInteligente.diagnostico === 'otimo' ? 'default' :
-                  mixServicos.analiseInteligente.diagnostico === 'bom' ? 'secondary' :
-                  mixServicos.analiseInteligente.diagnostico === 'atencao' ? 'outline' : 'destructive'
-                }
-                className={`text-sm px-3 py-1 ${
-                  mixServicos.analiseInteligente.diagnostico === 'otimo' ? 'bg-success text-success-foreground' : ''
-                }`}
-              >
-                {mixServicos.analiseInteligente.diagnostico === 'otimo' ? '✨ Mix Otimizado' :
-                 mixServicos.analiseInteligente.diagnostico === 'bom' ? '👍 Mix Bom' :
-                 mixServicos.analiseInteligente.diagnostico === 'atencao' ? '⚠️ Precisa Atenção' : '🚨 Crítico'}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className={`p-4 rounded-lg border ${
-              mixServicos.analiseInteligente.diagnostico === 'critico' ? 'bg-destructive/10 border-destructive/30' :
-              mixServicos.analiseInteligente.diagnostico === 'atencao' ? 'bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-800' :
-              'bg-muted/50 border-transparent'
-            }`}>
-              <p className="text-sm font-medium">{mixServicos.analiseInteligente.mensagemDiagnostico}</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 rounded-lg border bg-muted/30">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Lucro Atual</p>
-                <p className="text-2xl font-bold">R$ {formatCurrency(mixServicos.analiseInteligente.lucroAtualMensal)}<span className="text-sm font-normal text-muted-foreground">/mês</span></p>
-                <p className="text-xs text-muted-foreground mt-1">Margem média: {mixServicos.analiseInteligente.margemPonderadaAtual.toFixed(1)}%</p>
-              </div>
-              
-              {mixServicos.analiseInteligente.ganhoOtimizacao > 50 && (
-                <div className="p-4 rounded-lg border-2 border-success/30 bg-success/5">
-                  <p className="text-xs text-success uppercase tracking-wide mb-2">Potencial com Otimização</p>
-                  <p className="text-2xl font-bold text-success">R$ {formatCurrency(mixServicos.analiseInteligente.lucroOtimizadoMensal)}<span className="text-sm font-normal text-success/70">/mês</span></p>
-                  <p className="text-xs text-success mt-1">+R$ {formatCurrency(mixServicos.analiseInteligente.ganhoOtimizacao)}/mês possível</p>
-                </div>
-              )}
-            </div>
-
-            {mixServicos.analiseInteligente.servicoEstrela && (
-              <div className="flex items-center gap-4 p-4 rounded-lg border bg-success/5 border-success/20">
-                <div className="h-12 w-12 rounded-full bg-success/20 flex items-center justify-center shrink-0">
-                  <TrendingUp className="h-6 w-6 text-success" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-success font-medium">🌟 Serviço Estrela</span>
-                  </div>
-                  <p className="font-bold text-lg">{mixServicos.analiseInteligente.servicoEstrela.servico}</p>
-                  <p className="text-sm text-muted-foreground">
-                    R$ {formatCurrency(mixServicos.analiseInteligente.servicoEstrela.margem)} de lucro por atendimento • 
-                    {mixServicos.analiseInteligente.servicoEstrela.percentual.toFixed(0)}% da sua agenda
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {mixServicos.analiseInteligente.oportunidades.length > 0 && (
-              <div className="space-y-3">
-                <h4 className="font-medium flex items-center gap-2 text-primary">
-                  <Target className="h-4 w-4" />
-                  Ações para melhorar sua lucratividade
-                </h4>
-                
-                {mixServicos.analiseInteligente.oportunidades.slice(0, 3).map((op, idx) => (
-                  <div 
-                    key={idx} 
-                    className={`p-4 rounded-lg border ${
-                      op.tipo === 'oportunidade' 
-                        ? 'bg-blue-50/50 border-blue-200 dark:bg-blue-950/20 dark:border-blue-800' 
-                        : op.tipo === 'problema'
-                        ? 'bg-destructive/10 border-destructive/30'
-                        : 'bg-amber-50/50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-800'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${
-                        op.tipo === 'oportunidade' 
-                          ? 'bg-blue-100 dark:bg-blue-900' 
-                          : op.tipo === 'problema'
-                          ? 'bg-destructive/20'
-                          : 'bg-amber-100 dark:bg-amber-900'
-                      }`}>
-                        {op.tipo === 'oportunidade' 
-                          ? <ArrowUpCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                          : op.tipo === 'problema'
-                          ? <AlertTriangle className="h-4 w-4 text-destructive" />
-                          : <Lightbulb className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                        }
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm mb-1">{op.titulo}</p>
-                        <p className="text-sm text-muted-foreground">{op.descricao}</p>
-                        <p className="text-sm font-medium mt-2 text-primary">{op.acao}</p>
-                        {op.impactoMensal > 0 && (
-                          <Badge 
-                            variant="outline" 
-                            className={`mt-2 ${op.tipo === 'problema' ? 'border-destructive/50 text-destructive bg-destructive/10' : 'border-success/50 text-success bg-success/10'}`}
-                          >
-                            {op.tipo === 'problema' ? 'Prejuízo' : 'Impacto'}: {op.tipo === 'problema' ? '-' : '+'}R$ {formatCurrency(op.impactoMensal)}/mês
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {mixServicos.analiseInteligente.oportunidades.length === 0 && mixServicos.analiseInteligente.diagnostico === 'otimo' && (
-              <div className="text-center py-4">
-                <CheckCircle className="h-10 w-10 text-success mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">
-                  Seu mix de serviços está bem equilibrado. Continue monitorando mensalmente.
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+      {/* Simulador de Meta (novo) */}
+      <SimuladorMeta />
 
       {/* Análise por Serviço */}
       {rentabilidade.rentabilidadePorServico.length > 0 && (
