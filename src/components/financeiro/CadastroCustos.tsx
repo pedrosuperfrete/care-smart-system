@@ -46,9 +46,9 @@ const custosSugeridos = {
     { nome: 'Marketing e publicidade', valor: 300, descricao: 'Investimento em marketing' },
   ],
   variaveis: [
-    { nome: 'Materiais descartáveis', valor: 15, descricao: 'Luvas, máscaras, etc. por atendimento' },
-    { nome: 'Insumos médicos', valor: 25, descricao: 'Medicamentos e materiais por procedimento' },
-    { nome: 'Comissão por atendimento', valor: 0, descricao: 'Se houver pagamento por sessão' },
+    { nome: 'Materiais descartáveis', valor: 500, descricao: 'Luvas, máscaras, etc. - estimativa mensal' },
+    { nome: 'Insumos médicos', valor: 800, descricao: 'Medicamentos e materiais - estimativa mensal' },
+    { nome: 'Manutenção de equipamentos', valor: 300, descricao: 'Manutenção ocasional' },
   ],
 };
 
@@ -76,7 +76,7 @@ export function CadastroCustos() {
       nome: sugerido.nome,
       valor_estimado: sugerido.valor,
       tipo,
-      frequencia: tipo === 'fixo' ? 'mensal' : 'por_atendimento',
+      frequencia: 'mensal',
       descricao: sugerido.descricao,
       aplicacao: 'todos',
       servicos_ids: [],
@@ -122,7 +122,7 @@ export function CadastroCustos() {
       nome: custo.nome,
       valor_estimado: custo.valor_estimado,
       tipo: custo.tipo as 'fixo' | 'variavel',
-      frequencia: custo.frequencia as 'mensal' | 'por_atendimento' | 'ocasional',
+      frequencia: custo.frequencia as 'mensal' | 'ocasional',
       descricao: custo.descricao || '',
       aplicacao: aplicaTodos ? 'todos' : 'especificos',
       servicos_ids: servicosVinculados,
@@ -197,8 +197,7 @@ export function CadastroCustos() {
                         <div>
                           <p className="font-medium">{custo.nome}</p>
                           <p className="text-xs text-muted-foreground">
-                            {custo.frequencia === 'mensal' ? 'Mensal' : 
-                             custo.frequencia === 'por_atendimento' ? 'Por atendimento' : 'Ocasional'}
+                            {custo.frequencia === 'mensal' ? 'Mensal' : 'Ocasional'}
                           </p>
                         </div>
                       </TableCell>
@@ -307,7 +306,7 @@ export function CadastroCustos() {
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <Zap className="h-4 w-4" />
-                Custos Variáveis (por atendimento)
+                Custos Variáveis
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
@@ -391,7 +390,7 @@ export function CadastroCustos() {
                   onValueChange={(v: 'fixo' | 'variavel') => setFormData({ 
                     ...formData, 
                     tipo: v,
-                    frequencia: v === 'fixo' ? 'mensal' : 'por_atendimento'
+                    frequencia: 'mensal'
                   })}
                 >
                   <SelectTrigger>
@@ -410,13 +409,12 @@ export function CadastroCustos() {
                 <Label>Frequência</Label>
                 <Select 
                   value={formData.frequencia} 
-                  onValueChange={(v: 'mensal' | 'por_atendimento' | 'ocasional') => setFormData({ ...formData, frequencia: v })}
+                  onValueChange={(v: 'mensal' | 'ocasional') => setFormData({ ...formData, frequencia: v })}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="por_atendimento">Por atendimento</SelectItem>
                     <SelectItem value="mensal">Mensal</SelectItem>
                     <SelectItem value="ocasional">Ocasional</SelectItem>
                   </SelectContent>

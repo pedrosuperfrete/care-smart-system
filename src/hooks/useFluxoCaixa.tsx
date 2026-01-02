@@ -291,8 +291,8 @@ export function useFluxoCaixa(mesesAtras: number = 6, mesesFuturos: number = 3) 
   const custosFixosMensais = custos.filter(c => c.tipo === 'fixo' && c.frequencia === 'mensal');
   const custoFixoEstimado = custosFixosMensais.reduce((sum, c) => sum + Number(c.valor_estimado), 0);
 
-  const custoVariavelPorAtendimento = custos
-    .filter(c => c.tipo === 'variavel' && c.frequencia === 'por_atendimento')
+  const custoVariavelMensal = custos
+    .filter(c => c.tipo === 'variavel' && c.frequencia === 'mensal')
     .reduce((sum, c) => sum + Number(c.valor_estimado), 0);
 
   // Custos recorrentes mensais (fixos + variáveis mensais)
@@ -416,8 +416,8 @@ export function useFluxoCaixa(mesesAtras: number = 6, mesesFuturos: number = 3) 
         return sum + valorNoMes;
       }, 0);
 
-    // Custo variável total (baseado em atendimentos - só para meses passados)
-    const despesasVariaveisMes = atendimentosMes * custoVariavelPorAtendimento;
+    // Custo variável total mensal
+    const despesasVariaveisMes = custoVariavelMensal;
 
     // ============= LÓGICA DE CUSTOS: REAL vs ESTIMADO =============
     // Buscar pagamentos confirmados para este mês
@@ -536,7 +536,7 @@ export function useFluxoCaixa(mesesAtras: number = 6, mesesFuturos: number = 3) 
     mediaSaldoMensal,
     crescimentoReceita,
     custoFixoMensal: custoRecorrenteEstimado,
-    custoVariavelPorAtendimento,
+    custoVariavelMensal,
     taxaCredito,
     taxaDebito,
   };

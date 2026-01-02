@@ -92,7 +92,7 @@ export function CustosRentabilidade() {
       nome: sugerido.nome,
       valor_estimado: sugerido.valor,
       tipo,
-      frequencia: tipo === 'fixo' ? 'mensal' : 'por_atendimento',
+      frequencia: 'mensal',
       descricao: sugerido.descricao,
       aplicacao: 'todos',
       servicos_ids: [],
@@ -141,7 +141,7 @@ export function CustosRentabilidade() {
       nome: custo.nome,
       valor_estimado: custo.valor_estimado,
       tipo: custo.tipo as 'fixo' | 'variavel',
-      frequencia: custo.frequencia as 'mensal' | 'por_atendimento' | 'ocasional',
+      frequencia: custo.frequencia as 'mensal' | 'ocasional',
       descricao: custo.descricao || '',
       aplicacao: aplicaTodos ? 'todos' : 'especificos',
       servicos_ids: servicosVinculados,
@@ -602,8 +602,7 @@ export function CustosRentabilidade() {
                             <div>
                               <p className="font-medium">{custo.nome}</p>
                               <p className="text-xs text-muted-foreground">
-                                {custo.frequencia === 'mensal' ? 'Mensal' : 
-                                 custo.frequencia === 'por_atendimento' ? 'Por atendimento' : 'Ocasional'}
+                                {custo.frequencia === 'mensal' ? 'Mensal' : 'Ocasional'}
                               </p>
                             </div>
                           </TableCell>
@@ -900,7 +899,7 @@ export function CustosRentabilidade() {
                   onValueChange={(v: 'fixo' | 'variavel') => setFormData({ 
                     ...formData, 
                     tipo: v,
-                    frequencia: v === 'fixo' ? 'mensal' : 'por_atendimento'
+                    frequencia: 'mensal'
                   })}
                 >
                   <SelectTrigger>
@@ -919,13 +918,12 @@ export function CustosRentabilidade() {
                 <Label>Frequência</Label>
                 <Select 
                   value={formData.frequencia} 
-                  onValueChange={(v: 'mensal' | 'por_atendimento' | 'ocasional') => setFormData({ ...formData, frequencia: v })}
+                  onValueChange={(v: 'mensal' | 'ocasional') => setFormData({ ...formData, frequencia: v })}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="por_atendimento">Por atendimento</SelectItem>
                     <SelectItem value="mensal">Mensal</SelectItem>
                     <SelectItem value="ocasional">Ocasional</SelectItem>
                   </SelectContent>
