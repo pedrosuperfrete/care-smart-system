@@ -235,9 +235,6 @@ export function useFluxoCaixa(mesesAtras: number = 6, mesesFuturos: number = 3) 
         .not('data_pagamento', 'is', null);
 
       if (error) throw error;
-      
-      console.log('[FluxoCaixa] Pagamentos parcelados encontrados:', data?.length || 0, data);
-      
       return data || [];
     },
     enabled: !!agendamentosIdsQuery.data && agendamentosIdsQuery.data.length > 0,
@@ -375,8 +372,6 @@ export function useFluxoCaixa(mesesAtras: number = 6, mesesFuturos: number = 3) 
       }
     }
   });
-  
-  console.log('[FluxoCaixa] Receitas previstas por mês:', receitasPrevistasPorMes);
   
   const fluxoMensal: FluxoMensal[] = meses.map(mes => {
     const mesKey = format(mes, 'yyyy-MM');
