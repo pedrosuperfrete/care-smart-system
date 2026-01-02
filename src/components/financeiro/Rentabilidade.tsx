@@ -118,69 +118,14 @@ export function Rentabilidade() {
       {/* Simulador de Meta */}
       <SimuladorMeta />
 
-      {/* Alerta de serviços com margem negativa */}
-      {rentabilidade.servicoMenosRentavel && rentabilidade.servicoMenosRentavel.margem <= 0 && (
-        <Card className="border-destructive/50 bg-destructive/5">
-          <CardContent className="pt-6">
-            <div className="flex items-start gap-4">
-              <div className="h-10 w-10 rounded-full bg-destructive/20 flex items-center justify-center shrink-0">
-                <AlertTriangle className="h-5 w-5 text-destructive" />
-              </div>
-              <div>
-                <h4 className="font-medium text-destructive">Atenção: Serviços com margem baixa</h4>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Alguns dos seus serviços podem estar dando prejuízo. Veja a análise por serviço abaixo.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Análise por Serviço */}
       {rentabilidade.rentabilidadePorServico.length > 0 && (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {rentabilidade.servicoMaisRentavel && (
-              <Card className="border-success/50 bg-success/5">
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-2 mb-2">
-                    <TrendingUp className="h-5 w-5 text-success" />
-                    <span className="text-sm font-medium text-success">Mais Rentável</span>
-                  </div>
-                  <p className="text-lg font-bold">{rentabilidade.servicoMaisRentavel.nome}</p>
-                  <p className="text-sm text-muted-foreground">
-                    Margem: R$ {formatCurrency(rentabilidade.servicoMaisRentavel.margem)} ({rentabilidade.servicoMaisRentavel.margemPercentual.toFixed(0)}%)
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-
-            {rentabilidade.servicoMenosRentavel && rentabilidade.servicoMenosRentavel.margem < rentabilidade.servicoMaisRentavel?.margem && (
-              <Card className={`${rentabilidade.servicoMenosRentavel.margem <= 0 ? 'border-destructive/50 bg-destructive/5' : 'border-amber-500/50 bg-amber-500/5'}`}>
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-2 mb-2">
-                    <TrendingDown className={`h-5 w-5 ${rentabilidade.servicoMenosRentavel.margem <= 0 ? 'text-destructive' : 'text-amber-500'}`} />
-                    <span className={`text-sm font-medium ${rentabilidade.servicoMenosRentavel.margem <= 0 ? 'text-destructive' : 'text-amber-500'}`}>
-                      {rentabilidade.servicoMenosRentavel.margem <= 0 ? 'Dando Prejuízo' : 'Menor Margem'}
-                    </span>
-                  </div>
-                  <p className="text-lg font-bold">{rentabilidade.servicoMenosRentavel.nome}</p>
-                  <p className="text-sm text-muted-foreground">
-                    Margem: R$ {formatCurrency(rentabilidade.servicoMenosRentavel.margem)} ({rentabilidade.servicoMenosRentavel.margemPercentual.toFixed(0)}%)
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-
-          <AnaliseServicoRealizado 
-            rentabilidade={rentabilidade}
-            agendamentos={agendamentos}
-            periodoSelecionado={periodoSelecionado}
-            setPeriodoSelecionado={setPeriodoSelecionado}
-          />
-        </>
+        <AnaliseServicoRealizado 
+          rentabilidade={rentabilidade}
+          agendamentos={agendamentos}
+          periodoSelecionado={periodoSelecionado}
+          setPeriodoSelecionado={setPeriodoSelecionado}
+        />
       )}
 
       {rentabilidade.rentabilidadePorServico.length === 0 && (
