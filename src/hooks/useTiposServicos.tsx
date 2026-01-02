@@ -6,7 +6,8 @@ import { useAuth } from './useAuth';
 export interface TipoServico {
   id: string;
   nome: string;
-  preco?: number;
+  preco: number;
+  descricao?: string;
   ativo: boolean;
   clinica_id?: string;
   profissional_id?: string;
@@ -18,7 +19,8 @@ export interface TipoServico {
 
 export interface CreateTipoServicoData {
   nome: string;
-  preco?: number;
+  preco: number;
+  descricao?: string;
   clinica_id?: string;
   profissional_id?: string;
   percentual_cobranca_falta?: number;
@@ -28,6 +30,7 @@ export interface CreateTipoServicoData {
 export interface UpdateTipoServicoData {
   nome?: string;
   preco?: number;
+  descricao?: string;
   ativo?: boolean;
   percentual_cobranca_falta?: number | null;
   percentual_cobranca_agendamento?: number | null;
