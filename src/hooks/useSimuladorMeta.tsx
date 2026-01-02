@@ -249,10 +249,13 @@ export function useSimuladorMeta(metaLiquidaDesejada: number) {
       const custoVariavel = servicoRent.custoVariavel;
       const taxaCartao = preco * taxaCartaoMedia;
       
-      const custoFixoAlocado = (custoFixoTotal * mix.percentualMix) / 100;
-      // Margem de contribuição = preço - custos variáveis - taxa cartão
-      // Esta margem contribui para cobrir custos fixos e gerar lucro
-      const margemContribuicao = preco - custoVariavel - taxaCartao;
+      // Usar o custo fixo proporcional calculado pelo useRentabilidade
+      // (que já rateia custos fixos gerais + custos específicos do serviço)
+      const custoFixoPorAtendimento = servicoRent.custoFixoProporcional;
+      
+      // Margem de contribuição = preço - custos variáveis - taxa cartão - custo fixo alocado
+      // Esta é a margem real por atendimento após todos os custos
+      const lucroLiquidoUnitario = preco - custoVariavel - taxaCartao - custoFixoPorAtendimento;
       
       servicosComMargem.push({
         id: servicoRent.id,
@@ -262,9 +265,9 @@ export function useSimuladorMeta(metaLiquidaDesejada: number) {
         percentualMix: mix.percentualMix,
         custoVariavel,
         taxaCartao,
-        custoFixoAlocado: custoFixoAlocado / Math.max(mix.volumeMensal, 1),
-        lucroLiquido: margemContribuicao, // Margem de contribuição por atendimento
-        lucroTotalMensal: (margemContribuicao * mix.volumeMensal) - custoFixoAlocado,
+        custoFixoAlocado: custoFixoPorAtendimento,
+        lucroLiquido: lucroLiquidoUnitario, // Lucro líquido real por atendimento
+        lucroTotalMensal: lucroLiquidoUnitario * mix.volumeMensal,
       });
     });
 
@@ -295,7 +298,7 @@ export function useSimuladorMeta(metaLiquidaDesejada: number) {
         },
         cenarioAtual: {
           atendimentosMensais: servicosComMargem.reduce((sum, s) => sum + s.volumeMensal, 0),
-          lucroMensal: servicosComMargem.reduce((sum, s) => sum + s.lucroTotalMensal, 0) - custoFixoTotal,
+          lucroMensal: servicosComMargem.reduce((sum, s) => sum + s.lucroTotalMensal, 0),
           faturamentoMensal: servicosComMargem.reduce((sum, s) => sum + (s.preco * s.volumeMensal), 0),
         },
         saldoAcumulado: { meses: [], saldoTotal: 0, mesesRestantes: 0, metaMensalAjustada: metaLiquidaDesejada },
@@ -307,14 +310,36 @@ export function useSimuladorMeta(metaLiquidaDesejada: number) {
       };
     }
 
-    // 3. EQUILÍBRIO: Volume para cobrir custos fixos (lucro = 0)
-    const volumeEquilibrio = Math.ceil(custoFixoTotal / margemPonderada);
+    // 3. EQUILÍBRIO: Agora lucroLiquido já inclui custos fixos rateados, então
+    // equilíbrio é quando lucroLiquido * volume = 0. Como lucro já tem custos fixos
+    // embutidos por atendimento, precisamos encontrar volume onde o lucro total = 0.
+    // Mas como os custos já estão "diluídos" por atendimento, o volume de equilíbrio
+    // é 1 atendimento = custoFixo/qtdServicos de custo. Precisamos recalcular:
+    // Se lucroLiquido = preco - custoVar - taxaCartao - custoFixo/n, e queremos lucro total = 0
+    // então precisamos de n atendimentos onde a soma dos lucros = 0
+    // Isso só acontece se lucroLiquido >= 0. Se < 0, é Infinity.
+    // Como o custo fixo já está rateado por serviço (não por atendimento), 
+    // vamos calcular de forma diferente: volume onde receita cobre todos os custos
+    
+    // Para break-even: a margem de contribuição (preço - custoVar - taxaCartao) deve cobrir custoFixoTotal
+    const margemContribuicaoPonderada = servicosComMargem.reduce(
+      (sum, s) => sum + ((s.preco - s.custoVariavel - s.taxaCartao) * s.percentualMix / 100),
+      0
+    );
+    
+    const volumeEquilibrio = margemContribuicaoPonderada > 0 
+      ? Math.ceil(custoFixoTotal / margemContribuicaoPonderada)
+      : Infinity;
     const alertasEquilibrio: string[] = [];
-    const servicosEquilibrio = calcularDistribuicao(servicosComMargem, volumeEquilibrio, alertasEquilibrio);
+    const servicosEquilibrio = isFinite(volumeEquilibrio) 
+      ? calcularDistribuicao(servicosComMargem, volumeEquilibrio, alertasEquilibrio)
+      : [];
     const faturamentoEquilibrio = servicosEquilibrio.reduce((sum, s) => sum + s.faturamentoParcial, 0);
 
     // 4. META: Volume para atingir meta de lucro líquido
-    const volumeMeta = Math.ceil((metaLiquidaDesejada + custoFixoTotal) / margemPonderada);
+    const volumeMeta = margemContribuicaoPonderada > 0
+      ? Math.ceil((metaLiquidaDesejada + custoFixoTotal) / margemContribuicaoPonderada)
+      : Infinity;
     const alertasMeta: string[] = [];
     const servicosMeta = calcularDistribuicao(servicosComMargem, volumeMeta, alertasMeta);
     
@@ -322,14 +347,14 @@ export function useSimuladorMeta(metaLiquidaDesejada: number) {
     alertas.push(...alertasMeta);
 
     // Recalcular totais reais da meta (após limites)
+    // Nota: lucroUnitario já inclui custos fixos rateados
     const totalAtendimentosMeta = servicosMeta.reduce((sum, s) => sum + s.atendimentosNecessarios, 0);
     const faturamentoMeta = servicosMeta.reduce((sum, s) => sum + s.faturamentoParcial, 0);
-    const lucroContribuicaoMeta = servicosMeta.reduce((sum, s) => sum + s.contribuicaoLucro, 0);
-    const receitaLiquidaMeta = lucroContribuicaoMeta - custoFixoTotal;
+    const receitaLiquidaMeta = servicosMeta.reduce((sum, s) => sum + s.contribuicaoLucro, 0);
 
-    // 5. Cenário atual
+    // 5. Cenário atual (lucroTotalMensal já tem custos fixos rateados embutidos)
     const atendimentosAtuais = servicosComMargem.reduce((sum, s) => sum + s.volumeMensal, 0);
-    const lucroAtual = servicosComMargem.reduce((sum, s) => sum + s.lucroTotalMensal, 0) - custoFixoTotal;
+    const lucroAtual = servicosComMargem.reduce((sum, s) => sum + s.lucroTotalMensal, 0);
     const faturamentoAtual = servicosComMargem.reduce((sum, s) => sum + (s.preco * s.volumeMensal), 0);
 
     // 6. Saldo acumulado - calcular diferença entre lucro real e meta por mês

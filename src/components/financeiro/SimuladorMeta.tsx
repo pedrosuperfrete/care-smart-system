@@ -72,7 +72,9 @@ export function SimuladorMeta() {
   }
 
   const { equilibrio, meta, cenarioAtual, saldoAcumulado, custoFixoTotal, insights, alertas, metaViavel } = resultado;
-  const diferencaAtendimentosMeta = meta.totalAtendimentosNecessarios - cenarioAtual.atendimentosMensais;
+  const diferencaAtendimentosMeta = isFinite(meta.totalAtendimentosNecessarios) 
+    ? meta.totalAtendimentosNecessarios - cenarioAtual.atendimentosMensais 
+    : Infinity;
   const percentualMeta = cenarioAtual.lucroMensal > 0 
     ? Math.min((cenarioAtual.lucroMensal / metaDesejada) * 100, 100) 
     : 0;
@@ -169,7 +171,11 @@ export function SimuladorMeta() {
               Faturamento: R$ {formatCurrency(meta.faturamentoBrutoNecessario)}
             </p>
             <div className="flex items-center gap-1 mt-1">
-              {diferencaAtendimentosMeta > 0 ? (
+              {!isFinite(diferencaAtendimentosMeta) ? (
+                <Badge variant="outline" className="text-xs border-destructive text-destructive">
+                  Revise custos e preços
+                </Badge>
+              ) : diferencaAtendimentosMeta > 0 ? (
                 <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
                   +{diferencaAtendimentosMeta} vs. atual
                 </Badge>
