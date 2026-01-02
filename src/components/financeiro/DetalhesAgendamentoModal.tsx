@@ -375,8 +375,10 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
                     </Select>
                   ) : (
                     <p className="font-medium">
-                      {pagamentoAtual.parcelas_totais > 1 
-                        ? `${pagamentoAtual.parcelas_recebidas || 0}/${pagamentoAtual.parcelas_totais}x` 
+                      {pagamentoAtual.parcelas_totais > 1
+                        ? ((pagamentoAtual.parcelas_recebidas || 0) > 0
+                            ? `${pagamentoAtual.parcelas_recebidas}/${pagamentoAtual.parcelas_totais}x`
+                            : `${pagamentoAtual.parcelas_totais}x`)
                         : 'À vista'}
                     </p>
                   )}
