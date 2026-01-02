@@ -131,6 +131,8 @@ export type Database = {
           id: string
           nome: string
           pix_chave: string | null
+          taxa_cartao_credito: number | null
+          taxa_cartao_debito: number | null
         }
         Insert: {
           cnpj: string
@@ -140,6 +142,8 @@ export type Database = {
           id?: string
           nome: string
           pix_chave?: string | null
+          taxa_cartao_credito?: number | null
+          taxa_cartao_debito?: number | null
         }
         Update: {
           cnpj?: string
@@ -149,6 +153,8 @@ export type Database = {
           id?: string
           nome?: string
           pix_chave?: string | null
+          taxa_cartao_credito?: number | null
+          taxa_cartao_debito?: number | null
         }
         Relationships: []
       }

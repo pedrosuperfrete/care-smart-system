@@ -30,6 +30,8 @@ export interface FluxoMensal {
   mes: string;
   mesFormatado: string;
   receitas: number;
+  receitaBruta: number;
+  taxasCartao: number;
   despesasFixas: number;
   despesasVariaveis: number;
   despesasAvulsas: number;
@@ -225,11 +227,16 @@ export function useFluxoCaixa(mesesAtras: number = 6) {
     .filter(c => c.tipo === 'variavel' && c.frequencia === 'por_atendimento')
     .reduce((sum, c) => sum + Number(c.valor), 0);
 
+  // Taxas de cartão da clínica
+  const taxaCredito = Number(clinica?.taxa_cartao_credito) || 0;
+  const taxaDebito = Number(clinica?.taxa_cartao_debito) || 0;
+
   // Gerar fluxo por mês
   const meses = eachMonthOfInterval({ start: dataInicio, end: dataFim });
   
-  // Processar pagamentos parcelados - distribuir receita pelos meses
-  const receitasPorMes: Record<string, number> = {};
+  // Processar pagamentos parcelados - distribuir receita e taxas pelos meses
+  const receitasBrutasPorMes: Record<string, number> = {};
+  const taxasCartaoPorMes: Record<string, number> = {};
   
   (receitasQuery.data || []).forEach(p => {
     if (!p.data_pagamento) return;
@@ -237,12 +244,23 @@ export function useFluxoCaixa(mesesAtras: number = 6) {
     const parcelasTotais = p.parcelas_totais || 1;
     const valorParcela = (Number(p.valor_pago) || 0) / parcelasTotais;
     const dataPagamento = new Date(p.data_pagamento);
+    const formaPagamento = p.forma_pagamento;
+    
+    // Calcular taxa de cartão
+    let taxaPercentual = 0;
+    if (formaPagamento === 'cartao_credito') {
+      taxaPercentual = taxaCredito;
+    } else if (formaPagamento === 'cartao_debito') {
+      taxaPercentual = taxaDebito;
+    }
+    const taxaParcela = (valorParcela * taxaPercentual) / 100;
     
     // Distribuir o valor pelas parcelas
     for (let i = 0; i < parcelasTotais; i++) {
       const mesParcela = addMonths(dataPagamento, i);
       const mesKey = format(mesParcela, 'yyyy-MM');
-      receitasPorMes[mesKey] = (receitasPorMes[mesKey] || 0) + valorParcela;
+      receitasBrutasPorMes[mesKey] = (receitasBrutasPorMes[mesKey] || 0) + valorParcela;
+      taxasCartaoPorMes[mesKey] = (taxasCartaoPorMes[mesKey] || 0) + taxaParcela;
     }
   });
   
@@ -250,8 +268,12 @@ export function useFluxoCaixa(mesesAtras: number = 6) {
     const mesKey = format(mes, 'yyyy-MM');
     const mesFormatado = format(mes, 'MMM/yy', { locale: ptBR });
     
-    // Receitas do mês (agora incluindo parcelas distribuídas)
-    const receitasMes = receitasPorMes[mesKey] || 0;
+    // Receita bruta do mês
+    const receitaBrutaMes = receitasBrutasPorMes[mesKey] || 0;
+    // Taxas de cartão do mês
+    const taxasCartaoMes = taxasCartaoPorMes[mesKey] || 0;
+    // Receita líquida (descontando taxas de cartão)
+    const receitaLiquidaMes = receitaBrutaMes - taxasCartaoMes;
 
     // Atendimentos do mês
     const atendimentosMes = (atendimentosQuery.data || [])
@@ -266,15 +288,18 @@ export function useFluxoCaixa(mesesAtras: number = 6) {
     // Custo variável total (baseado em atendimentos)
     const despesasVariaveisMes = atendimentosMes * custoVariavelPorAtendimento;
 
-    const totalDespesas = custoFixoMensal + despesasVariaveisMes + despesasAvulsasMes;
-    const saldo = receitasMes - totalDespesas;
+    // Taxas de cartão entram como despesa variável adicional
+    const totalDespesas = custoFixoMensal + despesasVariaveisMes + despesasAvulsasMes + taxasCartaoMes;
+    const saldo = receitaBrutaMes - totalDespesas;
 
     return {
       mes: mesKey,
       mesFormatado,
-      receitas: receitasMes,
+      receitas: receitaLiquidaMes,
+      receitaBruta: receitaBrutaMes,
+      taxasCartao: taxasCartaoMes,
       despesasFixas: custoFixoMensal,
-      despesasVariaveis: despesasVariaveisMes,
+      despesasVariaveis: despesasVariaveisMes + taxasCartaoMes,
       despesasAvulsas: despesasAvulsasMes,
       totalDespesas,
       saldo,
@@ -283,9 +308,11 @@ export function useFluxoCaixa(mesesAtras: number = 6) {
   });
 
   // Totais
+  const totalReceitasBrutas = fluxoMensal.reduce((sum, m) => sum + m.receitaBruta, 0);
+  const totalTaxasCartao = fluxoMensal.reduce((sum, m) => sum + m.taxasCartao, 0);
   const totalReceitas = fluxoMensal.reduce((sum, m) => sum + m.receitas, 0);
   const totalDespesas = fluxoMensal.reduce((sum, m) => sum + m.totalDespesas, 0);
-  const saldoTotal = totalReceitas - totalDespesas;
+  const saldoTotal = totalReceitasBrutas - totalDespesas;
   const mediaReceitaMensal = totalReceitas / meses.length;
   const mediaDespesaMensal = totalDespesas / meses.length;
 
@@ -293,11 +320,15 @@ export function useFluxoCaixa(mesesAtras: number = 6) {
     isLoading: receitasQuery.isLoading || despesasAvulsasQuery.isLoading || atendimentosQuery.isLoading,
     fluxoMensal,
     totalReceitas,
+    totalReceitasBrutas,
+    totalTaxasCartao,
     totalDespesas,
     saldoTotal,
     mediaReceitaMensal,
     mediaDespesaMensal,
     custoFixoMensal,
     custoVariavelPorAtendimento,
+    taxaCredito,
+    taxaDebito,
   };
 }
