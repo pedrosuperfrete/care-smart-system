@@ -6,6 +6,9 @@ import { toast } from 'sonner';
 import { format, startOfMonth, endOfMonth, subMonths, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+// ID virtual para o custo de imposto (não existe no banco)
+const IMPOSTO_CUSTO_ID = 'imposto-automatico';
+
 export interface CustoPagamento {
   id: string;
   custo_id: string;
@@ -38,6 +41,7 @@ export interface CustoComPagamento {
   status: 'pendente' | 'pago' | 'estimado';
   pagamento_id: string | null;
   ultimo_valor_pago: number | null;
+  is_imposto?: boolean; // Flag para identificar a linha de imposto
 }
 
 export function useCustosPagamentos(mesReferencia?: string) {
@@ -46,6 +50,7 @@ export function useCustosPagamentos(mesReferencia?: string) {
   const queryClient = useQueryClient();
   
   const mesAtual = mesReferencia || format(new Date(), 'yyyy-MM');
+  const taxaImposto = Number(clinica?.taxa_imposto) || 0;
 
   // Buscar pagamentos do mês especificado
   const pagamentosQuery = useQuery({
@@ -97,6 +102,56 @@ export function useCustosPagamentos(mesReferencia?: string) {
     enabled: !!clinica?.id,
   });
 
+  // Buscar receita bruta do mês para calcular estimativa de imposto
+  const receitaMesQuery = useQuery({
+    queryKey: ['receita-mes', clinica?.id, mesAtual],
+    queryFn: async () => {
+      if (!clinica?.id) return 0;
+      
+      // Primeiro buscar IDs dos profissionais da clínica
+      const { data: profissionais, error: profError } = await supabase
+        .from('profissionais')
+        .select('id')
+        .eq('clinica_id', clinica.id)
+        .eq('ativo', true);
+      
+      if (profError) throw profError;
+      if (!profissionais || profissionais.length === 0) return 0;
+      
+      const profIds = profissionais.map(p => p.id);
+      
+      // Buscar agendamentos desses profissionais
+      const { data: agendamentos, error: agError } = await supabase
+        .from('agendamentos')
+        .select('id')
+        .in('profissional_id', profIds);
+      
+      if (agError) throw agError;
+      if (!agendamentos || agendamentos.length === 0) return 0;
+      
+      const agIds = agendamentos.map(a => a.id);
+      
+      // Calcular período do mês
+      const [ano, mes] = mesAtual.split('-').map(Number);
+      const inicioMes = new Date(ano, mes - 1, 1);
+      const fimMes = endOfMonth(inicioMes);
+      
+      // Buscar pagamentos do mês
+      const { data: pagamentos, error: pagError } = await supabase
+        .from('pagamentos')
+        .select('valor_pago')
+        .in('agendamento_id', agIds)
+        .eq('status', 'pago')
+        .gte('data_pagamento', inicioMes.toISOString())
+        .lte('data_pagamento', fimMes.toISOString());
+      
+      if (pagError) throw pagError;
+      
+      return (pagamentos || []).reduce((sum, p) => sum + (Number(p.valor_pago) || 0), 0);
+    },
+    enabled: !!clinica?.id && taxaImposto > 0,
+  });
+
   // Montar lista de custos com status de pagamento (fixos e variáveis mensais)
   const custosComPagamento: CustoComPagamento[] = custos
     .filter(c => c.frequencia === 'mensal' && c.ativo)
@@ -114,8 +169,31 @@ export function useCustosPagamentos(mesReferencia?: string) {
         status: pagamento?.status || 'pendente',
         pagamento_id: pagamento?.id || null,
         ultimo_valor_pago: ultimoValorPago,
+        is_imposto: false,
       };
     });
+
+  // Adicionar linha automática de imposto se a clínica tem taxa configurada
+  if (taxaImposto > 0) {
+    const receitaMes = receitaMesQuery.data || 0;
+    const impostoEstimado = (receitaMes * taxaImposto) / 100;
+    
+    const pagamentoImposto = pagamentosQuery.data?.find(p => p.custo_id === IMPOSTO_CUSTO_ID);
+    const ultimoValorPagoImposto = ultimosPagamentosQuery.data?.[IMPOSTO_CUSTO_ID] || null;
+    
+    custosComPagamento.push({
+      custo_id: IMPOSTO_CUSTO_ID,
+      nome: `Imposto (${taxaImposto}%)`,
+      tipo: 'fixo',
+      frequencia: 'mensal',
+      valor_estimado: impostoEstimado,
+      valor_pago: pagamentoImposto?.valor_pago || null,
+      status: pagamentoImposto?.status || 'pendente',
+      pagamento_id: pagamentoImposto?.id || null,
+      ultimo_valor_pago: ultimoValorPagoImposto,
+      is_imposto: true,
+    });
+  }
 
   // Criar ou atualizar pagamento
   const salvarPagamento = useMutation({
@@ -204,7 +282,7 @@ export function useCustosPagamentos(mesReferencia?: string) {
   const precisaConfirmacao = mesPassado && custosPendentes > 0;
 
   return {
-    isLoading: pagamentosQuery.isLoading || ultimosPagamentosQuery.isLoading,
+    isLoading: pagamentosQuery.isLoading || ultimosPagamentosQuery.isLoading || receitaMesQuery.isLoading,
     custosComPagamento,
     mesReferencia: mesAtual,
     totalEstimado,
@@ -214,6 +292,7 @@ export function useCustosPagamentos(mesReferencia?: string) {
     precisaConfirmacao,
     salvarPagamento,
     confirmarTodosMes,
+    impostoId: IMPOSTO_CUSTO_ID, // Exportar para uso em outros componentes
   };
 }
 

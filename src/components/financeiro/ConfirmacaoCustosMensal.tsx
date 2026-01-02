@@ -266,11 +266,24 @@ export function ConfirmacaoCustosMensal() {
               </TableHeader>
               <TableBody>
                 {custosComPagamento.map((item) => (
-                  <TableRow key={item.custo_id}>
-                    <TableCell className="font-medium">{item.nome}</TableCell>
+                  <TableRow key={item.custo_id} className={item.is_imposto ? 'bg-amber-500/5' : ''}>
+                    <TableCell className="font-medium">
+                      {item.nome}
+                      {item.is_imposto && (
+                        <span className="text-xs text-muted-foreground ml-2">
+                          (automático)
+                        </span>
+                      )}
+                    </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className={item.tipo === 'fixo' ? 'text-primary' : 'text-warning'}>
-                        {item.tipo === 'fixo' ? 'Fixo' : 'Variável'}
+                      <Badge variant="outline" className={
+                        item.is_imposto 
+                          ? 'text-amber-600 border-amber-500/50' 
+                          : item.tipo === 'fixo' 
+                            ? 'text-primary' 
+                            : 'text-warning'
+                      }>
+                        {item.is_imposto ? 'Imposto' : item.tipo === 'fixo' ? 'Fixo' : 'Variável'}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right text-muted-foreground">
