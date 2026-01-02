@@ -24,7 +24,7 @@ import { formatCurrency } from '@/lib/utils';
 
 export function SimuladorMeta() {
   const [metaDesejada, setMetaDesejada] = useState(10000);
-  const { isLoading, resultado, temHistorico } = useSimuladorMeta(metaDesejada);
+  const { isLoading, resultado, temHistorico, error, debug } = useSimuladorMeta(metaDesejada);
 
   if (isLoading) {
     return (
@@ -46,8 +46,18 @@ export function SimuladorMeta() {
             <Target className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-lg font-medium mb-2">Sem dados históricos suficientes</h3>
             <p className="text-muted-foreground">
-              O simulador precisa de agendamentos realizados nos últimos 3 meses para calcular 
+              O simulador precisa de agendamentos realizados nos últimos 3 meses para calcular
               a distribuição realista de serviços.
+            </p>
+
+            {error && (
+              <p className="mt-4 text-sm text-destructive">
+                Erro ao carregar histórico: {error.message}
+              </p>
+            )}
+
+            <p className="mt-3 text-xs text-muted-foreground">
+              Profissionais detectados: {debug?.profissionaisCount ?? 0} • Agendamentos carregados (6m): {debug?.agendamentosCount ?? 0}
             </p>
           </div>
         </CardContent>
