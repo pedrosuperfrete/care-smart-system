@@ -59,7 +59,6 @@ const custosSugeridos = {
   variaveis: [
     { nome: 'Materiais descartáveis', valor: 15, descricao: 'Luvas, máscaras, etc. por atendimento' },
     { nome: 'Insumos médicos', valor: 25, descricao: 'Medicamentos e materiais por procedimento' },
-    { nome: 'Taxa de cartão', valor: 0, descricao: 'Percentual sobre pagamentos em cartão' },
     { nome: 'Comissão por atendimento', valor: 0, descricao: 'Se houver pagamento por sessão' },
   ],
 };

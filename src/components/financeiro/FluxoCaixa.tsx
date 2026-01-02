@@ -17,7 +17,8 @@ import {
   ArrowDownCircle,
   Wallet,
   Calendar,
-  Receipt
+  Receipt,
+  CreditCard
 } from 'lucide-react';
 import { useFluxoCaixa, useDespesasAvulsas, DespesaAvulsaInput } from '@/hooks/useFluxoCaixa';
 import { formatCurrency } from '@/lib/utils';
@@ -84,7 +85,8 @@ export function FluxoCaixa() {
 
   const chartData = fluxo.fluxoMensal.map(m => ({
     name: m.mesFormatado,
-    Receitas: m.receitas,
+    'Receita Bruta': m.receitaBruta,
+    'Taxas Cartão': m.taxasCartao,
     Despesas: m.totalDespesas,
     Saldo: m.saldo,
   }));
@@ -97,15 +99,32 @@ export function FluxoCaixa() {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <ArrowUpCircle className="h-4 w-4 text-success" />
-              Total Receitas
+              Receita Bruta
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-success">
-              R$ {formatCurrency(fluxo.totalReceitas)}
+              R$ {formatCurrency(fluxo.totalReceitasBrutas)}
             </div>
             <p className="text-xs text-muted-foreground">
               Últimos {mesesAtras} meses
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <CreditCard className="h-4 w-4 text-warning" />
+              Taxas de Cartão
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-warning">
+              R$ {formatCurrency(fluxo.totalTaxasCartao)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Crédito: {fluxo.taxaCredito}% / Débito: {fluxo.taxaDebito}%
             </p>
           </CardContent>
         </Card>
@@ -122,7 +141,7 @@ export function FluxoCaixa() {
               R$ {formatCurrency(fluxo.totalDespesas)}
             </div>
             <p className="text-xs text-muted-foreground">
-              Fixas + Variáveis + Avulsas
+              Inclui taxas de cartão
             </p>
           </CardContent>
         </Card>
@@ -208,7 +227,8 @@ export function FluxoCaixa() {
               />
               <Legend />
               <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" />
-              <Bar dataKey="Receitas" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="Receita Bruta" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="Taxas Cartão" fill="hsl(var(--warning))" radius={[4, 4, 0, 0]} />
               <Bar dataKey="Despesas" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -228,11 +248,12 @@ export function FluxoCaixa() {
             <TableHeader>
               <TableRow>
                 <TableHead>Mês</TableHead>
-                <TableHead className="text-right">Receitas</TableHead>
+                <TableHead className="text-right">Receita Bruta</TableHead>
+                <TableHead className="text-right">Taxas Cartão</TableHead>
+                <TableHead className="text-right">Receita Líquida</TableHead>
                 <TableHead className="text-right">Despesas Fixas</TableHead>
                 <TableHead className="text-right">Despesas Variáveis</TableHead>
                 <TableHead className="text-right">Despesas Avulsas</TableHead>
-                <TableHead className="text-right">Total Despesas</TableHead>
                 <TableHead className="text-right">Saldo</TableHead>
               </TableRow>
             </TableHeader>
@@ -241,20 +262,23 @@ export function FluxoCaixa() {
                 <TableRow key={mes.mes}>
                   <TableCell className="font-medium capitalize">{mes.mesFormatado}</TableCell>
                   <TableCell className="text-right text-success">
+                    R$ {formatCurrency(mes.receitaBruta)}
+                  </TableCell>
+                  <TableCell className="text-right text-warning">
+                    {mes.taxasCartao > 0 ? `-R$ ${formatCurrency(mes.taxasCartao)}` : '-'}
+                  </TableCell>
+                  <TableCell className="text-right text-success font-medium">
                     R$ {formatCurrency(mes.receitas)}
                   </TableCell>
                   <TableCell className="text-right text-muted-foreground">
                     R$ {formatCurrency(mes.despesasFixas)}
                   </TableCell>
                   <TableCell className="text-right text-muted-foreground">
-                    R$ {formatCurrency(mes.despesasVariaveis)}
+                    R$ {formatCurrency(mes.despesasVariaveis - mes.taxasCartao)}
                     <span className="text-xs ml-1">({mes.atendimentosRealizados} atend.)</span>
                   </TableCell>
                   <TableCell className="text-right text-muted-foreground">
                     R$ {formatCurrency(mes.despesasAvulsas)}
-                  </TableCell>
-                  <TableCell className="text-right text-destructive font-medium">
-                    R$ {formatCurrency(mes.totalDespesas)}
                   </TableCell>
                   <TableCell className={`text-right font-bold ${mes.saldo >= 0 ? 'text-success' : 'text-destructive'}`}>
                     {mes.saldo >= 0 ? '+' : ''}R$ {formatCurrency(mes.saldo)}
