@@ -34,15 +34,19 @@ export interface FluxoMensal {
   mesFormatado: string;
   receitas: number;
   receitaBruta: number;
+  receitaPrevista: number; // Parcelas futuras certas a receber
   taxasCartao: number;
+  taxasPrevistas: number; // Taxas das parcelas futuras
   despesasFixas: number;
   despesasFixasReal: number; // Valor real confirmado
   despesasFixasEstimado: number; // Valor estimado
   isEstimado: boolean; // Se usa estimativa ou valor real
+  isFuturo: boolean; // Se é mês futuro (previsão)
   despesasVariaveis: number;
   despesasAvulsas: number;
   totalDespesas: number;
   saldo: number;
+  saldoPrevisto: number; // Saldo considerando receitas previstas
   atendimentosRealizados: number;
 }
 
@@ -148,15 +152,16 @@ export function useDespesasAvulsas(startDate?: Date, endDate?: Date) {
   };
 }
 
-export function useFluxoCaixa(mesesAtras: number = 6) {
+export function useFluxoCaixa(mesesAtras: number = 6, mesesFuturos: number = 3) {
   const { data: clinica } = useClinica();
   const { custos } = useCustos();
   const { pagamentos: pagamentosCustosRange, pagamentosPorMes } = useCustosPagamentosRange(mesesAtras);
 
-  // Calcular período
+  // Calcular período (inclui meses futuros para previsão)
   const hoje = new Date();
   const dataInicio = startOfMonth(subMonths(hoje, mesesAtras - 1));
-  const dataFim = endOfMonth(hoje);
+  const dataFimPassado = endOfMonth(hoje);
+  const dataFimFuturo = endOfMonth(addMonths(hoje, mesesFuturos));
 
   // Primeiro buscar IDs dos profissionais da clínica
   const profissionaisQuery = useQuery({
@@ -205,7 +210,7 @@ export function useFluxoCaixa(mesesAtras: number = 6) {
         .in('agendamento_id', agendamentosIdsQuery.data)
         .eq('status', 'pago')
         .gte('data_pagamento', dataInicio.toISOString())
-        .lte('data_pagamento', dataFim.toISOString());
+        .lte('data_pagamento', dataFimPassado.toISOString());
 
       if (error) throw error;
       return data || [];
@@ -213,10 +218,37 @@ export function useFluxoCaixa(mesesAtras: number = 6) {
     enabled: !!agendamentosIdsQuery.data && agendamentosIdsQuery.data.length > 0,
   });
 
+  // Buscar pagamentos parcelados pendentes para previsão de receitas futuras
+  const parcelasFuturasQuery = useQuery({
+    queryKey: ['fluxo-caixa-parcelas-futuras', agendamentosIdsQuery.data],
+    queryFn: async () => {
+      if (!agendamentosIdsQuery.data || agendamentosIdsQuery.data.length === 0) return [];
+
+      // Buscar pagamentos parcelados que ainda têm parcelas pendentes
+      const { data, error } = await supabase
+        .from('pagamentos')
+        .select('*')
+        .in('agendamento_id', agendamentosIdsQuery.data)
+        .eq('status', 'pago')
+        .eq('parcelado', true)
+        .not('data_pagamento', 'is', null);
+
+      if (error) throw error;
+      
+      // Filtrar apenas os que têm parcelas futuras pendentes
+      return (data || []).filter(p => {
+        const parcelasTotais = p.parcelas_totais || 1;
+        const parcelasRecebidas = p.parcelas_recebidas || parcelasTotais;
+        return parcelasRecebidas < parcelasTotais;
+      });
+    },
+    enabled: !!agendamentosIdsQuery.data && agendamentosIdsQuery.data.length > 0,
+  });
+
   // Buscar despesas avulsas - buscar todas que possam ter parcelas no período
   // Para isso, buscamos despesas que iniciaram até 12 meses antes (máximo de parcelas possíveis)
   const despesasAvulsasQuery = useQuery({
-    queryKey: ['fluxo-caixa-despesas', clinica?.id, dataInicio.toISOString(), dataFim.toISOString()],
+    queryKey: ['fluxo-caixa-despesas', clinica?.id, dataInicio.toISOString(), dataFimFuturo.toISOString()],
     queryFn: async () => {
       if (!clinica?.id) return [];
 
@@ -229,7 +261,7 @@ export function useFluxoCaixa(mesesAtras: number = 6) {
         .select('*')
         .eq('clinica_id', clinica.id)
         .gte('data_pagamento', dataInicioExtendida.toISOString())
-        .lte('data_pagamento', dataFim.toISOString());
+        .lte('data_pagamento', dataFimFuturo.toISOString());
 
       if (error) throw error;
       return data as DespesaAvulsa[];
@@ -249,7 +281,7 @@ export function useFluxoCaixa(mesesAtras: number = 6) {
         .in('profissional_id', profissionaisQuery.data)
         .eq('status', 'realizado')
         .gte('data_inicio', dataInicio.toISOString())
-        .lte('data_inicio', dataFim.toISOString());
+        .lte('data_inicio', dataFimPassado.toISOString());
 
       if (error) throw error;
       return data || [];
@@ -265,17 +297,24 @@ export function useFluxoCaixa(mesesAtras: number = 6) {
     .filter(c => c.tipo === 'variavel' && c.frequencia === 'por_atendimento')
     .reduce((sum, c) => sum + Number(c.valor_estimado), 0);
 
+  // Custos recorrentes mensais (fixos + variáveis mensais)
+  const custosRecorrentesMensais = custos.filter(c => c.frequencia === 'mensal' && c.ativo);
+  const custoRecorrenteEstimado = custosRecorrentesMensais.reduce((sum, c) => sum + Number(c.valor_estimado), 0);
+
   // Taxas de cartão da clínica
   const taxaCredito = Number(clinica?.taxa_cartao_credito) || 0;
   const taxaDebito = Number(clinica?.taxa_cartao_debito) || 0;
 
-  // Gerar fluxo por mês
-  const meses = eachMonthOfInterval({ start: dataInicio, end: dataFim });
+  // Gerar fluxo por mês (inclui meses futuros)
+  const meses = eachMonthOfInterval({ start: dataInicio, end: dataFimFuturo });
   
   // Processar pagamentos parcelados - distribuir receita e taxas pelos meses
   const receitasBrutasPorMes: Record<string, number> = {};
+  const receitasPrevistasPorMes: Record<string, number> = {}; // Parcelas futuras confirmadas
   const taxasCartaoPorMes: Record<string, number> = {};
+  const taxasPrevistasPorMes: Record<string, number> = {};
   
+  // Processar receitas já pagas
   (receitasQuery.data || []).forEach(p => {
     if (!p.data_pagamento) return;
     
@@ -293,12 +332,45 @@ export function useFluxoCaixa(mesesAtras: number = 6) {
     }
     const taxaParcela = (valorParcela * taxaPercentual) / 100;
     
-    // Distribuir o valor pelas parcelas
-    for (let i = 0; i < parcelasTotais; i++) {
+    // Distribuir o valor pelas parcelas já recebidas
+    const parcelasRecebidas = p.parcelas_recebidas || parcelasTotais;
+    for (let i = 0; i < parcelasRecebidas; i++) {
       const mesParcela = addMonths(dataPagamento, i);
       const mesKey = format(mesParcela, 'yyyy-MM');
       receitasBrutasPorMes[mesKey] = (receitasBrutasPorMes[mesKey] || 0) + valorParcela;
       taxasCartaoPorMes[mesKey] = (taxasCartaoPorMes[mesKey] || 0) + taxaParcela;
+    }
+  });
+
+  // Processar parcelas futuras (receitas certas a receber)
+  (parcelasFuturasQuery.data || []).forEach(p => {
+    if (!p.data_pagamento) return;
+    
+    const parcelasTotais = p.parcelas_totais || 1;
+    const parcelasRecebidas = p.parcelas_recebidas || 0;
+    const valorParcela = (Number(p.valor_total) || 0) / parcelasTotais;
+    const dataPagamento = new Date(p.data_pagamento);
+    const formaPagamento = p.forma_pagamento;
+    
+    // Calcular taxa de cartão
+    let taxaPercentual = 0;
+    if (formaPagamento === 'cartao_credito') {
+      taxaPercentual = taxaCredito;
+    } else if (formaPagamento === 'cartao_debito') {
+      taxaPercentual = taxaDebito;
+    }
+    const taxaParcela = (valorParcela * taxaPercentual) / 100;
+    
+    // Distribuir parcelas ainda não recebidas (futuras)
+    for (let i = parcelasRecebidas; i < parcelasTotais; i++) {
+      const mesParcela = addMonths(dataPagamento, i);
+      const mesKey = format(mesParcela, 'yyyy-MM');
+      
+      // Só adicionar se for mês futuro
+      if (isAfter(mesParcela, hoje) || isSameMonth(mesParcela, hoje)) {
+        receitasPrevistasPorMes[mesKey] = (receitasPrevistasPorMes[mesKey] || 0) + valorParcela;
+        taxasPrevistasPorMes[mesKey] = (taxasPrevistasPorMes[mesKey] || 0) + taxaParcela;
+      }
     }
   });
   
@@ -309,15 +381,18 @@ export function useFluxoCaixa(mesesAtras: number = 6) {
     const mesFuturo = isAfter(startOfMonth(mes), endOfMonth(hoje));
     const mesPassado = isBefore(endOfMonth(mes), startOfMonth(hoje));
     
-    // Receita bruta do mês
+    // Receita bruta do mês (já recebida)
     const receitaBrutaMes = receitasBrutasPorMes[mesKey] || 0;
+    // Receita prevista (parcelas futuras certas)
+    const receitaPrevistaMes = receitasPrevistasPorMes[mesKey] || 0;
     // Taxas de cartão do mês
     const taxasCartaoMes = taxasCartaoPorMes[mesKey] || 0;
+    const taxasPrevistasMes = taxasPrevistasPorMes[mesKey] || 0;
     // Receita líquida (descontando taxas de cartão)
     const receitaLiquidaMes = receitaBrutaMes - taxasCartaoMes;
 
-    // Atendimentos do mês
-    const atendimentosMes = (atendimentosQuery.data || [])
+    // Atendimentos do mês (só para meses passados/atual)
+    const atendimentosMes = mesFuturo ? 0 : (atendimentosQuery.data || [])
       .filter(a => format(new Date(a.data_inicio), 'yyyy-MM') === mesKey)
       .length;
 
@@ -339,10 +414,10 @@ export function useFluxoCaixa(mesesAtras: number = 6) {
         return sum + valorNoMes;
       }, 0);
 
-    // Custo variável total (baseado em atendimentos)
+    // Custo variável total (baseado em atendimentos - só para meses passados)
     const despesasVariaveisMes = atendimentosMes * custoVariavelPorAtendimento;
 
-    // ============= LÓGICA DE CUSTOS FIXOS: REAL vs ESTIMADO =============
+    // ============= LÓGICA DE CUSTOS: REAL vs ESTIMADO =============
     // Buscar pagamentos confirmados para este mês
     const pagamentosDoMes = pagamentosPorMes[mesKey] || [];
     
@@ -357,62 +432,80 @@ export function useFluxoCaixa(mesesAtras: number = 6) {
       }
     });
     
-    // Calcular estimativa para custos não confirmados
+    // Calcular estimativa para custos não confirmados (usando custos recorrentes)
     let despesasFixasEstimado = 0;
-    custosFixosMensais.forEach(custo => {
+    custosRecorrentesMensais.forEach(custo => {
       if (!custosConfirmados.has(custo.id)) {
         despesasFixasEstimado += Number(custo.valor_estimado);
       }
     });
     
     // Determinar se este mês usa valores estimados
-    const isEstimado = mesFuturo || (mesAtualCalendario && despesasFixasEstimado > 0) || (!mesPassado && custosConfirmados.size < custosFixosMensais.length);
+    const isEstimado = mesFuturo || (mesAtualCalendario && despesasFixasEstimado > 0) || (!mesPassado && custosConfirmados.size < custosRecorrentesMensais.length);
     
     // Valor total de despesas fixas (real + estimado para não confirmados)
     const despesasFixas = despesasFixasReal + despesasFixasEstimado;
 
-    // Taxas de cartão entram como despesa variável adicional
+    // Total de despesas
     const totalDespesas = despesasFixas + despesasVariaveisMes + despesasAvulsasMes + taxasCartaoMes;
+    
+    // Saldo realizado
     const saldo = receitaBrutaMes - totalDespesas;
+    
+    // Saldo previsto (inclui receitas certas a receber - taxas previstas)
+    const despesasPrevistas = mesFuturo ? (despesasFixas + despesasAvulsasMes + taxasPrevistasMes) : totalDespesas;
+    const receitaTotalPrevista = receitaBrutaMes + receitaPrevistaMes;
+    const saldoPrevisto = receitaTotalPrevista - despesasPrevistas;
 
     return {
       mes: mesKey,
       mesFormatado,
       receitas: receitaLiquidaMes,
       receitaBruta: receitaBrutaMes,
+      receitaPrevista: receitaPrevistaMes,
       taxasCartao: taxasCartaoMes,
+      taxasPrevistas: taxasPrevistasMes,
       despesasFixas,
       despesasFixasReal,
       despesasFixasEstimado,
       isEstimado,
+      isFuturo: mesFuturo,
       despesasVariaveis: despesasVariaveisMes + taxasCartaoMes,
       despesasAvulsas: despesasAvulsasMes,
       totalDespesas,
       saldo,
+      saldoPrevisto,
       atendimentosRealizados: atendimentosMes,
     };
   });
 
-  // Totais
-  const totalReceitasBrutas = fluxoMensal.reduce((sum, m) => sum + m.receitaBruta, 0);
-  const totalTaxasCartao = fluxoMensal.reduce((sum, m) => sum + m.taxasCartao, 0);
-  const totalReceitas = fluxoMensal.reduce((sum, m) => sum + m.receitas, 0);
-  const totalDespesas = fluxoMensal.reduce((sum, m) => sum + m.totalDespesas, 0);
+  // Totais (separando passado de futuro)
+  const fluxoPassado = fluxoMensal.filter(m => !m.isFuturo);
+  const fluxoFuturo = fluxoMensal.filter(m => m.isFuturo);
+  
+  const totalReceitasBrutas = fluxoPassado.reduce((sum, m) => sum + m.receitaBruta, 0);
+  const totalReceitasPrevistas = fluxoFuturo.reduce((sum, m) => sum + m.receitaPrevista, 0);
+  const totalTaxasCartao = fluxoPassado.reduce((sum, m) => sum + m.taxasCartao, 0);
+  const totalReceitas = fluxoPassado.reduce((sum, m) => sum + m.receitas, 0);
+  const totalDespesas = fluxoPassado.reduce((sum, m) => sum + m.totalDespesas, 0);
+  const totalDespesasPrevistas = fluxoFuturo.reduce((sum, m) => sum + m.totalDespesas, 0);
   const saldoTotal = totalReceitasBrutas - totalDespesas;
-  const mediaReceitaMensal = totalReceitas / meses.length;
-  const mediaDespesaMensal = totalDespesas / meses.length;
+  const mediaReceitaMensal = fluxoPassado.length > 0 ? totalReceitas / fluxoPassado.length : 0;
+  const mediaDespesaMensal = fluxoPassado.length > 0 ? totalDespesas / fluxoPassado.length : 0;
 
   return {
-    isLoading: profissionaisQuery.isLoading || agendamentosIdsQuery.isLoading || receitasQuery.isLoading || despesasAvulsasQuery.isLoading || atendimentosQuery.isLoading,
+    isLoading: profissionaisQuery.isLoading || agendamentosIdsQuery.isLoading || receitasQuery.isLoading || despesasAvulsasQuery.isLoading || atendimentosQuery.isLoading || parcelasFuturasQuery.isLoading,
     fluxoMensal,
     totalReceitas,
     totalReceitasBrutas,
+    totalReceitasPrevistas,
     totalTaxasCartao,
     totalDespesas,
+    totalDespesasPrevistas,
     saldoTotal,
     mediaReceitaMensal,
     mediaDespesaMensal,
-    custoFixoMensal: custoFixoEstimado,
+    custoFixoMensal: custoRecorrenteEstimado,
     custoVariavelPorAtendimento,
     taxaCredito,
     taxaDebito,
