@@ -334,25 +334,35 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
                   <p className="font-medium">{pagamento.data_vencimento ? formatDate(pagamento.data_vencimento) : 'Não informado'}</p>
                 )}
               </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Parcelas</p>
-                {isEditing ? (
-                  <Input
-                    type="number"
-                    min="1"
-                    max="24"
-                    value={parcelasTotais}
-                    onChange={(e) => setParcelasTotais(Math.max(1, parseInt(e.target.value) || 1))}
-                    className="mt-1"
-                  />
-                ) : (
-                  <p className="font-medium">
-                    {pagamento.parcelas_totais > 1 
-                      ? `${pagamento.parcelas_recebidas || 0}/${pagamento.parcelas_totais}x` 
-                      : 'À vista'}
-                  </p>
-                )}
-              </div>
+              {/* Parcelas - só mostra quando é cartão de crédito ou se já está parcelado */}
+              {(isEditing ? formaPagamento === 'cartao_credito' : pagamento.parcelas_totais > 1 || pagamento.forma_pagamento === 'cartao_credito') && (
+                <div>
+                  <p className="text-xs text-muted-foreground">Parcelas</p>
+                  {isEditing && formaPagamento === 'cartao_credito' ? (
+                    <Select 
+                      value={String(parcelasTotais)} 
+                      onValueChange={(value) => setParcelasTotais(parseInt(value))}
+                    >
+                      <SelectTrigger className="mt-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map((num) => (
+                          <SelectItem key={num} value={String(num)}>
+                            {num}x {Number(pagamento.valor_total) ? `de R$ ${formatCurrency(Number(pagamento.valor_total) / num)}` : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <p className="font-medium">
+                      {pagamento.parcelas_totais > 1 
+                        ? `${pagamento.parcelas_recebidas || 0}/${pagamento.parcelas_totais}x` 
+                        : 'À vista'}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             {isEditing && (
