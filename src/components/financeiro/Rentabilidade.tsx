@@ -1,18 +1,12 @@
-import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { 
   Plus, 
   TrendingUp, 
   TrendingDown,
   DollarSign,
-  Target,
   AlertTriangle,
   Calculator,
   Building2,
@@ -20,46 +14,16 @@ import {
   Lightbulb
 } from 'lucide-react';
 import { useCustos, useRentabilidade } from '@/hooks/useCustos';
-import { useTiposServicos } from '@/hooks/useTiposServicos';
 import { formatCurrency } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { SimuladorMeta } from './SimuladorMeta';
 
 export function Rentabilidade() {
   const { custos, isLoading: custosLoading } = useCustos();
-  const { data: tiposServicos = [] } = useTiposServicos();
   const rentabilidade = useRentabilidade();
   const navigate = useNavigate();
   
-  const [metaMensal, setMetaMensal] = useState(5000);
-  const [servicoSelecionado, setServicoSelecionado] = useState<string>('todos');
-  
   const custosCadastrados = custos.length > 0;
-
-  // Dados do serviço selecionado
-  const servicoInfo = servicoSelecionado !== 'todos' 
-    ? tiposServicos.find(s => s.id === servicoSelecionado)
-    : null;
-
-  const dadosServicoSelecionado = servicoSelecionado === 'todos'
-    ? {
-        preco: rentabilidade.ticketMedio,
-        margem: rentabilidade.margemMedia,
-        breakEven: rentabilidade.breakEven,
-      }
-    : rentabilidade.rentabilidadePorServico.find(s => s.id === servicoSelecionado) || {
-        preco: 0,
-        margem: 0,
-        breakEven: Infinity,
-      };
-
-  // Calcular quantos atendimentos para atingir a meta
-  const margemParaCalculo = servicoSelecionado === 'todos' 
-    ? rentabilidade.margemMedia 
-    : (dadosServicoSelecionado as any).margem || 0;
-  const atendimentosParaMeta = margemParaCalculo > 0 
-    ? Math.ceil((metaMensal + rentabilidade.custoFixoTotal) / margemParaCalculo)
-    : Infinity;
 
   if (custosLoading) {
     return <div className="text-center py-8">Carregando dados...</div>;
@@ -141,111 +105,8 @@ export function Rentabilidade() {
         </Card>
       </div>
 
-      {/* Seletor de Serviço */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <Label className="text-sm font-medium">Calcular para qual serviço?</Label>
-              <p className="text-xs text-muted-foreground mt-1">
-                Selecione um serviço específico ou veja a média de todos
-              </p>
-            </div>
-            <Select value={servicoSelecionado} onValueChange={setServicoSelecionado}>
-              <SelectTrigger className="w-[250px]">
-                <SelectValue placeholder="Selecione um serviço" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Média de todos os serviços</SelectItem>
-                {tiposServicos.filter(s => s.preco && s.preco > 0).map(servico => (
-                  <SelectItem key={servico.id} value={servico.id}>
-                    {servico.nome} (R$ {formatCurrency(servico.preco || 0)})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Card de Break-even */}
-      <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
-        <CardContent className="pt-6">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Target className="h-5 w-5 text-primary" />
-                <h3 className="font-semibold">Ponto de Equilíbrio</h3>
-                {servicoInfo && (
-                  <Badge variant="outline" className="ml-2">{servicoInfo.nome}</Badge>
-                )}
-              </div>
-              <p className="text-3xl font-bold text-primary mb-1">
-                {servicoSelecionado === 'todos' 
-                  ? (rentabilidade.breakEven === Infinity ? '∞' : rentabilidade.breakEven)
-                  : Math.ceil(rentabilidade.custoFixoTotal / Math.max(1, (dadosServicoSelecionado as any).margem || 1))
-                } atendimentos/mês
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {servicoSelecionado === 'todos' 
-                  ? 'É o mínimo que você precisa atender (média) para cobrir todos os seus custos.'
-                  : `É o mínimo de "${servicoInfo?.nome}" que você precisa fazer para cobrir todos os custos.`
-                }
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-muted-foreground">Margem por atendimento</p>
-              <p className={`text-xl font-bold ${(dadosServicoSelecionado as any).margem > 0 ? 'text-success' : 'text-destructive'}`}>
-                R$ {formatCurrency((dadosServicoSelecionado as any).margem || 0)}
-              </p>
-              {servicoInfo && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Preço: R$ {formatCurrency(servicoInfo.preco)}
-                </p>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Calculadora de meta simples */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Calculator className="h-4 w-4" />
-            Calculadora Rápida de Meta
-          </CardTitle>
-          <CardDescription>
-            Quanto você quer lucrar por mês? Veja quantos atendimentos precisa fazer.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-end gap-4">
-            <div className="flex-1">
-              <Label htmlFor="meta">Meta de lucro mensal</Label>
-              <div className="relative mt-1">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">R$</span>
-                <Input
-                  id="meta"
-                  type="number"
-                  value={metaMensal}
-                  onChange={(e) => setMetaMensal(Number(e.target.value))}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <div className="flex-1 p-4 bg-primary/5 rounded-lg">
-              <p className="text-sm text-muted-foreground">Você precisa fazer</p>
-              <p className="text-2xl font-bold text-primary">
-                {atendimentosParaMeta === Infinity ? '∞' : atendimentosParaMeta} atendimentos
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {servicoSelecionado === 'todos' ? '(média de todos os serviços)' : `de "${servicoInfo?.nome}"`}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Simulador de Meta */}
+      <SimuladorMeta />
 
       {/* Alerta de serviços com margem negativa */}
       {rentabilidade.servicoMenosRentavel && rentabilidade.servicoMenosRentavel.margem <= 0 && (
@@ -265,9 +126,6 @@ export function Rentabilidade() {
           </CardContent>
         </Card>
       )}
-
-      {/* Simulador de Meta (novo) */}
-      <SimuladorMeta />
 
       {/* Análise por Serviço */}
       {rentabilidade.rentabilidadePorServico.length > 0 && (
