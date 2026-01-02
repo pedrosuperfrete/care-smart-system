@@ -11,6 +11,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
+import { ConfirmacaoCustosMensal } from './ConfirmacaoCustosMensal';
 import { 
   Plus, 
   Trash2, 
@@ -27,7 +28,8 @@ import {
   Zap,
   Lightbulb,
   Users,
-  ArrowUpCircle
+  ArrowUpCircle,
+  ClipboardCheck
 } from 'lucide-react';
 import { useCustos, useRentabilidade, useMixServicos, CustoInput } from '@/hooks/useCustos';
 import { useTiposServicos } from '@/hooks/useTiposServicos';
@@ -192,7 +194,7 @@ export function CustosRentabilidade() {
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="dashboard" className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4" />
             Dashboard
@@ -200,6 +202,10 @@ export function CustosRentabilidade() {
           <TabsTrigger value="custos" className="flex items-center gap-2">
             <PiggyBank className="h-4 w-4" />
             Cadastrar Custos
+          </TabsTrigger>
+          <TabsTrigger value="confirmar" className="flex items-center gap-2">
+            <ClipboardCheck className="h-4 w-4" />
+            Confirmar Custos
           </TabsTrigger>
           <TabsTrigger value="servicos" className="flex items-center gap-2">
             <Calculator className="h-4 w-4" />
@@ -745,6 +751,11 @@ export function CustosRentabilidade() {
               </Card>
             </div>
           </div>
+        </TabsContent>
+
+        {/* Confirmar Custos Mensais */}
+        <TabsContent value="confirmar" className="space-y-6">
+          <ConfirmacaoCustosMensal />
         </TabsContent>
 
         {/* Rentabilidade por Serviço */}
