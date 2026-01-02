@@ -123,7 +123,7 @@ export function useSimuladorMeta(metaLiquidaDesejada: number) {
           status,
           valor,
           profissional_id,
-          pagamentos(forma_pagamento, valor_pago, status)
+          pagamentos!fk_pagamento_agendamento(forma_pagamento, valor_pago, status)
         `)
         .in('profissional_id', profissionaisQuery.data)
         .gte('data_inicio', seisMesesAtras.toISOString())
@@ -538,8 +538,13 @@ export function useSimuladorMeta(metaLiquidaDesejada: number) {
 
   return {
     isLoading: profissionaisQuery.isLoading || agendamentosQuery.isLoading || rentabilidade.isLoading,
+    error: (profissionaisQuery.error as Error | null) || (agendamentosQuery.error as Error | null) || null,
     resultado,
     temHistorico: mixHistorico.length > 0,
     mixHistorico,
+    debug: {
+      profissionaisCount: profissionaisQuery.data?.length ?? 0,
+      agendamentosCount: agendamentosQuery.data?.length ?? 0,
+    },
   };
 }
