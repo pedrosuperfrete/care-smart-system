@@ -139,7 +139,9 @@ export function SimuladorMeta() {
                 Ponto de Equilíbrio
               </p>
             </div>
-            <p className="text-2xl font-bold">{equilibrio.totalAtendimentosNecessarios}</p>
+            <p className="text-2xl font-bold">
+              {equilibrio.totalAtendimentosNecessarios === Infinity ? '—' : equilibrio.totalAtendimentosNecessarios}
+            </p>
             <p className="text-sm text-muted-foreground">atendimentos/mês</p>
             <p className="text-xs text-muted-foreground mt-2">
               Faturamento: R$ {formatCurrency(equilibrio.faturamentoBrutoNecessario)}
@@ -159,7 +161,9 @@ export function SimuladorMeta() {
                 Para atingir a Meta
               </p>
             </div>
-            <p className="text-2xl font-bold">{meta.totalAtendimentosNecessarios}</p>
+            <p className="text-2xl font-bold">
+              {meta.totalAtendimentosNecessarios === Infinity ? '—' : meta.totalAtendimentosNecessarios}
+            </p>
             <p className="text-sm text-muted-foreground">atendimentos/mês</p>
             <p className="text-xs text-muted-foreground mt-2">
               Faturamento: R$ {formatCurrency(meta.faturamentoBrutoNecessario)}
@@ -188,7 +192,7 @@ export function SimuladorMeta() {
                 Cenário Atual (média)
               </p>
             </div>
-            <p className="text-2xl font-bold">{cenarioAtual.atendimentosMensais}</p>
+            <p className="text-2xl font-bold">{Math.round(cenarioAtual.atendimentosMensais)}</p>
             <p className="text-sm text-muted-foreground">atendimentos/mês</p>
             <p className="text-xs text-muted-foreground mt-2">
               Faturamento: R$ {formatCurrency(cenarioAtual.faturamentoMensal)}
