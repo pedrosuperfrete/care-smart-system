@@ -39,6 +39,7 @@ export interface ResultadoSimulacao {
     metaLiquida: number;
     faturamentoBrutoNecessario: number;
     receitaLiquidaEstimada: number;
+    receitaLiquidaAposImpostos: number;
     totalAtendimentosNecessarios: number;
     servicosMix: DistribuicaoServicos[];
   };
@@ -46,8 +47,10 @@ export interface ResultadoSimulacao {
   // Cenário atual
   cenarioAtual: {
     atendimentosMensais: number;
-    lucroMensal: number;
     faturamentoMensal: number;
+    lucroAntesImpostos: number;
+    impostoEstimado: number;
+    lucroLiquido: number; // Após impostos
   };
   
   // Saldo acumulado (histórico de meses)
@@ -66,6 +69,7 @@ export interface ResultadoSimulacao {
   // Custos
   custoFixoTotal: number;
   margemPonderada: number;
+  taxaImposto: number;
   
   // Insights
   insights: string[];
@@ -334,17 +338,21 @@ export function useSimuladorMeta(metaLiquidaDesejada: number) {
           metaLiquida: metaLiquidaDesejada,
           faturamentoBrutoNecessario: 0,
           receitaLiquidaEstimada: 0,
+          receitaLiquidaAposImpostos: 0,
           totalAtendimentosNecessarios: Infinity,
           servicosMix: [],
         },
         cenarioAtual: {
           atendimentosMensais: servicosComMargem.reduce((sum, s) => sum + s.volumeMensal, 0),
-          lucroMensal: servicosComMargem.reduce((sum, s) => sum + s.lucroTotalMensal, 0),
           faturamentoMensal: servicosComMargem.reduce((sum, s) => sum + (s.preco * s.volumeMensal), 0),
+          lucroAntesImpostos: servicosComMargem.reduce((sum, s) => sum + s.lucroTotalMensal, 0),
+          impostoEstimado: 0,
+          lucroLiquido: servicosComMargem.reduce((sum, s) => sum + s.lucroTotalMensal, 0),
         },
         saldoAcumulado: { meses: [], saldoTotal: 0, mesesRestantes: 0, metaMensalAjustada: metaLiquidaDesejada },
         custoFixoTotal,
         margemPonderada,
+        taxaImposto: 0,
         insights: [],
         metaViavel: false,
         alertas,
@@ -392,11 +400,18 @@ export function useSimuladorMeta(metaLiquidaDesejada: number) {
     const totalAtendimentosMeta = servicosMeta.reduce((sum, s) => sum + s.atendimentosNecessarios, 0);
     const faturamentoMeta = servicosMeta.reduce((sum, s) => sum + s.faturamentoParcial, 0);
     const receitaLiquidaMeta = servicosMeta.reduce((sum, s) => sum + s.contribuicaoLucro, 0);
+    
+    // Calcular imposto sobre o faturamento
+    const taxaImposto = Number((clinica as any)?.taxa_imposto) || 0;
+    const impostoMeta = (faturamentoMeta * taxaImposto) / 100;
+    const receitaLiquidaAposImpostosMeta = receitaLiquidaMeta - impostoMeta;
 
     // 5. Cenário atual (lucroTotalMensal já tem custos fixos rateados embutidos)
     const atendimentosAtuais = servicosComMargem.reduce((sum, s) => sum + s.volumeMensal, 0);
-    const lucroAtual = servicosComMargem.reduce((sum, s) => sum + s.lucroTotalMensal, 0);
+    const lucroAntesImpostos = servicosComMargem.reduce((sum, s) => sum + s.lucroTotalMensal, 0);
     const faturamentoAtual = servicosComMargem.reduce((sum, s) => sum + (s.preco * s.volumeMensal), 0);
+    const impostoAtual = (faturamentoAtual * taxaImposto) / 100;
+    const lucroLiquidoAtual = lucroAntesImpostos - impostoAtual;
 
     // 6. Saldo acumulado - calcular diferença entre lucro real e meta por mês
     const agora = new Date();
@@ -474,13 +489,16 @@ export function useSimuladorMeta(metaLiquidaDesejada: number) {
         metaLiquida: metaLiquidaDesejada,
         faturamentoBrutoNecessario: faturamentoMeta,
         receitaLiquidaEstimada: receitaLiquidaMeta,
+        receitaLiquidaAposImpostos: receitaLiquidaAposImpostosMeta,
         totalAtendimentosNecessarios: totalAtendimentosMeta,
         servicosMix: servicosMeta,
       },
       cenarioAtual: {
         atendimentosMensais: Math.round(atendimentosAtuais),
-        lucroMensal: lucroAtual,
         faturamentoMensal: faturamentoAtual,
+        lucroAntesImpostos,
+        impostoEstimado: impostoAtual,
+        lucroLiquido: lucroLiquidoAtual,
       },
       saldoAcumulado: {
         meses: mesesComSaldo,
@@ -490,6 +508,7 @@ export function useSimuladorMeta(metaLiquidaDesejada: number) {
       },
       custoFixoTotal,
       margemPonderada,
+      taxaImposto,
       insights,
       metaViavel,
       alertas,

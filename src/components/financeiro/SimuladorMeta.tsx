@@ -71,12 +71,12 @@ export function SimuladorMeta() {
     );
   }
 
-  const { equilibrio, meta, cenarioAtual, saldoAcumulado, custoFixoTotal, insights, alertas, metaViavel } = resultado;
+  const { equilibrio, meta, cenarioAtual, saldoAcumulado, custoFixoTotal, taxaImposto, insights, alertas, metaViavel } = resultado;
   const diferencaAtendimentosMeta = isFinite(meta.totalAtendimentosNecessarios) 
     ? meta.totalAtendimentosNecessarios - cenarioAtual.atendimentosMensais 
     : Infinity;
-  const percentualMeta = cenarioAtual.lucroMensal > 0 
-    ? Math.min((cenarioAtual.lucroMensal / metaDesejada) * 100, 100) 
+  const percentualMeta = cenarioAtual.lucroLiquido > 0 
+    ? Math.min((cenarioAtual.lucroLiquido / metaDesejada) * 100, 100) 
     : 0;
 
   const formatMes = (mesKey: string) => {
@@ -123,7 +123,8 @@ export function SimuladorMeta() {
                 <span className="text-sm font-medium">{percentualMeta.toFixed(0)}%</span>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Você ganha R$ {formatCurrency(cenarioAtual.lucroMensal)}/mês atualmente
+                Você ganha R$ {formatCurrency(cenarioAtual.lucroLiquido)}/mês atualmente
+                {taxaImposto > 0 && <span className="text-muted-foreground/70"> (após {taxaImposto}% de imposto)</span>}
               </p>
             </div>
           </div>
@@ -203,9 +204,14 @@ export function SimuladorMeta() {
             <p className="text-xs text-muted-foreground mt-2">
               Faturamento: R$ {formatCurrency(cenarioAtual.faturamentoMensal)}
             </p>
-            <p className={`text-xs mt-1 ${cenarioAtual.lucroMensal >= 0 ? 'text-success' : 'text-destructive'}`}>
-              Lucro: R$ {formatCurrency(cenarioAtual.lucroMensal)}
+            <p className={`text-xs mt-1 ${cenarioAtual.lucroLiquido >= 0 ? 'text-success' : 'text-destructive'}`}>
+              Lucro líquido: R$ {formatCurrency(cenarioAtual.lucroLiquido)}
             </p>
+            {taxaImposto > 0 && cenarioAtual.impostoEstimado > 0 && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Antes dos impostos: R$ {formatCurrency(cenarioAtual.lucroAntesImpostos)} | Imposto ({taxaImposto}%): R$ {formatCurrency(cenarioAtual.impostoEstimado)}
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>
