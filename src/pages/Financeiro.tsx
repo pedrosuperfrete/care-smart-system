@@ -15,8 +15,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { ReciboModal } from '@/components/financeiro/ReciboModal';
 import { CobrancaModal } from '@/components/financeiro/CobrancaModal';
 import { DateFilter } from '@/components/financeiro/DateFilter';
-import { CustosRentabilidade } from '@/components/financeiro/CustosRentabilidade';
+import { CadastroCustos } from '@/components/financeiro/CadastroCustos';
+import { Rentabilidade } from '@/components/financeiro/Rentabilidade';
 import { FluxoCaixa } from '@/components/financeiro/FluxoCaixa';
+import { ConfirmacaoCustosMensal } from '@/components/financeiro/ConfirmacaoCustosMensal';
 import { toast } from 'sonner';
 import { NovoPagamentoModal } from '@/components/financeiro/NovoPagamentoModal';
 import { DetalhesAgendamentoModal } from '@/components/financeiro/DetalhesAgendamentoModal';
@@ -211,7 +213,15 @@ export default function Financeiro() {
           </TabsTrigger>
           <TabsTrigger value="custos" className="flex items-center gap-2">
             <Calculator className="h-4 w-4" />
-            Custos e Rentabilidade
+            Custos
+          </TabsTrigger>
+          <TabsTrigger value="confirmacao" className="flex items-center gap-2">
+            <CheckCircle className="h-4 w-4" />
+            Confirmar Custos
+          </TabsTrigger>
+          <TabsTrigger value="rentabilidade" className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4" />
+            Rentabilidade
           </TabsTrigger>
         </TabsList>
 
@@ -521,7 +531,15 @@ export default function Financeiro() {
         </TabsContent>
 
         <TabsContent value="custos" className="mt-4">
-          <CustosRentabilidade />
+          <CadastroCustos />
+        </TabsContent>
+
+        <TabsContent value="confirmacao" className="mt-4">
+          <ConfirmacaoCustosMensal />
+        </TabsContent>
+
+        <TabsContent value="rentabilidade" className="mt-4">
+          <Rentabilidade />
         </TabsContent>
       </Tabs>
     </div>
