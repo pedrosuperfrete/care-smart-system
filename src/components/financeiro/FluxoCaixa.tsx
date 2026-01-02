@@ -146,73 +146,23 @@ export function FluxoCaixa() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <ArrowUpCircle className="h-4 w-4 text-success" />
-              Receita Bruta
+              {fluxo.crescimentoReceita >= 0 ? (
+                <TrendingUp className="h-4 w-4 text-success" />
+              ) : (
+                <TrendingDown className="h-4 w-4 text-destructive" />
+              )}
+              Crescimento da Receita
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-success">
-              R$ {formatCurrency(fluxo.totalReceitasBrutas)}
+            <div className={`text-2xl font-bold ${fluxo.crescimentoReceita >= 0 ? 'text-success' : 'text-destructive'}`}>
+              {fluxo.crescimentoReceita >= 0 ? '+' : ''}{fluxo.crescimentoReceita.toFixed(1)}%
             </div>
             <p className="text-xs text-muted-foreground">
-              Últimos {mesesAtras} meses
+              vs. mês anterior
             </p>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <CreditCard className="h-4 w-4 text-warning" />
-              Taxas de Cartão
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-warning">
-              R$ {formatCurrency(fluxo.totalTaxasCartao)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Crédito: {fluxo.taxaCredito}% / Débito: {fluxo.taxaDebito}%
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <ArrowDownCircle className="h-4 w-4 text-destructive" />
-              Total Despesas
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-destructive">
-              R$ {formatCurrency(fluxo.totalDespesas)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Inclui taxas de cartão
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Card de previsão futura */}
-        {fluxo.totalReceitasPrevistas > 0 && (
-          <Card className="border-dashed border-primary/50 bg-primary/5">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-primary" />
-                Previsão de Receitas
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-primary">
-                R$ {formatCurrency(fluxo.totalReceitasPrevistas)}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Parcelas a receber (próx. meses)
-              </p>
-            </CardContent>
-          </Card>
-        )}
 
         <Card>
           <CardHeader className="pb-2">
@@ -222,11 +172,11 @@ export function FluxoCaixa() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${fluxo.saldoTotal >= 0 ? 'text-success' : 'text-destructive'}`}>
-              R$ {formatCurrency(fluxo.saldoTotal)}
+            <div className={`text-2xl font-bold ${fluxo.saldoFinalTotal >= 0 ? 'text-success' : 'text-destructive'}`}>
+              R$ {formatCurrency(fluxo.saldoFinalTotal)}
             </div>
             <p className="text-xs text-muted-foreground">
-              {fluxo.saldoTotal >= 0 ? 'Lucro' : 'Prejuízo'} acumulado
+              Pós impostos ({mesesAtras} meses)
             </p>
           </CardContent>
         </Card>
@@ -239,12 +189,30 @@ export function FluxoCaixa() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-lg font-bold">
-              <span className="text-success">+R$ {formatCurrency(fluxo.mediaReceitaMensal)}</span>
+            <div className={`text-2xl font-bold ${fluxo.mediaSaldoMensal >= 0 ? 'text-success' : 'text-destructive'}`}>
+              {fluxo.mediaSaldoMensal >= 0 ? '+' : ''}R$ {formatCurrency(fluxo.mediaSaldoMensal)}
             </div>
-            <div className="text-sm">
-              <span className="text-destructive">-R$ {formatCurrency(fluxo.mediaDespesaMensal)}</span>
+            <p className="text-xs text-muted-foreground">
+              Saldo médio pós impostos
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Card de previsão futura */}
+        <Card className="border-dashed border-primary/50 bg-primary/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-primary" />
+              Previsão de Receitas
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-primary">
+              R$ {formatCurrency(fluxo.totalReceitasPrevistas)}
             </div>
+            <p className="text-xs text-muted-foreground">
+              Parcelas a receber (próx. meses)
+            </p>
           </CardContent>
         </Card>
       </div>

@@ -503,9 +503,21 @@ export function useFluxoCaixa(mesesAtras: number = 6, mesesFuturos: number = 3) 
   const totalReceitas = fluxoPassado.reduce((sum, m) => sum + m.receitas, 0);
   const totalDespesas = fluxoPassado.reduce((sum, m) => sum + m.totalDespesas, 0);
   const totalDespesasPrevistas = fluxoFuturo.reduce((sum, m) => sum + m.totalDespesas, 0);
+  const totalImpostos = fluxoPassado.reduce((sum, m) => sum + m.impostoEstimado, 0);
   const saldoTotal = totalReceitasBrutas - totalDespesas;
+  const saldoFinalTotal = fluxoPassado.reduce((sum, m) => sum + m.saldoFinal, 0);
   const mediaReceitaMensal = fluxoPassado.length > 0 ? totalReceitas / fluxoPassado.length : 0;
   const mediaDespesaMensal = fluxoPassado.length > 0 ? totalDespesas / fluxoPassado.length : 0;
+  const mediaSaldoMensal = fluxoPassado.length > 0 ? saldoFinalTotal / fluxoPassado.length : 0;
+
+  // Calcular crescimento de receita em relação ao mês passado
+  const mesAtual = fluxoPassado[fluxoPassado.length - 1];
+  const mesAnterior = fluxoPassado.length >= 2 ? fluxoPassado[fluxoPassado.length - 2] : null;
+  
+  let crescimentoReceita = 0;
+  if (mesAnterior && mesAnterior.receitaBruta > 0) {
+    crescimentoReceita = ((mesAtual?.receitaBruta || 0) - mesAnterior.receitaBruta) / mesAnterior.receitaBruta * 100;
+  }
 
   return {
     isLoading: profissionaisQuery.isLoading || agendamentosIdsQuery.isLoading || receitasQuery.isLoading || despesasAvulsasQuery.isLoading || atendimentosQuery.isLoading || parcelasFuturasQuery.isLoading,
@@ -516,9 +528,13 @@ export function useFluxoCaixa(mesesAtras: number = 6, mesesFuturos: number = 3) 
     totalTaxasCartao,
     totalDespesas,
     totalDespesasPrevistas,
+    totalImpostos,
     saldoTotal,
+    saldoFinalTotal,
     mediaReceitaMensal,
     mediaDespesaMensal,
+    mediaSaldoMensal,
+    crescimentoReceita,
     custoFixoMensal: custoRecorrenteEstimado,
     custoVariavelPorAtendimento,
     taxaCredito,
