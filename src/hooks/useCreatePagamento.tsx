@@ -13,6 +13,7 @@ interface CreatePagamentoData {
   data_vencimento?: Date;
   data_pagamento?: Date;
   valor_pago?: number;
+  parcelas_totais?: number;
 }
 
 export function useCreatePagamento() {
@@ -50,6 +51,7 @@ export function useCreatePagamento() {
       }
 
       // Agora criar o pagamento
+      const parcelasTotais = data.forma_pagamento === 'cartao_credito' ? (data.parcelas_totais || 1) : 1;
       const pagamentoData = {
         agendamento_id: agendamento.id,
         valor_total: data.valor_total,
@@ -58,6 +60,8 @@ export function useCreatePagamento() {
         status: data.status,
         data_vencimento: data.data_vencimento?.toISOString(),
         data_pagamento: data.data_pagamento?.toISOString(),
+        parcelas_totais: parcelasTotais,
+        parcelado: parcelasTotais > 1,
       };
 
       const { data: pagamento, error: pagamentoError } = await supabase

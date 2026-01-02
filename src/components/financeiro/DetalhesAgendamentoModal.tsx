@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -36,11 +36,20 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
   const [formaPagamento, setFormaPagamento] = useState<string>('');
   const [dataVencimento, setDataVencimento] = useState<Date | undefined>(undefined);
   const [parcelasTotais, setParcelasTotais] = useState<number>(1);
+  const [pagamentoAtual, setPagamentoAtual] = useState<any>(pagamento);
   const updatePagamento = useUpdatePagamento();
 
   if (!pagamento) return null;
 
-  const agendamento = pagamento.agendamentos;
+  useEffect(() => {
+    setPagamentoAtual(pagamento);
+    setIsEditing(false);
+    setFormaPagamento('');
+    setDataVencimento(undefined);
+    setParcelasTotais(1);
+  }, [pagamento?.id]);
+
+  const agendamento = pagamentoAtual?.agendamentos;
   const paciente = agendamento?.pacientes;
   const profissional = agendamento?.profissionais;
   const servicosAdicionais = agendamento?.servicos_adicionais as ServicoAdicional[] | null;
@@ -101,16 +110,16 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
     return formas[forma] || forma;
   };
 
-  const valorServicoPrincipal = Number(pagamento.valor_total) - (
+  const valorServicoPrincipal = Number(pagamentoAtual.valor_total) - (
     Array.isArray(servicosAdicionais)
       ? servicosAdicionais.reduce((acc, s) => acc + Number(s.valor ?? s.preco ?? 0), 0)
       : 0
   );
 
   const handleStartEdit = () => {
-    setFormaPagamento(pagamento.forma_pagamento || 'pix');
-    setDataVencimento(pagamento.data_vencimento ? new Date(pagamento.data_vencimento) : undefined);
-    setParcelasTotais(pagamento.parcelas_totais || 1);
+    setFormaPagamento(pagamentoAtual.forma_pagamento || 'pix');
+    setDataVencimento(pagamentoAtual.data_vencimento ? new Date(pagamentoAtual.data_vencimento) : undefined);
+    setParcelasTotais(pagamentoAtual.parcelas_totais || 1);
     setIsEditing(true);
   };
 
@@ -123,8 +132,8 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
 
   const handleSave = async () => {
     try {
-      await updatePagamento.mutateAsync({
-        id: pagamento.id,
+      const updated = await updatePagamento.mutateAsync({
+        id: pagamentoAtual.id,
         data: {
           forma_pagamento: formaPagamento as any,
           data_vencimento: dataVencimento?.toISOString() || null,
@@ -132,6 +141,14 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
           parcelado: parcelasTotais > 1,
         },
       });
+
+      // Atualizar a visão do modal imediatamente (mantendo dados de agendamento)
+      setPagamentoAtual((prev: any) => ({
+        ...prev,
+        ...updated,
+        agendamentos: prev?.agendamentos,
+      }));
+
       setIsEditing(false);
     } catch (error) {
       console.error('Erro ao atualizar pagamento:', error);
@@ -246,7 +263,7 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
               <Separator className="my-2" />
               <div className="flex justify-between font-semibold text-lg">
                 <span>Total</span>
-                <span>R$ {formatCurrency(Number(pagamento.valor_total))}</span>
+                 <span>R$ {formatCurrency(Number(pagamentoAtual.valor_total))}</span>
               </div>
             </div>
           </div>
@@ -285,25 +302,25 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
                     </SelectContent>
                   </Select>
                 ) : (
-                  <p className="font-medium">{getFormaPagamentoLabel(pagamento.forma_pagamento)}</p>
+                  <p className="font-medium">{getFormaPagamentoLabel(pagamentoAtual.forma_pagamento)}</p>
                 )}
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Status</p>
-                <Badge variant={getStatusPagamento(pagamento.status).variant} className="mt-1">
-                  {getStatusPagamento(pagamento.status).label}
-                </Badge>
+                 <Badge variant={getStatusPagamento(pagamentoAtual.status).variant} className="mt-1">
+                   {getStatusPagamento(pagamentoAtual.status).label}
+                 </Badge>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Valor Pago</p>
-                <p className="font-medium">R$ {formatCurrency(Number(pagamento.valor_pago || 0))}</p>
-              </div>
-              {pagamento.data_pagamento && (
-                <div>
-                  <p className="text-xs text-muted-foreground">Data do Pagamento</p>
-                  <p className="font-medium">{formatDate(pagamento.data_pagamento)}</p>
-                </div>
-              )}
+                 <p className="font-medium">R$ {formatCurrency(Number(pagamentoAtual.valor_pago || 0))}</p>
+               </div>
+               {pagamentoAtual.data_pagamento && (
+                 <div>
+                   <p className="text-xs text-muted-foreground">Data do Pagamento</p>
+                   <p className="font-medium">{formatDate(pagamentoAtual.data_pagamento)}</p>
+                 </div>
+               )}
               <div>
                 <p className="text-xs text-muted-foreground">Vencimento</p>
                 {isEditing ? (
@@ -331,11 +348,11 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
                     </PopoverContent>
                   </Popover>
                 ) : (
-                  <p className="font-medium">{pagamento.data_vencimento ? formatDate(pagamento.data_vencimento) : 'Não informado'}</p>
+                  <p className="font-medium">{pagamentoAtual.data_vencimento ? formatDate(pagamentoAtual.data_vencimento) : 'Não informado'}</p>
                 )}
               </div>
               {/* Parcelas - só mostra quando é cartão de crédito ou se já está parcelado */}
-              {(isEditing ? formaPagamento === 'cartao_credito' : pagamento.parcelas_totais > 1 || pagamento.forma_pagamento === 'cartao_credito') && (
+              {(isEditing ? formaPagamento === 'cartao_credito' : pagamentoAtual.parcelas_totais > 1 || pagamentoAtual.forma_pagamento === 'cartao_credito') && (
                 <div>
                   <p className="text-xs text-muted-foreground">Parcelas</p>
                   {isEditing && formaPagamento === 'cartao_credito' ? (
@@ -349,15 +366,15 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
                       <SelectContent>
                         {Array.from({ length: 12 }, (_, i) => i + 1).map((num) => (
                           <SelectItem key={num} value={String(num)}>
-                            {num}x {Number(pagamento.valor_total) ? `de R$ ${formatCurrency(Number(pagamento.valor_total) / num)}` : ''}
+                            {num}x {Number(pagamentoAtual.valor_total) ? `de R$ ${formatCurrency(Number(pagamentoAtual.valor_total) / num)}` : ''}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   ) : (
                     <p className="font-medium">
-                      {pagamento.parcelas_totais > 1 
-                        ? `${pagamento.parcelas_recebidas || 0}/${pagamento.parcelas_totais}x` 
+                      {pagamentoAtual.parcelas_totais > 1 
+                        ? `${pagamentoAtual.parcelas_recebidas || 0}/${pagamentoAtual.parcelas_totais}x` 
                         : 'À vista'}
                     </p>
                   )}

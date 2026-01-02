@@ -121,6 +121,9 @@ export function usePagamentos(startDate?: Date, endDate?: Date) {
           data_pagamento,
           data_vencimento,
           forma_pagamento,
+          parcelado,
+          parcelas_totais,
+          parcelas_recebidas,
           criado_em,
           agendamento_id,
           agendamentos!fk_pagamento_agendamento (
