@@ -1,4 +1,24 @@
 /**
+ * Calcula a idade a partir de uma data de nascimento
+ */
+export function calcularIdade(dataNascimento: string | null | undefined): number | null {
+  if (!dataNascimento) return null;
+  
+  const hoje = new Date();
+  const nascimento = fromLocalDateString(dataNascimento);
+  
+  let idade = hoje.getFullYear() - nascimento.getFullYear();
+  const mesAtual = hoje.getMonth();
+  const mesNascimento = nascimento.getMonth();
+  
+  if (mesAtual < mesNascimento || (mesAtual === mesNascimento && hoje.getDate() < nascimento.getDate())) {
+    idade--;
+  }
+  
+  return idade;
+}
+
+/**
  * Utilitários para tratamento consistente de datas e fusos horários
  * Padroniza o comportamento entre formulários, banco de dados e exibição
  */

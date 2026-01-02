@@ -7,7 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { PacienteForm } from '@/components/forms/PacienteForm';
 import { Phone, Mail, MapPin, Edit, Calendar, User, CreditCard, Building } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
-import { fromLocalDateString } from '@/lib/dateUtils';
+import { fromLocalDateString, calcularIdade } from '@/lib/dateUtils';
 
 type Paciente = Tables<'pacientes'>;
 
@@ -105,6 +105,9 @@ export function PacienteInfo({ paciente, onClose }: PacienteInfoProps) {
                     <Calendar className="h-4 w-4 text-gray-400" />
                     <span className="text-base text-gray-900">
                       {fromLocalDateString(paciente.data_nascimento).toLocaleDateString('pt-BR')}
+                      {calcularIdade(paciente.data_nascimento) !== null && (
+                        <span className="text-muted-foreground ml-2">({calcularIdade(paciente.data_nascimento)} anos)</span>
+                      )}
                     </span>
                   </div>
                 </div>
