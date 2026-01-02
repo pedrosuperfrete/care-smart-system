@@ -15,7 +15,7 @@ import { usePacientes, usePacientesStats } from '@/hooks/usePacientes';
 import { usePacientesComAgendamentos } from '@/hooks/usePacientesComAgendamentos';
 import { Users, Plus, Search, MoreVertical, FileText, Edit, Calendar, History, Phone, Mail, MapPin, FileUp } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
-import { fromLocalDateString } from '@/lib/dateUtils';
+import { fromLocalDateString, calcularIdade } from '@/lib/dateUtils';
 import { ImportPacientesDialog } from '@/components/pacientes/ImportPacientesDialog';
 import { ProntuariosPacienteDialog } from '@/components/pacientes/ProntuariosPacienteDialog';
 
@@ -269,7 +269,14 @@ export default function Pacientes() {
                 <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                   <div className="flex-1 w-full">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-3">
-                      <h3 className="text-lg font-semibold">{paciente.nome}</h3>
+                      <h3 className="text-lg font-semibold">
+                        {paciente.nome}
+                        {calcularIdade(paciente.data_nascimento) !== null && (
+                          <span className="text-sm font-normal text-muted-foreground ml-2">
+                            ({calcularIdade(paciente.data_nascimento)} anos)
+                          </span>
+                        )}
+                      </h3>
                       <Badge className={getTipoPacienteColor(paciente.tipo_paciente)}>
                         {getTipoPacienteText(paciente.tipo_paciente)}
                       </Badge>

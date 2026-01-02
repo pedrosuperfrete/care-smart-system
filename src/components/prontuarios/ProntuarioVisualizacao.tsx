@@ -8,6 +8,7 @@ import { useProntuariosPorPaciente, useUpdateProntuario } from '@/hooks/usePront
 import { usePaciente } from '@/hooks/usePacientes';
 import { useAuth } from '@/hooks/useAuth';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { calcularIdade } from '@/lib/dateUtils';
 
 interface ProntuarioVisualizacaoProps {
   pacienteId: string;
@@ -88,7 +89,14 @@ export function ProntuarioVisualizacao({ pacienteId, prontuarioId, onVoltar }: P
           Voltar
         </Button>
         <div>
-          <h1 className="text-3xl font-bold">Prontuários - {paciente?.nome}</h1>
+          <h1 className="text-3xl font-bold">
+            Prontuários - {paciente?.nome}
+            {paciente?.data_nascimento && calcularIdade(paciente.data_nascimento) !== null && (
+              <span className="text-xl font-normal text-muted-foreground ml-2">
+                ({calcularIdade(paciente.data_nascimento)} anos)
+              </span>
+            )}
+          </h1>
           <p className="text-muted-foreground mt-1">
             Histórico completo do paciente
           </p>
