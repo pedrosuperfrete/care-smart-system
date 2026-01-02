@@ -249,20 +249,10 @@ export function useSimuladorMeta(metaLiquidaDesejada: number) {
       const custoVariavel = servicoRent.custoVariavel;
       const taxaCartao = preco * taxaCartaoMedia;
       
-      // Custo fixo alocado proporcionalmente ao mix deste serviço
       const custoFixoAlocado = (custoFixoTotal * mix.percentualMix) / 100;
-      
-      // Margem de contribuição unitária = preço - custos variáveis - taxa de cartão
-      // Esta é a margem que contribui para cobrir custos fixos + gerar lucro
+      // Margem de contribuição = preço - custos variáveis - taxa cartão
+      // Esta margem contribui para cobrir custos fixos e gerar lucro
       const margemContribuicao = preco - custoVariavel - taxaCartao;
-      
-      // Lucro líquido por atendimento = margem de contribuição - (custo fixo alocado / volume)
-      // Só faz sentido calcular se tem volume histórico
-      const custoFixoPorAtendimento = mix.volumeMensal > 0 
-        ? custoFixoAlocado / mix.volumeMensal 
-        : custoFixoTotal / Math.max(servicosComMargem.length, 1); // Ratear igualmente se não tem histórico
-      
-      const lucroLiquidoUnitario = margemContribuicao - custoFixoPorAtendimento;
       
       servicosComMargem.push({
         id: servicoRent.id,
@@ -272,9 +262,9 @@ export function useSimuladorMeta(metaLiquidaDesejada: number) {
         percentualMix: mix.percentualMix,
         custoVariavel,
         taxaCartao,
-        custoFixoAlocado: custoFixoPorAtendimento,
-        lucroLiquido: lucroLiquidoUnitario,
-        lucroTotalMensal: margemContribuicao * mix.volumeMensal - custoFixoAlocado,
+        custoFixoAlocado: custoFixoAlocado / Math.max(mix.volumeMensal, 1),
+        lucroLiquido: margemContribuicao, // Margem de contribuição por atendimento
+        lucroTotalMensal: (margemContribuicao * mix.volumeMensal) - custoFixoAlocado,
       });
     });
 
