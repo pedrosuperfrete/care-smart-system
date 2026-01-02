@@ -14,6 +14,7 @@ export interface DespesaAvulsa {
   categoria: string;
   data_pagamento: string;
   observacoes: string | null;
+  parcelas: number;
   criado_em: string;
   atualizado_em: string;
 }
@@ -24,6 +25,7 @@ export interface DespesaAvulsaInput {
   categoria: string;
   data_pagamento: Date;
   observacoes?: string;
+  parcelas?: number;
 }
 
 export interface FluxoMensal {
@@ -94,6 +96,7 @@ export function useDespesasAvulsas(startDate?: Date, endDate?: Date) {
           categoria: input.categoria,
           data_pagamento: input.data_pagamento.toISOString(),
           observacoes: input.observacoes || null,
+          parcelas: input.parcelas || 1,
         })
         .select()
         .single();
@@ -280,10 +283,23 @@ export function useFluxoCaixa(mesesAtras: number = 6) {
       .filter(a => format(new Date(a.data_inicio), 'yyyy-MM') === mesKey)
       .length;
 
-    // Despesas avulsas do mês
+    // Despesas avulsas do mês (agora distribuídas por parcelas)
     const despesasAvulsasMes = (despesasAvulsasQuery.data || [])
-      .filter(d => format(new Date(d.data_pagamento), 'yyyy-MM') === mesKey)
-      .reduce((sum, d) => sum + Number(d.valor), 0);
+      .reduce((sum, d) => {
+        const parcelas = d.parcelas || 1;
+        const valorParcela = Number(d.valor) / parcelas;
+        const dataPagamento = new Date(d.data_pagamento);
+        
+        // Verificar se alguma parcela cai neste mês
+        let valorNoMes = 0;
+        for (let i = 0; i < parcelas; i++) {
+          const mesParcela = addMonths(dataPagamento, i);
+          if (format(mesParcela, 'yyyy-MM') === mesKey) {
+            valorNoMes += valorParcela;
+          }
+        }
+        return sum + valorNoMes;
+      }, 0);
 
     // Custo variável total (baseado em atendimentos)
     const despesasVariaveisMes = atendimentosMes * custoVariavelPorAtendimento;
