@@ -18,7 +18,8 @@ import {
   Wallet,
   Calendar,
   Receipt,
-  CreditCard
+  CreditCard,
+  Check
 } from 'lucide-react';
 import { useFluxoCaixa, useDespesasAvulsas, DespesaAvulsaInput } from '@/hooks/useFluxoCaixa';
 import { formatCurrency } from '@/lib/utils';
@@ -51,6 +52,9 @@ export function FluxoCaixa() {
   const { despesas, criarDespesa, deletarDespesa, categorias, isLoading: despesasLoading } = useDespesasAvulsas();
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [newCategory, setNewCategory] = useState('');
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
   const [formData, setFormData] = useState<DespesaAvulsaInput>({
     descricao: '',
     valor: 0,
@@ -58,6 +62,8 @@ export function FluxoCaixa() {
     data_pagamento: new Date(),
     parcelas: 1,
   });
+
+  const allCategories = [...categorias, ...customCategories.filter(c => !categorias.includes(c))];
 
   const handleSubmit = () => {
     if (!formData.descricao || formData.valor <= 0) return;
@@ -429,15 +435,75 @@ export function FluxoCaixa() {
               <Label>Categoria</Label>
               <Select 
                 value={formData.categoria} 
-                onValueChange={(v) => setFormData({ ...formData, categoria: v })}
+                onValueChange={(v) => {
+                  if (v === '__add_new__') {
+                    setIsAddingCategory(true);
+                  } else {
+                    setFormData({ ...formData, categoria: v });
+                  }
+                }}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {categorias.map(cat => (
+                  {allCategories.map(cat => (
                     <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                   ))}
+                  <Separator className="my-1" />
+                  {isAddingCategory ? (
+                    <div className="flex items-center gap-2 p-2" onClick={(e) => e.stopPropagation()}>
+                      <Input
+                        value={newCategory}
+                        onChange={(e) => setNewCategory(e.target.value)}
+                        placeholder="Nova categoria..."
+                        className="h-8 text-sm"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && newCategory.trim()) {
+                            e.preventDefault();
+                            setCustomCategories([...customCategories, newCategory.trim()]);
+                            setFormData({ ...formData, categoria: newCategory.trim() });
+                            setNewCategory('');
+                            setIsAddingCategory(false);
+                          }
+                          if (e.key === 'Escape') {
+                            setNewCategory('');
+                            setIsAddingCategory(false);
+                          }
+                        }}
+                      />
+                      <Button 
+                        size="icon" 
+                        variant="ghost" 
+                        className="h-8 w-8"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (newCategory.trim()) {
+                            setCustomCategories([...customCategories, newCategory.trim()]);
+                            setFormData({ ...formData, categoria: newCategory.trim() });
+                            setNewCategory('');
+                            setIsAddingCategory(false);
+                          }
+                        }}
+                      >
+                        <Check className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div 
+                      className="flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer hover:bg-accent rounded-sm"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setIsAddingCategory(true);
+                      }}
+                    >
+                      <Plus className="h-4 w-4" />
+                      Adicionar categoria
+                    </div>
+                  )}
                 </SelectContent>
               </Select>
             </div>
