@@ -94,7 +94,6 @@ export function FluxoCaixa() {
   const chartData = fluxo.fluxoMensal.map(m => ({
     name: m.mesFormatado,
     'Receita Bruta': m.receitaBruta,
-    'Taxas Cartão': m.taxasCartao,
     Despesas: m.totalDespesas,
     Saldo: m.saldo,
   }));
@@ -236,7 +235,6 @@ export function FluxoCaixa() {
               <Legend />
               <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" />
               <Bar dataKey="Receita Bruta" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="Taxas Cartão" fill="hsl(var(--warning))" radius={[4, 4, 0, 0]} />
               <Bar dataKey="Despesas" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -257,8 +255,6 @@ export function FluxoCaixa() {
               <TableRow>
                 <TableHead>Mês</TableHead>
                 <TableHead className="text-right">Receita Bruta</TableHead>
-                <TableHead className="text-right">Taxas Cartão</TableHead>
-                <TableHead className="text-right">Receita Líquida</TableHead>
                 <TableHead className="text-right">Despesas Fixas</TableHead>
                 <TableHead className="text-right">Despesas Variáveis</TableHead>
                 <TableHead className="text-right">Despesas Avulsas</TableHead>
@@ -272,17 +268,11 @@ export function FluxoCaixa() {
                   <TableCell className="text-right text-success">
                     R$ {formatCurrency(mes.receitaBruta)}
                   </TableCell>
-                  <TableCell className="text-right text-warning">
-                    {mes.taxasCartao > 0 ? `-R$ ${formatCurrency(mes.taxasCartao)}` : '-'}
-                  </TableCell>
-                  <TableCell className="text-right text-success font-medium">
-                    R$ {formatCurrency(mes.receitas)}
-                  </TableCell>
                   <TableCell className="text-right text-muted-foreground">
                     R$ {formatCurrency(mes.despesasFixas)}
                   </TableCell>
                   <TableCell className="text-right text-muted-foreground">
-                    R$ {formatCurrency(mes.despesasVariaveis - mes.taxasCartao)}
+                    R$ {formatCurrency(mes.despesasVariaveis)}
                     <span className="text-xs ml-1">({mes.atendimentosRealizados} atend.)</span>
                   </TableCell>
                   <TableCell className="text-right text-muted-foreground">
