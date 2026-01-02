@@ -78,7 +78,7 @@ export function CustosRentabilidade() {
   // Form state
   const [formData, setFormData] = useState<CustoInput>({
     nome: '',
-    valor: 0,
+    valor_estimado: 0,
     tipo: 'fixo',
     frequencia: 'mensal',
     descricao: '',
@@ -90,7 +90,7 @@ export function CustosRentabilidade() {
   const handleAddSugerido = (sugerido: typeof custosSugeridos.fixos[0], tipo: 'fixo' | 'variavel') => {
     setFormData({
       nome: sugerido.nome,
-      valor: sugerido.valor,
+      valor_estimado: sugerido.valor,
       tipo,
       frequencia: tipo === 'fixo' ? 'mensal' : 'por_atendimento',
       descricao: sugerido.descricao,
@@ -102,7 +102,7 @@ export function CustosRentabilidade() {
   };
 
   const handleSubmit = () => {
-    if (!formData.nome || formData.valor <= 0) {
+    if (!formData.nome || formData.valor_estimado <= 0) {
       return;
     }
     
@@ -111,7 +111,7 @@ export function CustosRentabilidade() {
       atualizarCusto.mutate({
         id: editingCusto,
         nome: formData.nome,
-        valor: formData.valor,
+        valor_estimado: formData.valor_estimado,
         tipo: formData.tipo,
         frequencia: formData.frequencia,
         descricao: formData.descricao || null,
@@ -139,7 +139,7 @@ export function CustosRentabilidade() {
     
     setFormData({
       nome: custo.nome,
-      valor: custo.valor,
+      valor_estimado: custo.valor_estimado,
       tipo: custo.tipo as 'fixo' | 'variavel',
       frequencia: custo.frequencia as 'mensal' | 'por_atendimento' | 'ocasional',
       descricao: custo.descricao || '',
@@ -154,7 +154,7 @@ export function CustosRentabilidade() {
   const resetForm = () => {
     setFormData({
       nome: '',
-      valor: 0,
+      valor_estimado: 0,
       tipo: 'fixo',
       frequencia: 'mensal',
       descricao: '',
@@ -631,7 +631,7 @@ export function CustosRentabilidade() {
                             )}
                           </TableCell>
                           <TableCell className="text-right font-medium">
-                            R$ {formatCurrency(custo.valor)}
+                            R$ {formatCurrency(custo.valor_estimado)}
                           </TableCell>
                           <TableCell>
                             <div className="flex gap-1">
@@ -879,14 +879,14 @@ export function CustosRentabilidade() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="valor">Valor *</Label>
+                <Label htmlFor="valor">Valor Estimado *</Label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">R$</span>
                   <Input
                     id="valor"
                     type="number"
-                    value={formData.valor || ''}
-                    onChange={(e) => setFormData({ ...formData, valor: Number(e.target.value) })}
+                    value={formData.valor_estimado || ''}
+                    onChange={(e) => setFormData({ ...formData, valor_estimado: Number(e.target.value) })}
                     className="pl-10"
                     placeholder="0,00"
                   />

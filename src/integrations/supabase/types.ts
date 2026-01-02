@@ -172,7 +172,7 @@ export type Database = {
           id: string
           nome: string
           tipo: string
-          valor: number
+          valor_estimado: number
         }
         Insert: {
           ativo?: boolean
@@ -184,7 +184,7 @@ export type Database = {
           id?: string
           nome: string
           tipo: string
-          valor?: number
+          valor_estimado?: number
         }
         Update: {
           ativo?: boolean
@@ -196,7 +196,7 @@ export type Database = {
           id?: string
           nome?: string
           tipo?: string
-          valor?: number
+          valor_estimado?: number
         }
         Relationships: [
           {
@@ -204,6 +204,60 @@ export type Database = {
             columns: ["clinica_id"]
             isOneToOne: false
             referencedRelation: "clinicas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custos_pagamentos: {
+        Row: {
+          atualizado_em: string
+          clinica_id: string
+          criado_em: string
+          custo_id: string
+          data_pagamento: string | null
+          id: string
+          mes_referencia: string
+          observacoes: string | null
+          status: string
+          valor_pago: number
+        }
+        Insert: {
+          atualizado_em?: string
+          clinica_id: string
+          criado_em?: string
+          custo_id: string
+          data_pagamento?: string | null
+          id?: string
+          mes_referencia: string
+          observacoes?: string | null
+          status?: string
+          valor_pago?: number
+        }
+        Update: {
+          atualizado_em?: string
+          clinica_id?: string
+          criado_em?: string
+          custo_id?: string
+          data_pagamento?: string | null
+          id?: string
+          mes_referencia?: string
+          observacoes?: string | null
+          status?: string
+          valor_pago?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custos_pagamentos_clinica_id_fkey"
+            columns: ["clinica_id"]
+            isOneToOne: false
+            referencedRelation: "clinicas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custos_pagamentos_custo_id_fkey"
+            columns: ["custo_id"]
+            isOneToOne: false
+            referencedRelation: "custos"
             referencedColumns: ["id"]
           },
         ]
