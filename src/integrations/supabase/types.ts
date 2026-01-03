@@ -129,6 +129,11 @@ export type Database = {
           criado_em: string
           endereco: string | null
           id: string
+          nf_cidade_emissao: string | null
+          nf_codigo_servico: string | null
+          nf_descricao_servico: string | null
+          nf_inscricao_municipal: string | null
+          nf_regime_tributario: string | null
           nome: string
           pix_chave: string | null
           taxa_cartao_credito: number | null
@@ -141,6 +146,11 @@ export type Database = {
           criado_em?: string
           endereco?: string | null
           id?: string
+          nf_cidade_emissao?: string | null
+          nf_codigo_servico?: string | null
+          nf_descricao_servico?: string | null
+          nf_inscricao_municipal?: string | null
+          nf_regime_tributario?: string | null
           nome: string
           pix_chave?: string | null
           taxa_cartao_credito?: number | null
@@ -153,6 +163,11 @@ export type Database = {
           criado_em?: string
           endereco?: string | null
           id?: string
+          nf_cidade_emissao?: string | null
+          nf_codigo_servico?: string | null
+          nf_descricao_servico?: string | null
+          nf_inscricao_municipal?: string | null
+          nf_regime_tributario?: string | null
           nome?: string
           pix_chave?: string | null
           taxa_cartao_credito?: number | null
