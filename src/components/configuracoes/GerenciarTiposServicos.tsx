@@ -3,10 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Trash2, Edit3, Info } from 'lucide-react';
+import { Plus, Trash2, Edit3, Info, Percent, DollarSign } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { 
   useTiposServicos, 
   useCreateTipoServico, 
@@ -43,6 +44,10 @@ export function GerenciarTiposServicos() {
     descricao: '',
     percentualFalta: '',
     percentualAgendamento: '',
+    tipoCobrancaFalta: 'percentual' as 'percentual' | 'valor_fixo',
+    tipoCobrancaAgendamento: 'percentual' as 'percentual' | 'valor_fixo',
+    valorCobrancaFalta: '',
+    valorCobrancaAgendamento: '',
     profissionalId: ''
   });
   const [editandoTipo, setEditandoTipo] = useState<TipoServico | null>(null);
@@ -51,7 +56,11 @@ export function GerenciarTiposServicos() {
     preco: '',
     descricao: '',
     percentualFalta: '',
-    percentualAgendamento: ''
+    percentualAgendamento: '',
+    tipoCobrancaFalta: 'percentual' as 'percentual' | 'valor_fixo',
+    tipoCobrancaAgendamento: 'percentual' as 'percentual' | 'valor_fixo',
+    valorCobrancaFalta: '',
+    valorCobrancaAgendamento: ''
   });
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -91,14 +100,24 @@ export function GerenciarTiposServicos() {
       nome: novoTipo.nome.trim(),
       preco: parseFloat(novoTipo.preco),
       descricao: novoTipo.descricao.trim() || undefined,
-      percentual_cobranca_falta: novoTipo.percentualFalta ? parseFloat(novoTipo.percentualFalta) : undefined,
-      percentual_cobranca_agendamento: novoTipo.percentualAgendamento ? parseFloat(novoTipo.percentualAgendamento) : undefined,
+      percentual_cobranca_falta: novoTipo.tipoCobrancaFalta === 'percentual' && novoTipo.percentualFalta ? parseFloat(novoTipo.percentualFalta) : undefined,
+      percentual_cobranca_agendamento: novoTipo.tipoCobrancaAgendamento === 'percentual' && novoTipo.percentualAgendamento ? parseFloat(novoTipo.percentualAgendamento) : undefined,
+      tipo_cobranca_falta: novoTipo.tipoCobrancaFalta,
+      tipo_cobranca_agendamento: novoTipo.tipoCobrancaAgendamento,
+      valor_cobranca_falta: novoTipo.tipoCobrancaFalta === 'valor_fixo' && novoTipo.valorCobrancaFalta ? parseFloat(novoTipo.valorCobrancaFalta) : undefined,
+      valor_cobranca_agendamento: novoTipo.tipoCobrancaAgendamento === 'valor_fixo' && novoTipo.valorCobrancaAgendamento ? parseFloat(novoTipo.valorCobrancaAgendamento) : undefined,
       profissional_id: profissionalIdFinal,
       clinica_id: clinicaIdFinal
     };
     
     await createMutation.mutateAsync(data);
-    setNovoTipo({ nome: '', preco: '', descricao: '', percentualFalta: '', percentualAgendamento: '', profissionalId: '' });
+    setNovoTipo({ 
+      nome: '', preco: '', descricao: '', 
+      percentualFalta: '', percentualAgendamento: '', 
+      tipoCobrancaFalta: 'percentual', tipoCobrancaAgendamento: 'percentual',
+      valorCobrancaFalta: '', valorCobrancaAgendamento: '',
+      profissionalId: '' 
+    });
     setShowCreateDialog(false);
   };
 
@@ -109,7 +128,11 @@ export function GerenciarTiposServicos() {
       preco: tipo.preco?.toString() || '',
       descricao: tipo.descricao || '',
       percentualFalta: tipo.percentual_cobranca_falta?.toString() || '',
-      percentualAgendamento: tipo.percentual_cobranca_agendamento?.toString() || ''
+      percentualAgendamento: tipo.percentual_cobranca_agendamento?.toString() || '',
+      tipoCobrancaFalta: (tipo.tipo_cobranca_falta as 'percentual' | 'valor_fixo') || 'percentual',
+      tipoCobrancaAgendamento: (tipo.tipo_cobranca_agendamento as 'percentual' | 'valor_fixo') || 'percentual',
+      valorCobrancaFalta: tipo.valor_cobranca_falta?.toString() || '',
+      valorCobrancaAgendamento: tipo.valor_cobranca_agendamento?.toString() || ''
     });
     setShowEditDialog(true);
   };
@@ -121,8 +144,12 @@ export function GerenciarTiposServicos() {
       nome: editForm.nome.trim(),
       preco: parseFloat(editForm.preco),
       descricao: editForm.descricao.trim() || undefined,
-      percentual_cobranca_falta: editForm.percentualFalta ? parseFloat(editForm.percentualFalta) : null,
-      percentual_cobranca_agendamento: editForm.percentualAgendamento ? parseFloat(editForm.percentualAgendamento) : null
+      percentual_cobranca_falta: editForm.tipoCobrancaFalta === 'percentual' && editForm.percentualFalta ? parseFloat(editForm.percentualFalta) : null,
+      percentual_cobranca_agendamento: editForm.tipoCobrancaAgendamento === 'percentual' && editForm.percentualAgendamento ? parseFloat(editForm.percentualAgendamento) : null,
+      tipo_cobranca_falta: editForm.tipoCobrancaFalta,
+      tipo_cobranca_agendamento: editForm.tipoCobrancaAgendamento,
+      valor_cobranca_falta: editForm.tipoCobrancaFalta === 'valor_fixo' && editForm.valorCobrancaFalta ? parseFloat(editForm.valorCobrancaFalta) : null,
+      valor_cobranca_agendamento: editForm.tipoCobrancaAgendamento === 'valor_fixo' && editForm.valorCobrancaAgendamento ? parseFloat(editForm.valorCobrancaAgendamento) : null
     };
     
     await updateMutation.mutateAsync({ id: editandoTipo.id, data });
@@ -134,6 +161,20 @@ export function GerenciarTiposServicos() {
     if (confirm('Tem certeza que deseja remover este tipo de serviço?')) {
       await deleteMutation.mutateAsync(id);
     }
+  };
+
+  const formatCobranca = (tipo: TipoServico, campo: 'agendamento' | 'falta') => {
+    const tipoCobranca = campo === 'agendamento' ? tipo.tipo_cobranca_agendamento : tipo.tipo_cobranca_falta;
+    const percentual = campo === 'agendamento' ? tipo.percentual_cobranca_agendamento : tipo.percentual_cobranca_falta;
+    const valor = campo === 'agendamento' ? tipo.valor_cobranca_agendamento : tipo.valor_cobranca_falta;
+    
+    if (tipoCobranca === 'valor_fixo' && valor) {
+      return `R$ ${formatCurrency(valor)}`;
+    }
+    if (percentual) {
+      return `${percentual}%`;
+    }
+    return null;
   };
 
   const formatPercentual = (value: number | undefined | null) => {
@@ -262,62 +303,106 @@ export function GerenciarTiposServicos() {
                           <Info className="h-4 w-4 text-muted-foreground" />
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs">
-                          <p>Configure cobranças automáticas baseadas em percentual do valor do serviço.</p>
+                          <p>Configure cobranças automáticas em percentual ou valor fixo.</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   </div>
                   
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <Label htmlFor="percentualAgendamento">% cobrado no agendamento</Label>
+                  {/* Cobrança no agendamento */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Label>Cobrado no agendamento</Label>
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger>
                             <Info className="h-3 w-3 text-muted-foreground" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs">
-                            <p>Percentual do valor cobrado na hora do agendamento (entrada/sinal).</p>
+                            <p>Valor cobrado na hora do agendamento (entrada/sinal).</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
                     </div>
-                    <Input
-                      id="percentualAgendamento"
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="1"
-                      placeholder="Ex: 30"
-                      value={novoTipo.percentualAgendamento}
-                      onChange={(e) => setNovoTipo(prev => ({ ...prev, percentualAgendamento: e.target.value }))}
-                    />
+                    <div className="flex gap-2">
+                      <ToggleGroup 
+                        type="single" 
+                        value={novoTipo.tipoCobrancaAgendamento}
+                        onValueChange={(value) => value && setNovoTipo(prev => ({ ...prev, tipoCobrancaAgendamento: value as 'percentual' | 'valor_fixo' }))}
+                        className="border rounded-md"
+                      >
+                        <ToggleGroupItem value="percentual" aria-label="Percentual" className="px-3">
+                          <Percent className="h-4 w-4" />
+                        </ToggleGroupItem>
+                        <ToggleGroupItem value="valor_fixo" aria-label="Valor fixo" className="px-3">
+                          <DollarSign className="h-4 w-4" />
+                        </ToggleGroupItem>
+                      </ToggleGroup>
+                      <Input
+                        type="number"
+                        min="0"
+                        max={novoTipo.tipoCobrancaAgendamento === 'percentual' ? 100 : undefined}
+                        step={novoTipo.tipoCobrancaAgendamento === 'percentual' ? 1 : 0.01}
+                        placeholder={novoTipo.tipoCobrancaAgendamento === 'percentual' ? 'Ex: 30' : 'Ex: 150,00'}
+                        value={novoTipo.tipoCobrancaAgendamento === 'percentual' ? novoTipo.percentualAgendamento : novoTipo.valorCobrancaAgendamento}
+                        onChange={(e) => {
+                          if (novoTipo.tipoCobrancaAgendamento === 'percentual') {
+                            setNovoTipo(prev => ({ ...prev, percentualAgendamento: e.target.value }));
+                          } else {
+                            setNovoTipo(prev => ({ ...prev, valorCobrancaAgendamento: e.target.value }));
+                          }
+                        }}
+                        className="flex-1"
+                      />
+                    </div>
                   </div>
 
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <Label htmlFor="percentualFalta">% cobrado em caso de falta</Label>
+                  {/* Cobrança em caso de falta */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Label>Cobrado em caso de falta</Label>
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger>
                             <Info className="h-3 w-3 text-muted-foreground" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs">
-                            <p>Percentual do valor cobrado quando o paciente falta à consulta confirmada.</p>
+                            <p>Valor cobrado quando o paciente falta à consulta confirmada.</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
                     </div>
-                    <Input
-                      id="percentualFalta"
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="1"
-                      placeholder="Ex: 100"
-                      value={novoTipo.percentualFalta}
-                      onChange={(e) => setNovoTipo(prev => ({ ...prev, percentualFalta: e.target.value }))}
-                    />
+                    <div className="flex gap-2">
+                      <ToggleGroup 
+                        type="single" 
+                        value={novoTipo.tipoCobrancaFalta}
+                        onValueChange={(value) => value && setNovoTipo(prev => ({ ...prev, tipoCobrancaFalta: value as 'percentual' | 'valor_fixo' }))}
+                        className="border rounded-md"
+                      >
+                        <ToggleGroupItem value="percentual" aria-label="Percentual" className="px-3">
+                          <Percent className="h-4 w-4" />
+                        </ToggleGroupItem>
+                        <ToggleGroupItem value="valor_fixo" aria-label="Valor fixo" className="px-3">
+                          <DollarSign className="h-4 w-4" />
+                        </ToggleGroupItem>
+                      </ToggleGroup>
+                      <Input
+                        type="number"
+                        min="0"
+                        max={novoTipo.tipoCobrancaFalta === 'percentual' ? 100 : undefined}
+                        step={novoTipo.tipoCobrancaFalta === 'percentual' ? 1 : 0.01}
+                        placeholder={novoTipo.tipoCobrancaFalta === 'percentual' ? 'Ex: 100' : 'Ex: 200,00'}
+                        value={novoTipo.tipoCobrancaFalta === 'percentual' ? novoTipo.percentualFalta : novoTipo.valorCobrancaFalta}
+                        onChange={(e) => {
+                          if (novoTipo.tipoCobrancaFalta === 'percentual') {
+                            setNovoTipo(prev => ({ ...prev, percentualFalta: e.target.value }));
+                          } else {
+                            setNovoTipo(prev => ({ ...prev, valorCobrancaFalta: e.target.value }));
+                          }
+                        }}
+                        className="flex-1"
+                      />
+                    </div>
                   </div>
                 </div>
                 
@@ -376,14 +461,14 @@ export function GerenciarTiposServicos() {
                       {tipo.preco && (
                         <span>R$ {formatCurrency(tipo.preco)}</span>
                       )}
-                      {tipo.percentual_cobranca_agendamento && (
+                      {formatCobranca(tipo, 'agendamento') && (
                         <span className="text-primary">
-                          • {formatPercentual(tipo.percentual_cobranca_agendamento)} no agendamento
+                          • {formatCobranca(tipo, 'agendamento')} no agendamento
                         </span>
                       )}
-                      {tipo.percentual_cobranca_falta && (
+                      {formatCobranca(tipo, 'falta') && (
                         <span className="text-destructive">
-                          • {formatPercentual(tipo.percentual_cobranca_falta)} em falta
+                          • {formatCobranca(tipo, 'falta')} em falta
                         </span>
                       )}
                     </div>
@@ -465,62 +550,106 @@ export function GerenciarTiposServicos() {
                       <Info className="h-4 w-4 text-muted-foreground" />
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
-                      <p>Configure cobranças automáticas baseadas em percentual do valor do serviço.</p>
+                      <p>Configure cobranças automáticas em percentual ou valor fixo.</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               </div>
               
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <Label htmlFor="edit-percentualAgendamento">% cobrado no agendamento</Label>
+              {/* Cobrança no agendamento */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label>Cobrado no agendamento</Label>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger>
                         <Info className="h-3 w-3 text-muted-foreground" />
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
-                        <p>Percentual do valor cobrado na hora do agendamento (entrada/sinal).</p>
+                        <p>Valor cobrado na hora do agendamento (entrada/sinal).</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 </div>
-                <Input
-                  id="edit-percentualAgendamento"
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="1"
-                  placeholder="Ex: 30"
-                  value={editForm.percentualAgendamento}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, percentualAgendamento: e.target.value }))}
-                />
+                <div className="flex gap-2">
+                  <ToggleGroup 
+                    type="single" 
+                    value={editForm.tipoCobrancaAgendamento}
+                    onValueChange={(value) => value && setEditForm(prev => ({ ...prev, tipoCobrancaAgendamento: value as 'percentual' | 'valor_fixo' }))}
+                    className="border rounded-md"
+                  >
+                    <ToggleGroupItem value="percentual" aria-label="Percentual" className="px-3">
+                      <Percent className="h-4 w-4" />
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="valor_fixo" aria-label="Valor fixo" className="px-3">
+                      <DollarSign className="h-4 w-4" />
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                  <Input
+                    type="number"
+                    min="0"
+                    max={editForm.tipoCobrancaAgendamento === 'percentual' ? 100 : undefined}
+                    step={editForm.tipoCobrancaAgendamento === 'percentual' ? 1 : 0.01}
+                    placeholder={editForm.tipoCobrancaAgendamento === 'percentual' ? 'Ex: 30' : 'Ex: 150,00'}
+                    value={editForm.tipoCobrancaAgendamento === 'percentual' ? editForm.percentualAgendamento : editForm.valorCobrancaAgendamento}
+                    onChange={(e) => {
+                      if (editForm.tipoCobrancaAgendamento === 'percentual') {
+                        setEditForm(prev => ({ ...prev, percentualAgendamento: e.target.value }));
+                      } else {
+                        setEditForm(prev => ({ ...prev, valorCobrancaAgendamento: e.target.value }));
+                      }
+                    }}
+                    className="flex-1"
+                  />
+                </div>
               </div>
 
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <Label htmlFor="edit-percentualFalta">% cobrado em caso de falta</Label>
+              {/* Cobrança em caso de falta */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label>Cobrado em caso de falta</Label>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger>
                         <Info className="h-3 w-3 text-muted-foreground" />
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
-                        <p>Percentual do valor cobrado quando o paciente falta à consulta confirmada.</p>
+                        <p>Valor cobrado quando o paciente falta à consulta confirmada.</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 </div>
-                <Input
-                  id="edit-percentualFalta"
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="1"
-                  placeholder="Ex: 100"
-                  value={editForm.percentualFalta}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, percentualFalta: e.target.value }))}
-                />
+                <div className="flex gap-2">
+                  <ToggleGroup 
+                    type="single" 
+                    value={editForm.tipoCobrancaFalta}
+                    onValueChange={(value) => value && setEditForm(prev => ({ ...prev, tipoCobrancaFalta: value as 'percentual' | 'valor_fixo' }))}
+                    className="border rounded-md"
+                  >
+                    <ToggleGroupItem value="percentual" aria-label="Percentual" className="px-3">
+                      <Percent className="h-4 w-4" />
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="valor_fixo" aria-label="Valor fixo" className="px-3">
+                      <DollarSign className="h-4 w-4" />
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                  <Input
+                    type="number"
+                    min="0"
+                    max={editForm.tipoCobrancaFalta === 'percentual' ? 100 : undefined}
+                    step={editForm.tipoCobrancaFalta === 'percentual' ? 1 : 0.01}
+                    placeholder={editForm.tipoCobrancaFalta === 'percentual' ? 'Ex: 100' : 'Ex: 200,00'}
+                    value={editForm.tipoCobrancaFalta === 'percentual' ? editForm.percentualFalta : editForm.valorCobrancaFalta}
+                    onChange={(e) => {
+                      if (editForm.tipoCobrancaFalta === 'percentual') {
+                        setEditForm(prev => ({ ...prev, percentualFalta: e.target.value }));
+                      } else {
+                        setEditForm(prev => ({ ...prev, valorCobrancaFalta: e.target.value }));
+                      }
+                    }}
+                    className="flex-1"
+                  />
+                </div>
               </div>
             </div>
             
