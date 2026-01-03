@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Dialog,
   DialogContent,
@@ -14,11 +15,14 @@ import { Label } from "@/components/ui/label";
 import { Calendar, User, Stethoscope, DollarSign, CreditCard, FileText, Phone, Mail, Pencil, Save, X, Receipt, Loader2, ExternalLink } from "lucide-react";
 import { useUpdatePagamento } from "@/hooks/useFinanceiro";
 import { useEmitirNFSe, useNotaFiscalByPagamento } from "@/hooks/useEmitirNFSe";
+import { useCertificado } from "@/hooks/useCertificado";
+import { useClinica } from "@/hooks/useClinica";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn, formatCurrency } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface ServicoAdicional {
   nome: string;
@@ -38,9 +42,21 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
   const [dataVencimento, setDataVencimento] = useState<Date | undefined>(undefined);
   const [parcelasTotais, setParcelasTotais] = useState<number>(1);
   const [pagamentoAtual, setPagamentoAtual] = useState<any>(pagamento);
+  const navigate = useNavigate();
   const updatePagamento = useUpdatePagamento();
   const emitirNFSe = useEmitirNFSe();
   const { data: notaFiscal, isLoading: nfLoading } = useNotaFiscalByPagamento(pagamento?.id);
+  const { certificate } = useCertificado();
+  const { data: clinica } = useClinica();
+
+  // Verifica se as configurações de NF estão completas
+  const isNFConfigured = Boolean(
+    clinica?.nf_cidade_emissao &&
+    clinica?.nf_inscricao_municipal &&
+    clinica?.nf_codigo_servico
+  );
+  const isCertificateActive = certificate?.status === 'active';
+  const canEmitNF = isNFConfigured && isCertificateActive;
 
   useEffect(() => {
     if (pagamento) {
@@ -162,6 +178,30 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
 
   const handleEmitirNF = async () => {
     if (!pagamentoAtual?.id) return;
+    
+    // Validar configurações antes de emitir
+    if (!isCertificateActive) {
+      toast.error('Certificado digital não configurado', {
+        description: 'Configure seu certificado A1 antes de emitir notas fiscais.',
+        action: {
+          label: 'Configurar',
+          onClick: () => navigate('/app/configuracoes'),
+        },
+      });
+      return;
+    }
+    
+    if (!isNFConfigured) {
+      toast.error('Configurações de NF incompletas', {
+        description: 'Preencha os dados fiscais (cidade, inscrição municipal, código do serviço).',
+        action: {
+          label: 'Configurar',
+          onClick: () => navigate('/app/configuracoes'),
+        },
+      });
+      return;
+    }
+    
     await emitirNFSe.mutateAsync(pagamentoAtual.id);
   };
 
@@ -477,7 +517,7 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
                   </Button>
                 )}
               </div>
-            ) : pagamentoAtual.status === 'pago' ? (
+            ) : (
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -497,10 +537,6 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
                   </>
                 )}
               </Button>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                Disponível após confirmação do pagamento
-              </p>
             )}
           </div>
         </div>
