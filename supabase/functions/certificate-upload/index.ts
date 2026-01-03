@@ -309,7 +309,20 @@ Deno.serve(async (req) => {
 
 // Helper function to map PlugNotas errors
 function mapPlugNotasError(response: any): string {
-  const message = (response.message || response.error || '').toLowerCase();
+  // Handle different response formats from PlugNotas
+  let message = '';
+  
+  if (typeof response === 'string') {
+    message = response.toLowerCase();
+  } else if (response?.message && typeof response.message === 'string') {
+    message = response.message.toLowerCase();
+  } else if (response?.error && typeof response.error === 'string') {
+    message = response.error.toLowerCase();
+  } else if (response?.errors && Array.isArray(response.errors)) {
+    message = response.errors.map((e: any) => typeof e === 'string' ? e : e?.message || '').join(' ').toLowerCase();
+  }
+  
+  console.log('PlugNotas error message:', message);
   
   if (message.includes('senha') || message.includes('password') || message.includes('incorreta')) {
     return 'password_invalid';
@@ -322,6 +335,9 @@ function mapPlugNotasError(response: any): string {
   }
   if (message.includes('inválido') || message.includes('invalid') || message.includes('formato')) {
     return 'file_invalid';
+  }
+  if (message.includes('unauthorized') || message.includes('api key') || message.includes('não autorizado')) {
+    return 'plugnotas_unavailable';
   }
   
   return 'unknown_error';
