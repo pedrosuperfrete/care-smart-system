@@ -122,6 +122,158 @@ export type Database = {
         }
         Relationships: []
       }
+      certificate_audit_logs: {
+        Row: {
+          action: Database["public"]["Enums"]["certificate_audit_action"]
+          created_at: string
+          id: string
+          metadata: Json
+          profissional_id: string
+        }
+        Insert: {
+          action: Database["public"]["Enums"]["certificate_audit_action"]
+          created_at?: string
+          id?: string
+          metadata?: Json
+          profissional_id: string
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["certificate_audit_action"]
+          created_at?: string
+          id?: string
+          metadata?: Json
+          profissional_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificate_audit_logs_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profissionais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      certificate_consents: {
+        Row: {
+          consent_ip: string | null
+          consent_text: string
+          consent_text_version: string
+          consented_at: string
+          created_at: string
+          id: string
+          profissional_id: string
+        }
+        Insert: {
+          consent_ip?: string | null
+          consent_text: string
+          consent_text_version?: string
+          consented_at?: string
+          created_at?: string
+          id?: string
+          profissional_id: string
+        }
+        Update: {
+          consent_ip?: string | null
+          consent_text?: string
+          consent_text_version?: string
+          consented_at?: string
+          created_at?: string
+          id?: string
+          profissional_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificate_consents_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profissionais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      certificate_rate_limits: {
+        Row: {
+          attempts: number
+          created_at: string
+          id: string
+          profissional_id: string
+          updated_at: string
+          window_start: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          profissional_id: string
+          updated_at?: string
+          window_start?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          profissional_id?: string
+          updated_at?: string
+          window_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificate_rate_limits_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profissionais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      certificates: {
+        Row: {
+          cnpj: string
+          created_at: string
+          id: string
+          last_error_code: string | null
+          last_error_message: string | null
+          plugnotas_certificate_id: string | null
+          profissional_id: string
+          status: Database["public"]["Enums"]["certificate_status"]
+          updated_at: string
+          valid_until: string | null
+        }
+        Insert: {
+          cnpj: string
+          created_at?: string
+          id?: string
+          last_error_code?: string | null
+          last_error_message?: string | null
+          plugnotas_certificate_id?: string | null
+          profissional_id: string
+          status?: Database["public"]["Enums"]["certificate_status"]
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Update: {
+          cnpj?: string
+          created_at?: string
+          id?: string
+          last_error_code?: string | null
+          last_error_message?: string | null
+          plugnotas_certificate_id?: string | null
+          profissional_id?: string
+          status?: Database["public"]["Enums"]["certificate_status"]
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificates_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profissionais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clinicas: {
         Row: {
           cnpj: string
@@ -1505,6 +1657,19 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "profissional" | "recepcionista"
+      certificate_audit_action:
+        | "CERT_UPLOAD_ATTEMPT"
+        | "CERT_UPLOAD_SUCCESS"
+        | "CERT_UPLOAD_FAILURE"
+        | "CERT_REPLACED"
+        | "CERT_STATUS_CHANGE"
+      certificate_status:
+        | "not_configured"
+        | "validating"
+        | "active"
+        | "expiring_soon"
+        | "invalid"
+        | "error"
       forma_pagamento:
         | "pix"
         | "cartao"
@@ -1650,6 +1815,21 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "profissional", "recepcionista"],
+      certificate_audit_action: [
+        "CERT_UPLOAD_ATTEMPT",
+        "CERT_UPLOAD_SUCCESS",
+        "CERT_UPLOAD_FAILURE",
+        "CERT_REPLACED",
+        "CERT_STATUS_CHANGE",
+      ],
+      certificate_status: [
+        "not_configured",
+        "validating",
+        "active",
+        "expiring_soon",
+        "invalid",
+        "error",
+      ],
       forma_pagamento: [
         "pix",
         "cartao",
