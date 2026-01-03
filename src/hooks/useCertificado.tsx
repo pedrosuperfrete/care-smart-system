@@ -175,13 +175,27 @@ export function useCertificado() {
     }
   };
 
+  const refreshCertificate = useCallback(async () => {
+    // Try to reconcile status from last success log (fixes cases where DB update silently failed)
+    try {
+      const { error } = await supabase.functions.invoke('certificate-sync');
+      if (error) {
+        console.error('Error syncing certificate:', error);
+      }
+    } catch (err) {
+      console.error('Error calling certificate-sync:', err);
+    }
+
+    await fetchCertificate();
+  }, [fetchCertificate]);
+
   return {
     certificate,
     isLoading,
     isUploading,
     error,
     uploadCertificate,
-    refreshCertificate: fetchCertificate,
+    refreshCertificate,
     getStatusLabel,
     getStatusColor,
     consentText: CONSENT_TEXT,

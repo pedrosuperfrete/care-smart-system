@@ -151,24 +151,55 @@ Deno.serve(async (req) => {
       },
     });
 
-    // Update certificate status to validating
-    const { data: existingCert } = await supabase
+    // Update certificate status to validating (capture row id for later updates)
+    let certificateRowId: string | null = null;
+
+    const { data: existingCert, error: existingCertError } = await supabase
       .from('certificates')
       .select('id')
       .eq('profissional_id', profissional_id)
       .maybeSingle();
 
-    if (existingCert) {
-      await supabase
+    if (existingCertError) {
+      console.error('Error checking existing certificate:', existingCertError);
+    }
+
+    if (existingCert?.id) {
+      certificateRowId = existingCert.id;
+      const { error: setValidatingError } = await supabase
         .from('certificates')
         .update({ status: 'validating', updated_at: new Date().toISOString() })
         .eq('id', existingCert.id);
+
+      if (setValidatingError) {
+        console.error('Error setting certificate status to validating:', setValidatingError);
+      }
     } else {
-      await supabase.from('certificates').insert({
-        profissional_id,
-        cnpj,
-        status: 'validating',
-      });
+      const { data: insertedCert, error: insertCertError } = await supabase
+        .from('certificates')
+        .insert({
+          profissional_id,
+          cnpj,
+          status: 'validating',
+          updated_at: new Date().toISOString(),
+        })
+        .select('id')
+        .single();
+
+      if (insertCertError) {
+        console.error('Error inserting certificate:', insertCertError);
+      } else {
+        certificateRowId = insertedCert?.id ?? null;
+      }
+    }
+
+    if (!certificateRowId) {
+      // Without a row id we can’t reliably persist status updates.
+      await logFailure(supabase, profissional_id, 'db_error');
+      return new Response(
+        JSON.stringify({ error: 'Erro interno ao salvar certificado. Tente novamente.', code: 'db_error' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Record consent
@@ -281,17 +312,26 @@ Deno.serve(async (req) => {
       }
     }
 
-    await supabase
+    const { error: updateSuccessError } = await supabase
       .from('certificates')
       .update({
-        plugnotas_certificate_id: plugnotasCertId,
+        plugnotas_certificate_id: plugnotasCertId ?? null,
         status,
         valid_until: validUntil || null,
         last_error_code: null,
         last_error_message: null,
         updated_at: new Date().toISOString(),
       })
-      .eq('profissional_id', profissional_id);
+      .eq('id', certificateRowId);
+
+    if (updateSuccessError) {
+      console.error('Error updating certificate after PlugNotas success:', updateSuccessError);
+      await logFailure(supabase, profissional_id, 'db_error');
+      return new Response(
+        JSON.stringify({ error: 'Erro ao finalizar validação do certificado. Tente novamente.', code: 'db_error' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Log success
     await supabase.from('certificate_audit_logs').insert({
