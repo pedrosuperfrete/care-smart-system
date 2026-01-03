@@ -97,7 +97,7 @@ Deno.serve(async (req) => {
       .from('notas_fiscais')
       .select('id, status_emissao, numero_nf')
       .eq('pagamento_id', pagamento_id)
-      .single();
+      .maybeSingle();
 
     if (nfExistente && nfExistente.status_emissao === 'emitida') {
       return new Response(
@@ -191,20 +191,30 @@ Deno.serve(async (req) => {
 
     // Montar payload para PlugNotas
     const valorServico = Number(pagamento.valor_total) || 0;
-    
+
+    // Mapear cidade (UI salva "RJ" ou "SP", PlugNotas espera código IBGE)
+    const codigoCidade = clinica.nf_cidade_emissao === 'RJ' ? '3304557' : '3550308';
+
+    // Mapear regime tributário (UI salva: simples | lucro_presumido | lucro_real | mei)
+    const simplesNacional = ['simples', 'mei'].includes(clinica.nf_regime_tributario);
+    const regimeTributario = clinica.nf_regime_tributario === 'lucro_presumido'
+      ? 2
+      : clinica.nf_regime_tributario === 'lucro_real'
+        ? 3
+        : 1;
+
     const nfsePayload = {
       idIntegracao: pagamento_id,
       prestador: {
         cpfCnpj: clinica.cnpj.replace(/\D/g, ''),
         inscricaoMunicipal: clinica.nf_inscricao_municipal,
         razaoSocial: clinica.nome,
-        simplesNacional: clinica.nf_regime_tributario === 'simples',
-        regimeTributario: clinica.nf_regime_tributario === 'simples' ? 1 : 
-                          clinica.nf_regime_tributario === 'presumido' ? 2 : 3,
+        simplesNacional,
+        regimeTributario,
         endereco: {
           logradouro: clinica.endereco || 'Não informado',
           numero: 'S/N',
-          codigoCidade: clinica.nf_cidade_emissao || '3550308', // São Paulo como default
+          codigoCidade,
           cep: '00000000',
         },
       },
@@ -215,7 +225,7 @@ Deno.serve(async (req) => {
         endereco: paciente?.endereco ? {
           logradouro: paciente.endereco,
           numero: 'S/N',
-          codigoCidade: clinica.nf_cidade_emissao || '3550308',
+          codigoCidade,
           cep: paciente.cep?.replace(/\D/g, '') || '00000000',
         } : undefined,
       },
@@ -235,29 +245,28 @@ Deno.serve(async (req) => {
 
     console.log('Enviando NFS-e para PlugNotas:', JSON.stringify(nfsePayload, null, 2));
 
-    // Chamar API do PlugNotas
+    // Chamar API do PlugNotas (endpoint espera um ARRAY de documentos)
     const plugnotasResponse = await fetch(`${PLUGNOTAS_BASE_URL}/nfse`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-API-KEY': PLUGNOTAS_API_KEY,
       },
-      body: JSON.stringify(nfsePayload),
+      body: JSON.stringify([nfsePayload]),
     });
 
     const plugnotasResult = await plugnotasResponse.json();
+    const plugnotasDoc = Array.isArray(plugnotasResult) ? plugnotasResult[0] : plugnotasResult;
     console.log('Resposta PlugNotas:', JSON.stringify(plugnotasResult, null, 2));
 
     if (!plugnotasResponse.ok) {
       // Mapear erros do PlugNotas
       let errorMessage = 'Erro ao emitir nota fiscal';
-      
-      if (plugnotasResult.message) {
-        errorMessage = plugnotasResult.message;
-      } else if (plugnotasResult.error) {
-        errorMessage = plugnotasResult.error;
-      } else if (Array.isArray(plugnotasResult) && plugnotasResult[0]?.message) {
-        errorMessage = plugnotasResult[0].message;
+
+      if (plugnotasDoc?.message) {
+        errorMessage = plugnotasDoc.message;
+      } else if (plugnotasDoc?.error) {
+        errorMessage = plugnotasDoc.error;
       }
 
       // Salvar erro na tabela notas_fiscais
@@ -276,7 +285,7 @@ Deno.serve(async (req) => {
     }
 
     // Sucesso - extrair dados da resposta
-    const nfseId = plugnotasResult.id || plugnotasResult.documents?.[0]?.id;
+    const nfseId = plugnotasDoc?.id || plugnotasDoc?.documents?.[0]?.id;
     
     // Salvar/atualizar registro na tabela notas_fiscais
     const { data: notaFiscal, error: nfError } = await supabase

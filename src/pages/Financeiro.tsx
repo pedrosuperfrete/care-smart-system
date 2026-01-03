@@ -32,6 +32,7 @@ export default function Financeiro() {
   const { user, loading: authLoading, isRecepcionista } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
+  const [emittingPagamentoId, setEmittingPagamentoId] = useState<string | null>(null);
   
   // Rastrear se veio do dashboard
   const cameFromDashboard = useRef(false);
@@ -90,7 +91,7 @@ export default function Financeiro() {
       });
       return;
     }
-    
+
     if (!isNFConfigured) {
       toast.error('Configurações de NF incompletas', {
         description: 'Preencha os dados fiscais (cidade, inscrição municipal, código do serviço).',
@@ -101,8 +102,13 @@ export default function Financeiro() {
       });
       return;
     }
-    
-    await emitirNFSe.mutateAsync(pagamentoId);
+
+    setEmittingPagamentoId(pagamentoId);
+    try {
+      await emitirNFSe.mutateAsync(pagamentoId);
+    } finally {
+      setEmittingPagamentoId(null);
+    }
   };
 
   // Abrir detalhes do pagamento automaticamente se houver agendamento_id na URL
@@ -473,17 +479,21 @@ export default function Financeiro() {
                             </Button>
                           )}
                           
-                          {status === 'pago' && (
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => handleEmitirNF(pagamento.id)}
-                              disabled={emitirNFSe.isPending}
-                            >
-                              <FileText className="h-4 w-4 mr-1" />
-                              {emitirNFSe.isPending ? 'Emitindo...' : 'Emitir NF'}
-                            </Button>
-                          )}
+                          {status === 'pago' && (() => {
+                            const isThisEmitting = emitirNFSe.isPending && emittingPagamentoId === pagamento.id;
+
+                            return (
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handleEmitirNF(pagamento.id)}
+                                disabled={emitirNFSe.isPending}
+                              >
+                                <FileText className="h-4 w-4 mr-1" />
+                                {isThisEmitting ? 'Emitindo...' : 'Emitir NF'}
+                              </Button>
+                            );
+                          })()}
                           
                           {(status === 'pendente' || status === 'vencido') && (
                             <TooltipProvider>
