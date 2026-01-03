@@ -186,6 +186,7 @@ export function CertificadoDigitalCard() {
         open={modalOpen} 
         onOpenChange={setModalOpen}
         isReplacing={isReplacing}
+        onUploaded={refreshCertificate}
       />
     </>
   );
