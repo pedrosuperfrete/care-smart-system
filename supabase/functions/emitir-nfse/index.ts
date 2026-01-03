@@ -62,11 +62,12 @@ Deno.serve(async (req) => {
     console.log('Iniciando emissão de NFS-e para pagamento:', pagamento_id);
 
     // Buscar dados do pagamento com agendamento, paciente e profissional
+    // Especificando a FK para evitar ambiguidade (existem 2 FKs entre pagamentos e agendamentos)
     const { data: pagamento, error: pagamentoError } = await supabase
       .from('pagamentos')
       .select(`
         *,
-        agendamentos (
+        agendamentos!pagamentos_agendamento_id_fkey (
           *,
           pacientes (*),
           profissionais (*, clinica_id)
