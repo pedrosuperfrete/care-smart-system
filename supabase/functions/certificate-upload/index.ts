@@ -334,10 +334,14 @@ Deno.serve(async (req) => {
 // Helper function to map PlugNotas errors
 function mapPlugNotasError(response: any): string {
   // Handle different response formats from PlugNotas
+  // PlugNotas format: { "error": { "message": "...", "data": {...} } }
   let message = '';
   
   if (typeof response === 'string') {
     message = response.toLowerCase();
+  } else if (response?.error?.message && typeof response.error.message === 'string') {
+    // Primary format: { error: { message: "..." } }
+    message = response.error.message.toLowerCase();
   } else if (response?.message && typeof response.message === 'string') {
     message = response.message.toLowerCase();
   } else if (response?.mensagem && typeof response.mensagem === 'string') {
@@ -348,7 +352,7 @@ function mapPlugNotasError(response: any): string {
     message = response.errors.map((e: any) => typeof e === 'string' ? e : e?.message || '').join(' ').toLowerCase();
   }
   
-  console.log('PlugNotas error message:', message);
+  console.log('PlugNotas error message parsed:', message);
   
   if (message.includes('senha') || message.includes('password') || message.includes('incorreta')) {
     return 'password_invalid';
