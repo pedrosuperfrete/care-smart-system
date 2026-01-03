@@ -1038,6 +1038,10 @@ export type Database = {
           percentual_cobranca_falta: number | null
           preco: number | null
           profissional_id: string | null
+          tipo_cobranca_agendamento: string | null
+          tipo_cobranca_falta: string | null
+          valor_cobranca_agendamento: number | null
+          valor_cobranca_falta: number | null
         }
         Insert: {
           ativo?: boolean
@@ -1051,6 +1055,10 @@ export type Database = {
           percentual_cobranca_falta?: number | null
           preco?: number | null
           profissional_id?: string | null
+          tipo_cobranca_agendamento?: string | null
+          tipo_cobranca_falta?: string | null
+          valor_cobranca_agendamento?: number | null
+          valor_cobranca_falta?: number | null
         }
         Update: {
           ativo?: boolean
@@ -1064,6 +1072,10 @@ export type Database = {
           percentual_cobranca_falta?: number | null
           preco?: number | null
           profissional_id?: string | null
+          tipo_cobranca_agendamento?: string | null
+          tipo_cobranca_falta?: string | null
+          valor_cobranca_agendamento?: number | null
+          valor_cobranca_falta?: number | null
         }
         Relationships: []
       }

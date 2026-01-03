@@ -13,6 +13,10 @@ export interface TipoServico {
   profissional_id?: string;
   percentual_cobranca_falta?: number;
   percentual_cobranca_agendamento?: number;
+  tipo_cobranca_falta?: 'percentual' | 'valor_fixo';
+  tipo_cobranca_agendamento?: 'percentual' | 'valor_fixo';
+  valor_cobranca_falta?: number;
+  valor_cobranca_agendamento?: number;
   criado_em: string;
   atualizado_em: string;
 }
@@ -25,6 +29,10 @@ export interface CreateTipoServicoData {
   profissional_id?: string;
   percentual_cobranca_falta?: number;
   percentual_cobranca_agendamento?: number;
+  tipo_cobranca_falta?: 'percentual' | 'valor_fixo';
+  tipo_cobranca_agendamento?: 'percentual' | 'valor_fixo';
+  valor_cobranca_falta?: number;
+  valor_cobranca_agendamento?: number;
 }
 
 export interface UpdateTipoServicoData {
@@ -34,6 +42,10 @@ export interface UpdateTipoServicoData {
   ativo?: boolean;
   percentual_cobranca_falta?: number | null;
   percentual_cobranca_agendamento?: number | null;
+  tipo_cobranca_falta?: 'percentual' | 'valor_fixo';
+  tipo_cobranca_agendamento?: 'percentual' | 'valor_fixo';
+  valor_cobranca_falta?: number | null;
+  valor_cobranca_agendamento?: number | null;
 }
 
 export function useTiposServicos() {
