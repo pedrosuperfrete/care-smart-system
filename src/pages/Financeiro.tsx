@@ -85,7 +85,7 @@ export default function Financeiro() {
         description: 'Configure seu certificado A1 antes de emitir notas fiscais.',
         action: {
           label: 'Configurar',
-          onClick: () => navigate('/app/configuracoes'),
+          onClick: () => navigate('/app/configuracoes?tab=clinica'),
         },
       });
       return;
@@ -96,7 +96,7 @@ export default function Financeiro() {
         description: 'Preencha os dados fiscais (cidade, inscrição municipal, código do serviço).',
         action: {
           label: 'Configurar',
-          onClick: () => navigate('/app/configuracoes'),
+          onClick: () => navigate('/app/configuracoes?tab=clinica'),
         },
       });
       return;
