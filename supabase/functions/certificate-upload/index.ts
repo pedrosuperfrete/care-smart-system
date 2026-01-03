@@ -202,14 +202,19 @@ Deno.serve(async (req) => {
     plugnotasFormData.append('arquivo', new Blob([fileBytes], { type: 'application/x-pkcs12' }), file.name);
     plugnotasFormData.append('senha', password);
 
-    console.log(`Sending certificate to PlugNotas for CNPJ: ${cnpj.slice(0, 4)}****`);
+    // Select correct PlugNotas base URL based on environment
+    const plugnotasBaseUrl = use_production 
+      ? 'https://api.plugnotas.com.br'
+      : 'https://api.sandbox.plugnotas.com.br';
+
+    console.log(`Sending certificate to PlugNotas (${use_production ? 'production' : 'sandbox'}) for CNPJ: ${cnpj.slice(0, 4)}****`);
 
     let plugnotasResponse;
     try {
       // Ensure API key is properly trimmed and encoded as ASCII
       const cleanApiKey = plugnotasApiKey.trim().replace(/[^\x00-\x7F]/g, '');
       
-      plugnotasResponse = await fetch('https://api.plugnotas.com.br/certificado', {
+      plugnotasResponse = await fetch(`${plugnotasBaseUrl}/certificado`, {
         method: 'POST',
         headers: {
           'x-api-key': cleanApiKey,
