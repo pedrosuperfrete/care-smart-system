@@ -1,5 +1,8 @@
 project_id = "zxgkspeehamsrfhynbzr"
 
+[functions.emitir-nfse]
+verify_jwt = true
+
 [functions.google-oauth]
 verify_jwt = false
 
