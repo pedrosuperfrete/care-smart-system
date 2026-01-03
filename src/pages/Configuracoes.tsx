@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
@@ -22,6 +22,25 @@ export default function Configuracoes() {
     const params = new URLSearchParams(window.location.search);
     return params.get('tab') || 'perfil';
   });
+
+  // Scroll para seção específica quando indicado na URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const section = params.get('section');
+    
+    if (section && activeTab === 'clinica') {
+      // Pequeno delay para garantir que o conteúdo da aba foi renderizado
+      setTimeout(() => {
+        const elementId = section === 'nf' ? 'config-nota-fiscal' : section === 'certificado' ? 'config-certificado' : null;
+        if (elementId) {
+          const element = document.getElementById(elementId);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }
+      }, 100);
+    }
+  }, [activeTab]);
 
   // Estado para dados do perfil básico do usuário
   const [profileData, setProfileData] = useState({
