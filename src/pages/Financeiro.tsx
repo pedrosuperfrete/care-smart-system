@@ -106,6 +106,8 @@ export default function Financeiro() {
     setEmittingPagamentoId(pagamentoId);
     try {
       await emitirNFSe.mutateAsync(pagamentoId);
+    } catch {
+      // o toast já é mostrado no onError do hook; evitar unhandled rejection
     } finally {
       setEmittingPagamentoId(null);
     }

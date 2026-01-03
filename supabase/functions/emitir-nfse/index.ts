@@ -203,6 +203,8 @@ Deno.serve(async (req) => {
         ? 3
         : 1;
 
+    const codigoServico = String(clinica.nf_codigo_servico || '').trim();
+
     const nfsePayload = {
       idIntegracao: pagamento_id,
       prestador: {
@@ -230,7 +232,7 @@ Deno.serve(async (req) => {
         } : undefined,
       },
       servico: [{
-        codigo: clinica.nf_codigo_servico,
+        codigo: codigoServico,
         discriminacao: clinica.nf_descricao_servico || agendamento?.tipo_servico || 'Serviço de saúde',
         cnae: '8630503', // CNAE para consultório médico
         iss: {
