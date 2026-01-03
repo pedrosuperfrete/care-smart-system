@@ -20,9 +20,15 @@ interface CertificadoUploadModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   isReplacing?: boolean;
+  onUploaded?: () => void;
 }
 
-export function CertificadoUploadModal({ open, onOpenChange, isReplacing = false }: CertificadoUploadModalProps) {
+export function CertificadoUploadModal({
+  open,
+  onOpenChange,
+  isReplacing = false,
+  onUploaded,
+}: CertificadoUploadModalProps) {
   const { uploadCertificate, isUploading, consentText } = useCertificado();
   const { data: clinica } = useClinica();
   
@@ -75,6 +81,14 @@ export function CertificadoUploadModal({ open, onOpenChange, isReplacing = false
     if (result.success) {
       setSuccess(true);
       toast.success('Certificado conectado com sucesso!');
+
+      // Mantém o card sincronizado (o modal tem seu próprio hook/estado)
+      try {
+        await onUploaded?.();
+      } catch {
+        // noop
+      }
+
       setTimeout(() => {
         onOpenChange(false);
         resetForm();
