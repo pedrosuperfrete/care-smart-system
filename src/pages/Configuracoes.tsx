@@ -132,15 +132,19 @@ export default function Configuracoes() {
             <div className="space-y-6">
               {/* Configurações gerais da clínica (apenas para admin/profissional) */}
               {(isAdmin || profissional) && !isRecepcionista && (
-                <>
-                  <ConfiguracaoClinica />
-                  <ConfiguracaoNotaFiscal />
-                  <CertificadoDigitalCard />
-                </>
+                <ConfiguracaoClinica />
               )}
 
               {/* Configurações dos profissionais */}
               <ConfiguracoesProfissional />
+
+              {/* Nota Fiscal e Certificado Digital (última seção) */}
+              {(isAdmin || profissional) && !isRecepcionista && (
+                <>
+                  <ConfiguracaoNotaFiscal />
+                  <CertificadoDigitalCard />
+                </>
+              )}
             </div>
           </TabsContent>
         )}
