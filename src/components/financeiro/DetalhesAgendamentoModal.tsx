@@ -178,7 +178,7 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
 
   const handleEmitirNF = async () => {
     if (!pagamentoAtual?.id) return;
-    
+
     // Validar configurações antes de emitir
     if (!isCertificateActive) {
       toast.error('Certificado digital não configurado', {
@@ -190,7 +190,7 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
       });
       return;
     }
-    
+
     if (!isNFConfigured) {
       toast.error('Configurações de NF incompletas', {
         description: 'Preencha os dados fiscais (cidade, inscrição municipal, código do serviço).',
@@ -201,8 +201,12 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
       });
       return;
     }
-    
-    await emitirNFSe.mutateAsync(pagamentoAtual.id);
+
+    try {
+      await emitirNFSe.mutateAsync(pagamentoAtual.id);
+    } catch {
+      // o toast já é mostrado no onError do hook; evitar unhandled rejection
+    }
   };
 
   const getStatusNFLabel = (status: string) => {

@@ -48,21 +48,24 @@ export function ConfiguracaoNotaFiscal() {
   const handleSave = async () => {
     if (!clinica) return;
 
+    const payload = {
+      nome: formData.nome.trim(),
+      cnpj: formData.cnpj.trim(),
+      endereco: formData.endereco?.trim() ? formData.endereco.trim() : null,
+      taxa_imposto: formData.taxa_imposto || 0,
+      nf_cidade_emissao: formData.nf_cidade_emissao || null,
+      nf_inscricao_municipal: formData.nf_inscricao_municipal?.trim() ? formData.nf_inscricao_municipal.trim() : null,
+      nf_regime_tributario: formData.nf_regime_tributario || 'simples',
+      // Importante: este código deve ser o da LC 116 / prefeitura (ex: 4.03), não CNAE
+      nf_codigo_servico: formData.nf_codigo_servico?.trim() ? formData.nf_codigo_servico.trim() : null,
+      nf_descricao_servico: formData.nf_descricao_servico?.trim() ? formData.nf_descricao_servico.trim() : null,
+    };
+
     setLoading(true);
     try {
       const { error } = await supabase
         .from('clinicas')
-        .update({
-          nome: formData.nome,
-          cnpj: formData.cnpj,
-          endereco: formData.endereco || null,
-          taxa_imposto: formData.taxa_imposto || 0,
-          nf_cidade_emissao: formData.nf_cidade_emissao || null,
-          nf_inscricao_municipal: formData.nf_inscricao_municipal || null,
-          nf_regime_tributario: formData.nf_regime_tributario || 'simples',
-          nf_codigo_servico: formData.nf_codigo_servico || null,
-          nf_descricao_servico: formData.nf_descricao_servico || null
-        } as any)
+        .update(payload as any)
         .eq('id', clinica.id);
 
       if (error) throw error;
@@ -227,7 +230,7 @@ export function ConfiguracaoNotaFiscal() {
                         <Info className="h-4 w-4 text-muted-foreground" />
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
-                        <p>Código do serviço conforme a lista de serviços da sua prefeitura (LC 116)</p>
+                        <p>Código do serviço conforme a lista de serviços da sua prefeitura (LC 116). Ex: 4.03. (Não é CNAE)</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>

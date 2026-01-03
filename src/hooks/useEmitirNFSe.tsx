@@ -25,14 +25,43 @@ export function useEmitirNFSe() {
       });
 
       if (error) {
-        throw new Error(error.message || 'Erro ao emitir nota fiscal');
+        // Supabase retorna FunctionsHttpError com o body da resposta em error.context.body
+        let message = error.message || 'Erro ao emitir nota fiscal';
+        const ctxBody = (error as any)?.context?.body;
+        try {
+          const parsed = typeof ctxBody === 'string' ? JSON.parse(ctxBody) : ctxBody;
+          const errObj = parsed?.error;
+          if (typeof errObj === 'string') message = errObj;
+          else if (errObj?.message) {
+            message = errObj.message;
+            const fields = errObj?.data?.fields;
+            if (fields && typeof fields === 'object') {
+              const first = Object.entries(fields)[0];
+              if (first) message = `${message}: ${String(first[1])}`;
+            }
+          }
+        } catch {
+          // noop
+        }
+        throw new Error(message);
       }
 
-      if (data.error) {
-        throw new Error(data.error);
+      if ((data as any)?.error) {
+        const errObj = (data as any).error;
+        let message = 'Erro ao emitir nota fiscal';
+        if (typeof errObj === 'string') message = errObj;
+        else if (errObj?.message) {
+          message = errObj.message;
+          const fields = errObj?.data?.fields;
+          if (fields && typeof fields === 'object') {
+            const first = Object.entries(fields)[0];
+            if (first) message = `${message}: ${String(first[1])}`;
+          }
+        }
+        throw new Error(message);
       }
 
-      return data;
+      return data as EmitirNFSeResponse;
     },
     onSuccess: (data) => {
       toast.success(data.message || 'Nota fiscal enviada para processamento!');
