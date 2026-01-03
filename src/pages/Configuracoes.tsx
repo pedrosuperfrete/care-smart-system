@@ -12,6 +12,7 @@ import { ConfiguracaoClinica } from '@/components/configuracoes/ConfiguracaoClin
 import { AssinaturaStatus } from '@/components/configuracoes/AssinaturaStatus';
 import { ConfiguracaoWhatsApp } from '@/components/configuracoes/ConfiguracaoWhatsApp';
 import { ConfiguracoesProfissional } from '@/components/configuracoes/ConfiguracoesProfissional';
+import { ConfiguracaoNotaFiscal } from '@/components/configuracoes/ConfiguracaoNotaFiscal';
 
 export default function Configuracoes() {
   const { userProfile, profissional, isAdmin, isRecepcionista, updateProfissional } = useAuth();
@@ -130,7 +131,10 @@ export default function Configuracoes() {
             <div className="space-y-6">
               {/* Configurações gerais da clínica (apenas para admin/profissional) */}
               {(isAdmin || profissional) && !isRecepcionista && (
-                <ConfiguracaoClinica />
+                <>
+                  <ConfiguracaoClinica />
+                  <ConfiguracaoNotaFiscal />
+                </>
               )}
 
               {/* Configurações dos profissionais */}
