@@ -8,7 +8,6 @@ import { toast } from 'sonner';
 import { PerfilBasico } from '@/components/configuracoes/PerfilBasico';
 import { GerenciarEquipe } from '@/components/configuracoes/GerenciarEquipe';
 import { ConfiguracoesSistema } from '@/components/configuracoes/ConfiguracoesSistema';
-import { ConfiguracaoClinica } from '@/components/configuracoes/ConfiguracaoClinica';
 import { AssinaturaStatus } from '@/components/configuracoes/AssinaturaStatus';
 import { ConfiguracaoWhatsApp } from '@/components/configuracoes/ConfiguracaoWhatsApp';
 import { ConfiguracoesProfissional } from '@/components/configuracoes/ConfiguracoesProfissional';
@@ -149,21 +148,16 @@ export default function Configuracoes() {
         {(isAdmin || profissional || isRecepcionista) && (
           <TabsContent value="clinica">
             <div className="space-y-6">
-              {/* Configurações gerais da clínica (apenas para admin/profissional) */}
-              {(isAdmin || profissional) && !isRecepcionista && (
-                <ConfiguracaoClinica />
-              )}
-
-              {/* Configurações dos profissionais */}
-              <ConfiguracoesProfissional />
-
-              {/* Nota Fiscal e Certificado Digital (última seção) */}
+              {/* Nota Fiscal e dados da clínica (apenas para admin/profissional) */}
               {(isAdmin || profissional) && !isRecepcionista && (
                 <>
                   <ConfiguracaoNotaFiscal />
                   <CertificadoDigitalCard />
                 </>
               )}
+
+              {/* Configurações dos profissionais */}
+              <ConfiguracoesProfissional />
             </div>
           </TabsContent>
         )}
