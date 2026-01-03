@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.criar-agendamento]
 verify_jwt = false
+
+[functions.certificate-upload]
+verify_jwt = false

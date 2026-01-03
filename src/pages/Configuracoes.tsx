@@ -13,6 +13,7 @@ import { AssinaturaStatus } from '@/components/configuracoes/AssinaturaStatus';
 import { ConfiguracaoWhatsApp } from '@/components/configuracoes/ConfiguracaoWhatsApp';
 import { ConfiguracoesProfissional } from '@/components/configuracoes/ConfiguracoesProfissional';
 import { ConfiguracaoNotaFiscal } from '@/components/configuracoes/ConfiguracaoNotaFiscal';
+import { CertificadoDigitalCard } from '@/components/configuracoes/CertificadoDigitalCard';
 
 export default function Configuracoes() {
   const { userProfile, profissional, isAdmin, isRecepcionista, updateProfissional } = useAuth();
@@ -134,6 +135,7 @@ export default function Configuracoes() {
                 <>
                   <ConfiguracaoClinica />
                   <ConfiguracaoNotaFiscal />
+                  <CertificadoDigitalCard />
                 </>
               )}
 
