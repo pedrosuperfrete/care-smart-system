@@ -11,6 +11,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   file_invalid: 'Arquivo inválido. Envie um certificado A1 (.pfx ou .p12).',
   cert_expired: 'Seu certificado está expirado. Gere/renove um novo A1 e envie novamente.',
   no_private_key: 'Este certificado não contém a chave privada. Confirme se você exportou como A1 (.pfx/.p12) com chave privada.',
+  plugnotas_unauthorized: 'Falha de autenticação com a PlugNotas. Verifique a API Key (sandbox/produção) configurada no Supabase.',
   plugnotas_unavailable: 'Serviço fiscal indisponível no momento. Tente novamente em alguns minutos.',
   rate_limited: 'Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.',
   unknown_error: 'Não foi possível validar seu certificado. Tente novamente. Se persistir, fale com o suporte.',
@@ -217,7 +218,9 @@ Deno.serve(async (req) => {
       plugnotasResponse = await fetch(`${plugnotasBaseUrl}/certificado`, {
         method: 'POST',
         headers: {
-          'x-api-key': cleanApiKey,
+          // Docs: "X-API-KEY: {{apiKey}}" (header name is case-insensitive, but we keep the canonical casing)
+          'X-API-KEY': cleanApiKey,
+          'Accept': 'application/json',
         },
         body: plugnotasFormData,
       });
@@ -231,11 +234,27 @@ Deno.serve(async (req) => {
       );
     }
 
-    const plugnotasData = await plugnotasResponse.json();
+    const responseContentType = plugnotasResponse.headers.get('content-type') || '';
+    const plugnotasBodyText = await plugnotasResponse.text();
+
+    let plugnotasData: any = null;
+    try {
+      plugnotasData = plugnotasBodyText ? JSON.parse(plugnotasBodyText) : null;
+    } catch {
+      // Some PlugNotas errors may come back as non-JSON (HTML/plain text)
+      plugnotasData = plugnotasBodyText;
+    }
+
     console.log('PlugNotas response status:', plugnotasResponse.status);
+    console.log('PlugNotas response content-type:', responseContentType);
+    console.log('PlugNotas response body preview:', (plugnotasBodyText || '').slice(0, 200));
 
     if (!plugnotasResponse.ok) {
-      const errorCode = mapPlugNotasError(plugnotasData);
+      // 401 is explicit in docs: "X-API-KEY ausente ou inválido"
+      const errorCode = plugnotasResponse.status === 401
+        ? 'plugnotas_unauthorized'
+        : mapPlugNotasError(plugnotasData);
+
       const errorMessage = ERROR_MESSAGES[errorCode] || ERROR_MESSAGES.unknown_error;
       
       console.log(`PlugNotas error: ${errorCode}`);
@@ -321,6 +340,8 @@ function mapPlugNotasError(response: any): string {
     message = response.toLowerCase();
   } else if (response?.message && typeof response.message === 'string') {
     message = response.message.toLowerCase();
+  } else if (response?.mensagem && typeof response.mensagem === 'string') {
+    message = response.mensagem.toLowerCase();
   } else if (response?.error && typeof response.error === 'string') {
     message = response.error.toLowerCase();
   } else if (response?.errors && Array.isArray(response.errors)) {
