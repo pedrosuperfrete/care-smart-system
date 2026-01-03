@@ -206,10 +206,13 @@ Deno.serve(async (req) => {
 
     let plugnotasResponse;
     try {
+      // Ensure API key is properly trimmed and encoded as ASCII
+      const cleanApiKey = plugnotasApiKey.trim().replace(/[^\x00-\x7F]/g, '');
+      
       plugnotasResponse = await fetch('https://api.plugnotas.com.br/certificado', {
         method: 'POST',
         headers: {
-          'x-api-key': plugnotasApiKey,
+          'x-api-key': cleanApiKey,
         },
         body: plugnotasFormData,
       });
