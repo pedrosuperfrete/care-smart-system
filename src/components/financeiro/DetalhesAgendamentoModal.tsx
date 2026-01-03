@@ -11,8 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Calendar, User, Stethoscope, DollarSign, CreditCard, FileText, Phone, Mail, Pencil, Save, X } from "lucide-react";
+import { Calendar, User, Stethoscope, DollarSign, CreditCard, FileText, Phone, Mail, Pencil, Save, X, Receipt, Loader2, ExternalLink } from "lucide-react";
 import { useUpdatePagamento } from "@/hooks/useFinanceiro";
+import { useEmitirNFSe, useNotaFiscalByPagamento } from "@/hooks/useEmitirNFSe";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
@@ -38,6 +39,8 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
   const [parcelasTotais, setParcelasTotais] = useState<number>(1);
   const [pagamentoAtual, setPagamentoAtual] = useState<any>(pagamento);
   const updatePagamento = useUpdatePagamento();
+  const emitirNFSe = useEmitirNFSe();
+  const { data: notaFiscal, isLoading: nfLoading } = useNotaFiscalByPagamento(pagamento?.id);
 
   useEffect(() => {
     if (pagamento) {
@@ -155,6 +158,20 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
     } catch (error) {
       console.error('Erro ao atualizar pagamento:', error);
     }
+  };
+
+  const handleEmitirNF = async () => {
+    if (!pagamentoAtual?.id) return;
+    await emitirNFSe.mutateAsync(pagamentoAtual.id);
+  };
+
+  const getStatusNFLabel = (status: string) => {
+    const statusMap: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' }> = {
+      emitida: { label: 'Emitida', variant: 'default' },
+      pendente: { label: 'Processando', variant: 'secondary' },
+      erro: { label: 'Erro', variant: 'destructive' },
+    };
+    return statusMap[status] || { label: status, variant: 'secondary' };
   };
 
   return (
@@ -397,6 +414,93 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
                   {updatePagamento.isPending ? 'Salvando...' : 'Salvar'}
                 </Button>
               </div>
+            )}
+          </div>
+
+          <Separator />
+
+          {/* Nota Fiscal */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+              <Receipt className="h-4 w-4" />
+              Nota Fiscal
+            </h3>
+            
+            {nfLoading ? (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Carregando...
+              </div>
+            ) : notaFiscal ? (
+              <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Status</p>
+                    <Badge variant={getStatusNFLabel(notaFiscal.status_emissao).variant} className="mt-1">
+                      {getStatusNFLabel(notaFiscal.status_emissao).label}
+                    </Badge>
+                  </div>
+                  {notaFiscal.numero_nf && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">Número</p>
+                      <p className="font-medium">{notaFiscal.numero_nf}</p>
+                    </div>
+                  )}
+                </div>
+                {notaFiscal.link_nf && (
+                  <Button variant="outline" size="sm" asChild className="w-full mt-2">
+                    <a href={notaFiscal.link_nf} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Visualizar NF
+                    </a>
+                  </Button>
+                )}
+                {notaFiscal.status_emissao === 'erro' && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full mt-2"
+                    onClick={handleEmitirNF}
+                    disabled={emitirNFSe.isPending}
+                  >
+                    {emitirNFSe.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Emitindo...
+                      </>
+                    ) : (
+                      <>
+                        <Receipt className="h-4 w-4 mr-2" />
+                        Tentar Novamente
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+            ) : pagamentoAtual.status === 'pago' ? (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full"
+                onClick={handleEmitirNF}
+                disabled={emitirNFSe.isPending}
+              >
+                {emitirNFSe.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Emitindo...
+                  </>
+                ) : (
+                  <>
+                    <Receipt className="h-4 w-4 mr-2" />
+                    Emitir Nota Fiscal
+                  </>
+                )}
+              </Button>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Disponível após confirmação do pagamento
+              </p>
             )}
           </div>
         </div>

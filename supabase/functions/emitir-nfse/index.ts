@@ -1,0 +1,318 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+// Usar sandbox ou produção baseado na env
+const USE_PRODUCTION = Deno.env.get('USE_PLUGNOTAS_PROD') === 'true';
+const PLUGNOTAS_API_KEY = USE_PRODUCTION 
+  ? Deno.env.get('PLUGNOTAS_PROD_API_KEY')
+  : Deno.env.get('PLUGNOTAS_SANDBOX_API_KEY');
+const PLUGNOTAS_BASE_URL = USE_PRODUCTION
+  ? 'https://api.plugnotas.com.br'
+  : 'https://api.sandbox.plugnotas.com.br';
+
+interface EmitirNFSeRequest {
+  pagamento_id: string;
+}
+
+Deno.serve(async (req) => {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Autenticação do usuário
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Token de autorização não fornecido' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+
+    if (authError || !user) {
+      console.error('Erro de autenticação:', authError);
+      return new Response(
+        JSON.stringify({ error: 'Usuário não autenticado' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { pagamento_id }: EmitirNFSeRequest = await req.json();
+
+    if (!pagamento_id) {
+      return new Response(
+        JSON.stringify({ error: 'ID do pagamento é obrigatório' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Iniciando emissão de NFS-e para pagamento:', pagamento_id);
+
+    // Buscar dados do pagamento com agendamento, paciente e profissional
+    const { data: pagamento, error: pagamentoError } = await supabase
+      .from('pagamentos')
+      .select(`
+        *,
+        agendamentos (
+          *,
+          pacientes (*),
+          profissionais (*, clinica_id)
+        )
+      `)
+      .eq('id', pagamento_id)
+      .single();
+
+    if (pagamentoError || !pagamento) {
+      console.error('Erro ao buscar pagamento:', pagamentoError);
+      return new Response(
+        JSON.stringify({ error: 'Pagamento não encontrado' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Verificar se o pagamento está pago
+    if (pagamento.status !== 'pago') {
+      return new Response(
+        JSON.stringify({ error: 'Só é possível emitir NF para pagamentos já confirmados' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Verificar se já existe NF emitida
+    const { data: nfExistente } = await supabase
+      .from('notas_fiscais')
+      .select('id, status_emissao, numero_nf')
+      .eq('pagamento_id', pagamento_id)
+      .single();
+
+    if (nfExistente && nfExistente.status_emissao === 'emitida') {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Já existe uma NF emitida para este pagamento',
+          numero_nf: nfExistente.numero_nf
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const agendamento = pagamento.agendamentos;
+    const paciente = agendamento?.pacientes;
+    const profissional = agendamento?.profissionais;
+
+    if (!profissional?.clinica_id) {
+      return new Response(
+        JSON.stringify({ error: 'Profissional sem clínica associada' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Buscar dados da clínica
+    const { data: clinica, error: clinicaError } = await supabase
+      .from('clinicas')
+      .select('*')
+      .eq('id', profissional.clinica_id)
+      .single();
+
+    if (clinicaError || !clinica) {
+      console.error('Erro ao buscar clínica:', clinicaError);
+      return new Response(
+        JSON.stringify({ error: 'Clínica não encontrada' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Verificar configurações de NF
+    if (!clinica.cnpj) {
+      return new Response(
+        JSON.stringify({ error: 'CNPJ da clínica não configurado' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!clinica.nf_inscricao_municipal) {
+      return new Response(
+        JSON.stringify({ error: 'Inscrição municipal não configurada. Acesse Configurações > Clínica > Nota Fiscal.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!clinica.nf_codigo_servico) {
+      return new Response(
+        JSON.stringify({ error: 'Código do serviço não configurado. Acesse Configurações > Clínica > Nota Fiscal.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Verificar se tem certificado digital ativo
+    const { data: certificate } = await supabase
+      .from('certificates')
+      .select('status, plugnotas_certificate_id')
+      .eq('profissional_id', profissional.id)
+      .single();
+
+    if (!certificate || certificate.status !== 'active') {
+      return new Response(
+        JSON.stringify({ error: 'Certificado digital não configurado ou inválido. Acesse Configurações > Clínica > Certificado Digital.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Verificar API key
+    if (!PLUGNOTAS_API_KEY) {
+      console.error('API key do PlugNotas não configurada');
+      return new Response(
+        JSON.stringify({ error: 'Configuração de integração com NF-e incompleta' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Formatar CPF do paciente (remover pontuação)
+    const cpfPaciente = paciente?.cpf?.replace(/\D/g, '') || '';
+    if (!cpfPaciente || cpfPaciente.length !== 11) {
+      return new Response(
+        JSON.stringify({ error: 'CPF do paciente não informado ou inválido' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Montar payload para PlugNotas
+    const valorServico = Number(pagamento.valor_total) || 0;
+    
+    const nfsePayload = {
+      idIntegracao: pagamento_id,
+      prestador: {
+        cpfCnpj: clinica.cnpj.replace(/\D/g, ''),
+        inscricaoMunicipal: clinica.nf_inscricao_municipal,
+        razaoSocial: clinica.nome,
+        simplesNacional: clinica.nf_regime_tributario === 'simples',
+        regimeTributario: clinica.nf_regime_tributario === 'simples' ? 1 : 
+                          clinica.nf_regime_tributario === 'presumido' ? 2 : 3,
+        endereco: {
+          logradouro: clinica.endereco || 'Não informado',
+          numero: 'S/N',
+          codigoCidade: clinica.nf_cidade_emissao || '3550308', // São Paulo como default
+          cep: '00000000',
+        },
+      },
+      tomador: {
+        cpfCnpj: cpfPaciente,
+        razaoSocial: paciente?.nome || 'Consumidor Final',
+        email: paciente?.email || undefined,
+        endereco: paciente?.endereco ? {
+          logradouro: paciente.endereco,
+          numero: 'S/N',
+          codigoCidade: clinica.nf_cidade_emissao || '3550308',
+          cep: paciente.cep?.replace(/\D/g, '') || '00000000',
+        } : undefined,
+      },
+      servico: [{
+        codigo: clinica.nf_codigo_servico,
+        discriminacao: clinica.nf_descricao_servico || agendamento?.tipo_servico || 'Serviço de saúde',
+        cnae: '8630503', // CNAE para consultório médico
+        iss: {
+          tipoTributacao: 6, // Tributável
+          aliquota: 2.00, // 2% padrão
+        },
+        valor: {
+          servico: valorServico,
+        },
+      }],
+    };
+
+    console.log('Enviando NFS-e para PlugNotas:', JSON.stringify(nfsePayload, null, 2));
+
+    // Chamar API do PlugNotas
+    const plugnotasResponse = await fetch(`${PLUGNOTAS_BASE_URL}/nfse`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-KEY': PLUGNOTAS_API_KEY,
+      },
+      body: JSON.stringify(nfsePayload),
+    });
+
+    const plugnotasResult = await plugnotasResponse.json();
+    console.log('Resposta PlugNotas:', JSON.stringify(plugnotasResult, null, 2));
+
+    if (!plugnotasResponse.ok) {
+      // Mapear erros do PlugNotas
+      let errorMessage = 'Erro ao emitir nota fiscal';
+      
+      if (plugnotasResult.message) {
+        errorMessage = plugnotasResult.message;
+      } else if (plugnotasResult.error) {
+        errorMessage = plugnotasResult.error;
+      } else if (Array.isArray(plugnotasResult) && plugnotasResult[0]?.message) {
+        errorMessage = plugnotasResult[0].message;
+      }
+
+      // Salvar erro na tabela notas_fiscais
+      await supabase.from('notas_fiscais').upsert({
+        id: nfExistente?.id,
+        pagamento_id,
+        paciente_id: paciente?.id,
+        status_emissao: 'erro',
+        valor_nf: valorServico,
+      }, { onConflict: 'id' });
+
+      return new Response(
+        JSON.stringify({ error: errorMessage }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Sucesso - extrair dados da resposta
+    const nfseId = plugnotasResult.id || plugnotasResult.documents?.[0]?.id;
+    
+    // Salvar/atualizar registro na tabela notas_fiscais
+    const { data: notaFiscal, error: nfError } = await supabase
+      .from('notas_fiscais')
+      .upsert({
+        id: nfExistente?.id,
+        pagamento_id,
+        paciente_id: paciente?.id,
+        status_emissao: 'pendente', // Aguardando processamento da prefeitura
+        valor_nf: valorServico,
+        numero_nf: nfseId,
+        data_emissao: new Date().toISOString(),
+      }, { onConflict: 'id' })
+      .select()
+      .single();
+
+    if (nfError) {
+      console.error('Erro ao salvar nota fiscal:', nfError);
+    }
+
+    console.log('NFS-e enviada com sucesso! ID:', nfseId);
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'Nota fiscal enviada para processamento',
+        nfse_id: nfseId,
+        nota_fiscal: notaFiscal,
+      }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    console.error('Erro ao emitir NFS-e:', error);
+    return new Response(
+      JSON.stringify({ error: 'Erro interno ao processar emissão de NF-e' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+});
