@@ -11,6 +11,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { DollarSign, TrendingUp, Calendar, Search, CheckCircle, Clock, XCircle, Receipt, CreditCard, MessageSquare, FileText, Calculator, Wallet } from 'lucide-react';
 import { usePagamentos, useFinanceiroStats, useMarcarPago } from '@/hooks/useFinanceiro';
 import { useCreatePagamento } from '@/hooks/useCreatePagamento';
+import { useEmitirNFSe, useNotaFiscalByPagamento } from '@/hooks/useEmitirNFSe';
+import { useCertificado } from '@/hooks/useCertificado';
+import { useClinica } from '@/hooks/useClinica';
 import { useAuth } from '@/hooks/useAuth';
 import { ReciboModal } from '@/components/financeiro/ReciboModal';
 import { CobrancaModal } from '@/components/financeiro/CobrancaModal';
@@ -64,6 +67,43 @@ export default function Financeiro() {
   const { data: stats, isLoading: statsLoading } = useFinanceiroStats(startDate, endDate);
   const marcarPagoMutation = useMarcarPago();
   const createPagamentoMutation = useCreatePagamento();
+  const emitirNFSe = useEmitirNFSe();
+  const { certificate } = useCertificado();
+  const { data: clinica } = useClinica();
+  
+  // Verifica se as configurações de NF estão completas
+  const isNFConfigured = Boolean(
+    clinica?.nf_cidade_emissao &&
+    clinica?.nf_inscricao_municipal &&
+    clinica?.nf_codigo_servico
+  );
+  const isCertificateActive = certificate?.status === 'active';
+
+  const handleEmitirNF = async (pagamentoId: string) => {
+    if (!isCertificateActive) {
+      toast.error('Certificado digital não configurado', {
+        description: 'Configure seu certificado A1 antes de emitir notas fiscais.',
+        action: {
+          label: 'Configurar',
+          onClick: () => navigate('/app/configuracoes'),
+        },
+      });
+      return;
+    }
+    
+    if (!isNFConfigured) {
+      toast.error('Configurações de NF incompletas', {
+        description: 'Preencha os dados fiscais (cidade, inscrição municipal, código do serviço).',
+        action: {
+          label: 'Configurar',
+          onClick: () => navigate('/app/configuracoes'),
+        },
+      });
+      return;
+    }
+    
+    await emitirNFSe.mutateAsync(pagamentoId);
+  };
 
   // Abrir detalhes do pagamento automaticamente se houver agendamento_id na URL
   useEffect(() => {
@@ -434,26 +474,15 @@ export default function Financeiro() {
                           )}
                           
                           {status === 'pago' && (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className="inline-block">
-                                    <Button 
-                                      size="sm" 
-                                      variant="outline"
-                                      disabled
-                                      className="opacity-60 pointer-events-none"
-                                    >
-                                      <FileText className="h-4 w-4 mr-1" />
-                                      Enviar NF
-                                    </Button>
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Em breve</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleEmitirNF(pagamento.id)}
+                              disabled={emitirNFSe.isPending}
+                            >
+                              <FileText className="h-4 w-4 mr-1" />
+                              {emitirNFSe.isPending ? 'Emitindo...' : 'Emitir NF'}
+                            </Button>
                           )}
                           
                           {(status === 'pendente' || status === 'vencido') && (
