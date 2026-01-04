@@ -118,17 +118,19 @@ Deno.serve(async (req) => {
     // Verificar se já existe NF emitida
     const { data: nfExistente } = await supabase
       .from('notas_fiscais')
-      .select('id, status_emissao, numero_nf')
+      .select('id, status_emissao, numero_nf, link_nf, data_emissao, valor_nf, pagamento_id, paciente_id')
       .eq('pagamento_id', pagamento_id)
       .maybeSingle();
 
     if (nfExistente && nfExistente.status_emissao === 'emitida') {
       return new Response(
-        JSON.stringify({ 
-          error: 'Já existe uma NF emitida para este pagamento',
-          numero_nf: nfExistente.numero_nf
+        JSON.stringify({
+          success: true,
+          message: 'Nota fiscal já emitida para este pagamento',
+          nfse_id: nfExistente.numero_nf,
+          nota_fiscal: nfExistente,
         }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -312,6 +314,38 @@ Deno.serve(async (req) => {
         errorMessage = `O CNPJ ${cnpjUsado} não está cadastrado no ambiente ${ambiente} do PlugNotas. ` +
           `Acesse o painel do PlugNotas (${ambiente === 'sandbox' ? 'app.sandbox.plugnotas.com.br' : 'app.plugnotas.com.br'}) ` +
           `e cadastre a empresa antes de emitir notas fiscais.`;
+      }
+
+      // Caso a NF já exista no PlugNotas (idIntegracao duplicado), tratar como sucesso e devolver o PDF/XML.
+      if (errorMessage.includes('Já existe uma NFSe com os parâmetros informados')) {
+        const current = plugnotasDoc?.error?.data?.current;
+        const linkPdf = current?.pdf ?? null;
+        const numeroNfse = current?.numeroNfse ? String(current.numeroNfse) : null;
+
+        const { data: notaFiscalJaExiste } = await supabase
+          .from('notas_fiscais')
+          .upsert({
+            id: nfExistente?.id,
+            pagamento_id,
+            paciente_id: paciente?.id,
+            status_emissao: 'emitida',
+            valor_nf: valorServico,
+            numero_nf: numeroNfse ?? nfExistente?.numero_nf ?? null,
+            link_nf: linkPdf,
+            data_emissao: new Date().toISOString(),
+          }, { onConflict: 'id' })
+          .select()
+          .single();
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: 'Nota fiscal já emitida para este pagamento',
+            nfse_id: numeroNfse ?? nfExistente?.numero_nf ?? null,
+            nota_fiscal: notaFiscalJaExiste ?? null,
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
 
       console.error('Erro PlugNotas:', errorMessage, errorDetails);
