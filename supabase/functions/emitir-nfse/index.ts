@@ -14,9 +14,32 @@ const PLUGNOTAS_BASE_URL = USE_PRODUCTION
   ? 'https://api.plugnotas.com.br'
   : 'https://api.sandbox.plugnotas.com.br';
 
+const normalizeCnpj = (value: string) => (value ?? '').replace(/\D/g, '');
+
+const isValidCnpj = (value: string) => {
+  const cnpj = normalizeCnpj(value);
+  if (cnpj.length !== 14) return false;
+  if (/^(\d)\1+$/.test(cnpj)) return false;
+
+  const calcDigit = (base: string, weights: number[]) => {
+    let sum = 0;
+    for (let i = 0; i < weights.length; i++) sum += Number(base[i]) * weights[i];
+    const mod = sum % 11;
+    return mod < 2 ? 0 : 11 - mod;
+  };
+
+  const base12 = cnpj.slice(0, 12);
+  const d1 = calcDigit(base12, [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
+  const base13 = base12 + String(d1);
+  const d2 = calcDigit(base13, [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
+
+  return cnpj === base13 + String(d2);
+};
+
 interface EmitirNFSeRequest {
   pagamento_id: string;
 }
+
 
 Deno.serve(async (req) => {
   // Handle CORS preflight
@@ -136,9 +159,14 @@ Deno.serve(async (req) => {
     }
 
     // Verificar configurações de NF
-    if (!clinica.cnpj) {
+    const cnpjRaw = String(clinica.cnpj ?? '').trim();
+    const cnpjDigits = normalizeCnpj(cnpjRaw);
+
+    if (!cnpjRaw || cnpjRaw.startsWith('temp-') || !isValidCnpj(cnpjDigits)) {
       return new Response(
-        JSON.stringify({ error: 'CNPJ da clínica não configurado' }),
+        JSON.stringify({
+          error: 'CNPJ da clínica inválido. Informe um CNPJ válido (00.000.000/0000-00) em Configurações > Clínica > Nota Fiscal.',
+        }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -208,7 +236,7 @@ Deno.serve(async (req) => {
     const nfsePayload = {
       idIntegracao: pagamento_id,
       prestador: {
-        cpfCnpj: clinica.cnpj.replace(/\D/g, ''),
+        cpfCnpj: cnpjDigits,
         inscricaoMunicipal: clinica.nf_inscricao_municipal,
         razaoSocial: clinica.nome,
         simplesNacional,
