@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Calendar, User, Stethoscope, DollarSign, CreditCard, FileText, Phone, Mail, Pencil, Save, X, Receipt, Loader2, ExternalLink } from "lucide-react";
+import { Calendar, User, Stethoscope, DollarSign, CreditCard, FileText, Phone, Mail, Pencil, Save, X, Receipt, Loader2 } from "lucide-react";
 import { useUpdatePagamento } from "@/hooks/useFinanceiro";
 import { useEmitirNFSe, useNotaFiscalByPagamento } from "@/hooks/useEmitirNFSe";
 import { useCertificado } from "@/hooks/useCertificado";
@@ -23,6 +23,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn, formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
+import { VisualizarNFModal } from "./VisualizarNFModal";
 
 interface ServicoAdicional {
   nome: string;
@@ -43,6 +44,7 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
   const [parcelasTotais, setParcelasTotais] = useState<number>(1);
   const [pagamentoAtual, setPagamentoAtual] = useState<any>(pagamento);
   const [notaFiscalLocal, setNotaFiscalLocal] = useState<any | null>(null);
+  const [showNFModal, setShowNFModal] = useState(false);
   const navigate = useNavigate();
   const updatePagamento = useUpdatePagamento();
   const emitirNFSe = useEmitirNFSe();
@@ -228,6 +230,7 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] flex flex-col">
         <DialogHeader className="flex-shrink-0">
@@ -484,53 +487,46 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Carregando...
               </div>
-            ) : notaFiscal ? (
-              <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Status</p>
-                    <Badge variant={getStatusNFLabel(notaFiscal.status_emissao).variant} className="mt-1">
-                      {getStatusNFLabel(notaFiscal.status_emissao).label}
-                    </Badge>
-                  </div>
-                  {notaFiscal.numero_nf && (
-                    <div>
-                      <p className="text-xs text-muted-foreground">Número</p>
-                      <p className="font-medium">{notaFiscal.numero_nf}</p>
-                    </div>
+            ) : notaFiscal && notaFiscal.status_emissao !== 'erro' ? (
+              // NF existe e não está com erro - mostrar botão "Ver NF"
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full"
+                onClick={() => setShowNFModal(true)}
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Ver Nota Fiscal
+                {notaFiscal.numero_nf && (
+                  <span className="ml-2 text-muted-foreground">#{notaFiscal.numero_nf}</span>
+                )}
+              </Button>
+            ) : notaFiscal?.status_emissao === 'erro' ? (
+              // NF com erro - permitir reemitir
+              <div className="space-y-2">
+                <Badge variant="destructive" className="w-fit">Erro na emissão</Badge>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full"
+                  onClick={handleEmitirNF}
+                  disabled={emitirNFSe.isPending}
+                >
+                  {emitirNFSe.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Processando...
+                    </>
+                  ) : (
+                    <>
+                      <Receipt className="h-4 w-4 mr-2" />
+                      Tentar Novamente
+                    </>
                   )}
-                </div>
-                {notaFiscal.link_nf && (
-                  <Button variant="outline" size="sm" asChild className="w-full mt-2">
-                    <a href={notaFiscal.link_nf} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      Visualizar NF
-                    </a>
-                  </Button>
-                )}
-                {notaFiscal.status_emissao === 'erro' && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full mt-2"
-                    onClick={handleEmitirNF}
-                    disabled={emitirNFSe.isPending}
-                  >
-                    {emitirNFSe.isPending ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Processando...
-                      </>
-                    ) : (
-                      <>
-                        <Receipt className="h-4 w-4 mr-2" />
-                        Tentar Novamente
-                      </>
-                    )}
-                  </Button>
-                )}
+                </Button>
               </div>
             ) : (
+              // Sem NF - mostrar botão de emitir
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -555,5 +551,12 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
         </div>
       </DialogContent>
     </Dialog>
+
+    <VisualizarNFModal 
+      open={showNFModal} 
+      onOpenChange={setShowNFModal} 
+      notaFiscal={notaFiscal} 
+    />
+  </>
   );
 }
