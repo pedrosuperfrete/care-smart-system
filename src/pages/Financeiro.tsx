@@ -586,6 +586,12 @@ export default function Financeiro() {
         }}
         pagamento={detalhesModal.pagamento}
       />
+
+      <VisualizarNFModal
+        open={nfModal.open}
+        onOpenChange={(open) => setNfModal({ open, notaFiscal: open ? nfModal.notaFiscal : null })}
+        notaFiscal={nfModal.notaFiscal}
+      />
         </TabsContent>
 
         <TabsContent value="fluxo" className="mt-4">
