@@ -152,8 +152,7 @@ Deno.serve(async (req) => {
       status: 200,
       headers: {
         ...corsHeaders,
-        'Content-Type': 'application/octet-stream',
-        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Content-Type': 'application/pdf',
         'Cache-Control': 'no-store',
       },
     });
