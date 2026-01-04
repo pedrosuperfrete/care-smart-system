@@ -10,6 +10,7 @@ import { useClinica } from '@/hooks/useClinica';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { formatCNPJ, isValidCNPJ, normalizeCNPJ } from '@/lib/utils';
 
 export function ConfiguracaoNotaFiscal() {
   const { data: clinica, refetch } = useClinica();
@@ -48,6 +49,14 @@ export function ConfiguracaoNotaFiscal() {
   const handleSave = async () => {
     if (!clinica) return;
 
+    const cnpjRaw = formData.cnpj.trim();
+    const cnpjDigits = normalizeCNPJ(cnpjRaw);
+
+    if (cnpjRaw && !cnpjRaw.startsWith('temp-') && !isValidCNPJ(cnpjDigits)) {
+      toast.error('CNPJ inválido. Verifique os dígitos e tente novamente.');
+      return;
+    }
+
     const payload = {
       nome: formData.nome.trim(),
       cnpj: formData.cnpj.trim(),
@@ -79,7 +88,9 @@ export function ConfiguracaoNotaFiscal() {
     }
   };
 
-  const temCnpj = formData.cnpj && formData.cnpj.replace(/\D/g, '').length >= 14;
+  const cnpjDigitsForUi = normalizeCNPJ(formData.cnpj);
+  const temCnpj = !!formData.cnpj?.trim() && !formData.cnpj.trim().startsWith('temp-') && isValidCNPJ(cnpjDigitsForUi);
+
 
   return (
     <Card id="config-nota-fiscal">
@@ -111,7 +122,9 @@ export function ConfiguracaoNotaFiscal() {
               <Input 
                 placeholder="00.000.000/0001-00" 
                 value={formData.cnpj}
-                onChange={(e) => setFormData({...formData, cnpj: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, cnpj: formatCNPJ(e.target.value) })}
+                maxLength={18}
+                inputMode="numeric"
               />
             </div>
 
