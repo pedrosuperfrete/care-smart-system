@@ -261,15 +261,32 @@ Deno.serve(async (req) => {
     const plugnotasDoc = Array.isArray(plugnotasResult) ? plugnotasResult[0] : plugnotasResult;
     console.log('Resposta PlugNotas:', JSON.stringify(plugnotasResult, null, 2));
 
-    if (!plugnotasResponse.ok) {
+    if (!plugnotasResponse.ok || plugnotasDoc?.error) {
       // Mapear erros do PlugNotas
       let errorMessage = 'Erro ao emitir nota fiscal';
+      let errorDetails = '';
 
-      if (plugnotasDoc?.message) {
+      if (plugnotasDoc?.error?.message) {
+        errorMessage = plugnotasDoc.error.message;
+        if (plugnotasDoc.error.data) {
+          errorDetails = JSON.stringify(plugnotasDoc.error.data);
+        }
+      } else if (plugnotasDoc?.message) {
         errorMessage = plugnotasDoc.message;
-      } else if (plugnotasDoc?.error) {
+      } else if (typeof plugnotasDoc?.error === 'string') {
         errorMessage = plugnotasDoc.error;
       }
+
+      // Mensagem amigável para erro de empresa não encontrada
+      if (errorMessage.includes('Não localizamos qualquer Empresa')) {
+        const cnpjUsado = clinica.cnpj.replace(/\D/g, '');
+        const ambiente = USE_PRODUCTION ? 'produção' : 'sandbox';
+        errorMessage = `O CNPJ ${cnpjUsado} não está cadastrado no ambiente ${ambiente} do PlugNotas. ` +
+          `Acesse o painel do PlugNotas (${ambiente === 'sandbox' ? 'app.sandbox.plugnotas.com.br' : 'app.plugnotas.com.br'}) ` +
+          `e cadastre a empresa antes de emitir notas fiscais.`;
+      }
+
+      console.error('Erro PlugNotas:', errorMessage, errorDetails);
 
       // Salvar erro na tabela notas_fiscais
       await supabase.from('notas_fiscais').upsert({
@@ -281,7 +298,7 @@ Deno.serve(async (req) => {
       }, { onConflict: 'id' });
 
       return new Response(
-        JSON.stringify({ error: errorMessage }),
+        JSON.stringify({ error: errorMessage, details: errorDetails }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
