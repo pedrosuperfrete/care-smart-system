@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calendar, User, Stethoscope, DollarSign, CreditCard, FileText, Phone, Mail, Pencil, Save, X, Receipt, Loader2 } from "lucide-react";
 import { useUpdatePagamento } from "@/hooks/useFinanceiro";
-import { useEmitirNFSe, useNotaFiscalByPagamento } from "@/hooks/useEmitirNFSe";
+import { useEmitirNFSe, useNotaFiscalByAgendamento, useNotaFiscalByPagamento } from "@/hooks/useEmitirNFSe";
 import { useCertificado } from "@/hooks/useCertificado";
 import { useClinica } from "@/hooks/useClinica";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -48,7 +48,8 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
   const navigate = useNavigate();
   const updatePagamento = useUpdatePagamento();
   const emitirNFSe = useEmitirNFSe();
-  const { data: notaFiscalRemote, isLoading: nfLoading, refetch: refetchNotaFiscal } = useNotaFiscalByPagamento(pagamentoAtual?.id);
+  const { data: notaFiscalByPagamento, isLoading: nfLoading, refetch: refetchNotaFiscalPagamento } = useNotaFiscalByPagamento(pagamentoAtual?.id);
+  const { data: notaFiscalByAgendamento, refetch: refetchNotaFiscalAgendamento } = useNotaFiscalByAgendamento(pagamentoAtual?.agendamento_id);
   const { certificate } = useCertificado();
   const { data: clinica } = useClinica();
 
@@ -61,6 +62,7 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
   const isCertificateActive = certificate?.status === 'active';
   const canEmitNF = isNFConfigured && isCertificateActive;
 
+  const notaFiscalRemote = notaFiscalByPagamento ?? notaFiscalByAgendamento;
   const notaFiscal = notaFiscalLocal ?? notaFiscalRemote;
 
   useEffect(() => {
@@ -224,7 +226,8 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
         });
       }
       // Atualiza a nota fiscal após emissão bem-sucedida
-      refetchNotaFiscal();
+      refetchNotaFiscalPagamento();
+      refetchNotaFiscalAgendamento();
     } catch {
       // o toast já é mostrado no onError do hook; evitar unhandled rejection
     }
