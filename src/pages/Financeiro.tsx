@@ -99,7 +99,7 @@ export default function Financeiro() {
         description: 'Para emitir NF é obrigatório que o paciente tenha um CPF válido cadastrado.',
         action: {
           label: 'Editar paciente',
-          onClick: () => navigate(`/app/pacientes?id=${pagamento?.agendamentos?.pacientes?.id}`),
+          onClick: () => navigate(`/app/pacientes?id=${pagamento?.agendamentos?.pacientes?.id}&edit=true`),
         },
       });
       return;

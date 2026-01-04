@@ -40,17 +40,23 @@ export default function Pacientes() {
   // Rastrear se veio do dashboard
   const cameFromDashboard = useRef(false);
 
-  // Abrir detalhes automaticamente se houver ID na URL
+  // Abrir detalhes ou edição automaticamente se houver ID na URL
   useEffect(() => {
     const pacienteId = searchParams.get('id');
+    const editMode = searchParams.get('edit') === 'true';
     if (pacienteId && pacientes.length > 0) {
       const paciente = pacientes.find(p => p.id === pacienteId);
       if (paciente) {
         cameFromDashboard.current = true;
         setSelectedPaciente(paciente);
-        setIsDetailsOpen(true);
+        if (editMode) {
+          setIsEditPacienteOpen(true);
+        } else {
+          setIsDetailsOpen(true);
+        }
         // Limpar o parâmetro da URL
         searchParams.delete('id');
+        searchParams.delete('edit');
         setSearchParams(searchParams, { replace: true });
       }
     }
