@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { DollarSign, TrendingUp, Calendar, Search, CheckCircle, Clock, XCircle, Receipt, CreditCard, MessageSquare, FileText, Calculator, Wallet } from 'lucide-react';
 import { usePagamentos, useFinanceiroStats, useMarcarPago } from '@/hooks/useFinanceiro';
 import { useCreatePagamento } from '@/hooks/useCreatePagamento';
-import { useEmitirNFSe, useNotaFiscalByPagamento } from '@/hooks/useEmitirNFSe';
+import { useEmitirNFSe, useNotasFiscaisByAgendamentos } from '@/hooks/useEmitirNFSe';
 import { useCertificado } from '@/hooks/useCertificado';
 import { useClinica } from '@/hooks/useClinica';
 import { useAuth } from '@/hooks/useAuth';
@@ -24,6 +24,7 @@ import { FluxoCaixa } from '@/components/financeiro/FluxoCaixa';
 import { toast } from 'sonner';
 import { NovoPagamentoModal } from '@/components/financeiro/NovoPagamentoModal';
 import { DetalhesAgendamentoModal } from '@/components/financeiro/DetalhesAgendamentoModal';
+import { VisualizarNFModal } from '@/components/financeiro/VisualizarNFModal';
 import { formatCurrency } from '@/lib/utils';
 
 export default function Financeiro() {
@@ -59,6 +60,10 @@ export default function Financeiro() {
     open: false,
     pagamento: null
   });
+  const [nfModal, setNfModal] = useState<{ open: boolean; notaFiscal: any | null }>({
+    open: false,
+    notaFiscal: null,
+  });
 
   console.log('User carregado:', user);
   console.log('Status do loading:', authLoading);
@@ -71,6 +76,12 @@ export default function Financeiro() {
   const emitirNFSe = useEmitirNFSe();
   const { certificate } = useCertificado();
   const { data: clinica } = useClinica();
+
+  const agendamentoIds = useMemo(
+    () => Array.from(new Set((pagamentos || []).map((p: any) => p?.agendamento_id).filter(Boolean))),
+    [pagamentos]
+  );
+  const { data: notasFiscaisByAgendamento = {} } = useNotasFiscaisByAgendamentos(agendamentoIds);
   
   // Verifica se as configurações de NF estão completas
   const isNFConfigured = Boolean(
@@ -483,6 +494,21 @@ export default function Financeiro() {
                           
                           {status === 'pago' && (() => {
                             const isThisEmitting = emitirNFSe.isPending && emittingPagamentoId === pagamento.id;
+                            const nf = (notasFiscaisByAgendamento as any)?.[pagamento.agendamento_id];
+                            const hasNF = !!nf;
+
+                            if (hasNF) {
+                              return (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setNfModal({ open: true, notaFiscal: nf })}
+                                >
+                                  <FileText className="h-4 w-4 mr-1" />
+                                  Ver NF
+                                </Button>
+                              );
+                            }
 
                             return (
                               <Button 
@@ -492,7 +518,7 @@ export default function Financeiro() {
                                 disabled={emitirNFSe.isPending}
                               >
                                 <FileText className="h-4 w-4 mr-1" />
-                                {isThisEmitting ? 'Emitindo...' : 'Emitir NF'}
+                                {isThisEmitting ? 'Processando...' : 'Emitir NF'}
                               </Button>
                             );
                           })()}
