@@ -148,3 +148,35 @@ export function useNotaFiscalByAgendamento(agendamentoId: string | undefined) {
     enabled: !!agendamentoId,
   });
 }
+
+// Para a lista do Financeiro: buscar NFs em lote por agendamentos
+export function useNotasFiscaisByAgendamentos(agendamentoIds: string[]) {
+  return useQuery({
+    queryKey: ['nota-fiscal-agendamentos', agendamentoIds],
+    queryFn: async () => {
+      if (!agendamentoIds?.length) return {} as Record<string, any>;
+
+      const { data, error } = await supabase
+        .from('notas_fiscais')
+        .select('*, pagamentos!inner(agendamento_id)')
+        .in('pagamentos.agendamento_id', agendamentoIds)
+        .order('criado_em', { ascending: false });
+
+      if (error) {
+        console.error('Erro ao buscar notas fiscais por agendamentos:', error);
+        return {} as Record<string, any>;
+      }
+
+      const map: Record<string, any> = {};
+      for (const nf of data || []) {
+        const agId = (nf as any)?.pagamentos?.agendamento_id;
+        if (agId && !map[agId]) {
+          map[agId] = nf;
+        }
+      }
+
+      return map;
+    },
+    enabled: Array.isArray(agendamentoIds) && agendamentoIds.length > 0,
+  });
+}
