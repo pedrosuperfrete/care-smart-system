@@ -391,13 +391,13 @@ Deno.serve(async (req) => {
       console.error('Erro ao salvar nota fiscal:', nfError);
     }
 
-    console.log('NFS-e enviada com sucesso! ID:', nfseId);
+    console.log('NFS-e enviada com sucesso! ID:', plugnotasId);
 
     return new Response(
       JSON.stringify({
         success: true,
         message: 'Nota fiscal enviada para processamento',
-        nfse_id: nfseId,
+        nfse_id: plugnotasId,
         nota_fiscal: notaFiscal,
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
