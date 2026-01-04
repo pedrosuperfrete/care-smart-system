@@ -46,6 +46,15 @@ export function VisualizarNFModal({ open, onOpenChange, notaFiscal }: Visualizar
   const downloadPdf = async (mode: "download" | "open") => {
     if (!notaFiscal?.id) return;
 
+    // Abrir janela ANTES da requisição para evitar bloqueio de popup
+    let newWindow: Window | null = null;
+    if (mode === "open") {
+      newWindow = window.open("about:blank", "_blank");
+      if (newWindow) {
+        newWindow.document.write("<html><body style='display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;'><p>Carregando PDF...</p></body></html>");
+      }
+    }
+
     const { data, error } = await supabase.functions.invoke("nfse-download", {
       body: { nota_fiscal_id: notaFiscal.id },
     });
@@ -53,17 +62,17 @@ export function VisualizarNFModal({ open, onOpenChange, notaFiscal }: Visualizar
     if (error) {
       const message = (error as any)?.message || "Não foi possível baixar a nota fiscal";
       toast.error(message);
+      if (newWindow) newWindow.close();
       return;
     }
 
     const blob = data as Blob;
     const fileName = `nfse-${(notaFiscal.numero_nf || notaFiscal.id).toString()}.pdf`;
-
     const url = URL.createObjectURL(blob);
 
-    if (mode === "open") {
-      window.open(url, "_blank", "noopener,noreferrer");
-      window.setTimeout(() => URL.revokeObjectURL(url), 30_000);
+    if (mode === "open" && newWindow) {
+      newWindow.location.href = url;
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
       return;
     }
 
