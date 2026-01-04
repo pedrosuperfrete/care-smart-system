@@ -91,7 +91,28 @@ export default function Financeiro() {
   );
   const isCertificateActive = certificate?.status === 'active';
 
-  const handleEmitirNF = async (pagamentoId: string) => {
+  const handleEmitirNF = async (pagamentoId: string, pagamento: any) => {
+    // Validar CPF do paciente
+    const cpfPaciente = pagamento?.agendamentos?.pacientes?.cpf?.replace(/\D/g, '') || '';
+    if (!cpfPaciente || cpfPaciente.length !== 11) {
+      toast.error('CPF do paciente não informado', {
+        description: 'Para emitir NF é obrigatório que o paciente tenha um CPF válido cadastrado.',
+        action: {
+          label: 'Editar paciente',
+          onClick: () => navigate(`/app/pacientes?id=${pagamento?.agendamentos?.pacientes?.id}`),
+        },
+      });
+      return;
+    }
+
+    // Validar status do pagamento
+    if (pagamento?.status !== 'pago') {
+      toast.error('Pagamento não confirmado', {
+        description: 'Só é possível emitir NF para pagamentos já confirmados como "Pago".',
+      });
+      return;
+    }
+
     if (!isCertificateActive) {
       toast.error('Certificado digital não configurado', {
         description: 'Configure seu certificado A1 antes de emitir notas fiscais.',
@@ -514,7 +535,7 @@ export default function Financeiro() {
                               <Button 
                                 size="sm" 
                                 variant="outline"
-                                onClick={() => handleEmitirNF(pagamento.id)}
+                                onClick={() => handleEmitirNF(pagamento.id, pagamento)}
                                 disabled={emitirNFSe.isPending}
                               >
                                 <FileText className="h-4 w-4 mr-1" />
