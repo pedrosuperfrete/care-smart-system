@@ -366,9 +366,13 @@ Deno.serve(async (req) => {
     }
 
     // Sucesso - extrair dados da resposta
-    const nfseId = plugnotasDoc?.id || plugnotasDoc?.documents?.[0]?.id;
+    // plugnotasId é o ID de rastreamento (UUID), não o número da NF
+    // O número real da NF (numeroNfse) só vem depois do processamento pela prefeitura
+    const plugnotasId = plugnotasDoc?.id || plugnotasDoc?.documents?.[0]?.id;
     
     // Salvar/atualizar registro na tabela notas_fiscais
+    // Guardamos o plugnotasId temporariamente em numero_nf para consultar o status depois
+    // O número real será atualizado quando a prefeitura processar
     const { data: notaFiscal, error: nfError } = await supabase
       .from('notas_fiscais')
       .upsert({
@@ -377,7 +381,7 @@ Deno.serve(async (req) => {
         paciente_id: paciente?.id,
         status_emissao: 'pendente', // Aguardando processamento da prefeitura
         valor_nf: valorServico,
-        numero_nf: nfseId,
+        numero_nf: plugnotasId, // ID de rastreamento (será atualizado com número real depois)
         data_emissao: new Date().toISOString(),
       }, { onConflict: 'id' })
       .select()

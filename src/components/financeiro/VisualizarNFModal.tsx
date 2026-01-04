@@ -115,7 +115,12 @@ export function VisualizarNFModal({ open, onOpenChange, notaFiscal }: Visualizar
           <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
             <div>
               <p className="text-xs text-muted-foreground mb-1">Número da NF</p>
-              <p className="text-lg font-semibold">{notaFiscal.numero_nf || "Aguardando..."}</p>
+              <p className="text-lg font-semibold">
+                {/* Só mostrar número quando status for 'emitida' - caso contrário ainda é ID de rastreamento */}
+                {notaFiscal.status_emissao === 'emitida' && notaFiscal.numero_nf 
+                  ? notaFiscal.numero_nf 
+                  : "Aguardando..."}
+              </p>
             </div>
             <div className="text-right">
               <p className="text-xs text-muted-foreground mb-1">Status</p>
