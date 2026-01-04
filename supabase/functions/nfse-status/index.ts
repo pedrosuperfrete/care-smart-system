@@ -158,9 +158,20 @@ Deno.serve(async (req) => {
     // Verificar status da NF no PlugNotas
     // Status possíveis: AGUARDANDO, PROCESSANDO, CONCLUIDO, ERRO, REJEITADO
     const statusPlugnotas = plugnotasResult?.status || plugnotasResult?.situacao;
-    const numeroNfse = plugnotasResult?.numeroNfse || plugnotasResult?.numero;
-    const linkPdf = plugnotasResult?.pdf || plugnotasResult?.linkPdf || plugnotasResult?.url?.pdf;
-    const linkXml = plugnotasResult?.xml || plugnotasResult?.linkXml || plugnotasResult?.url?.xml;
+    
+    // O número real da NF vem em retorno.numeroNfse
+    const numeroNfse = plugnotasResult?.retorno?.numeroNfse 
+      || plugnotasResult?.numeroNfse 
+      || plugnotasResult?.numero;
+    
+    // O link do PDF - sandbox retorna objeto, produção pode retornar URL direta
+    // Construir URL de download usando o ID do PlugNotas
+    const plugnotasDocId = plugnotasResult?.id;
+    const linkPdf = typeof plugnotasResult?.pdf === 'string' 
+      ? plugnotasResult.pdf 
+      : plugnotasDocId 
+        ? `${PLUGNOTAS_BASE_URL}/nfse/pdf/${plugnotasDocId}`
+        : null;
 
     console.log('Status PlugNotas:', statusPlugnotas, 'Numero:', numeroNfse, 'PDF:', linkPdf);
 
