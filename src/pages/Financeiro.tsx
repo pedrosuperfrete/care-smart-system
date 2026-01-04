@@ -11,7 +11,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { DollarSign, TrendingUp, Calendar, Search, CheckCircle, Clock, XCircle, Receipt, CreditCard, MessageSquare, FileText, Calculator, Wallet } from 'lucide-react';
 import { usePagamentos, useFinanceiroStats, useMarcarPago } from '@/hooks/useFinanceiro';
 import { useCreatePagamento } from '@/hooks/useCreatePagamento';
-import { useEmitirNFSe, useNotasFiscaisByAgendamentos } from '@/hooks/useEmitirNFSe';
+import { useEmitirNFSe, useNotasFiscaisByAgendamentos, useVerificarStatusNFSe } from '@/hooks/useEmitirNFSe';
 import { useCertificado } from '@/hooks/useCertificado';
 import { useClinica } from '@/hooks/useClinica';
 import { useAuth } from '@/hooks/useAuth';
@@ -83,6 +83,7 @@ export default function Financeiro() {
   const marcarPagoMutation = useMarcarPago();
   const createPagamentoMutation = useCreatePagamento();
   const emitirNFSe = useEmitirNFSe();
+  const verificarStatusNFSe = useVerificarStatusNFSe();
   const { certificate } = useCertificado();
   const { data: clinica } = useClinica();
 
@@ -90,7 +91,30 @@ export default function Financeiro() {
     () => Array.from(new Set((pagamentos || []).map((p: any) => p?.agendamento_id).filter(Boolean))),
     [pagamentos]
   );
-  const { data: notasFiscaisByAgendamento = {} } = useNotasFiscaisByAgendamentos(agendamentoIds);
+  const { data: notasFiscaisByAgendamento = {}, refetch: refetchNFs } = useNotasFiscaisByAgendamentos(agendamentoIds);
+
+  // Polling automático para NFs pendentes
+  useEffect(() => {
+    const nfsPendentes = Object.values(notasFiscaisByAgendamento || {}).filter(
+      (nf: any) => nf?.status_emissao === 'pendente'
+    );
+
+    if (nfsPendentes.length === 0) return;
+
+    // Verificar status a cada 10 segundos para NFs pendentes
+    const interval = setInterval(async () => {
+      for (const nf of nfsPendentes as any[]) {
+        try {
+          await verificarStatusNFSe.mutateAsync({ nota_fiscal_id: nf.id });
+        } catch (err) {
+          console.error('Erro ao verificar status da NF:', err);
+        }
+      }
+      refetchNFs();
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [notasFiscaisByAgendamento]);
   
   // Verifica se as configurações de NF estão completas
   const isNFConfigured = Boolean(
@@ -531,12 +555,46 @@ export default function Financeiro() {
                             const isThisEmitting = emitirNFSe.isPending && emittingPagamentoId === pagamento.id;
                             const nf = (notasFiscaisByAgendamento as any)?.[pagamento.agendamento_id];
                             const hasNF = !!nf;
+                            const nfStatus = nf?.status_emissao;
 
                             if (hasNF) {
+                              // NF pendente de processamento
+                              if (nfStatus === 'pendente') {
+                                return (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    disabled
+                                    className="opacity-70"
+                                  >
+                                    <Clock className="h-4 w-4 mr-1 animate-pulse" />
+                                    Processando...
+                                  </Button>
+                                );
+                              }
+                              
+                              // NF com erro
+                              if (nfStatus === 'erro') {
+                                return (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-destructive border-destructive"
+                                    onClick={() => handleEmitirNF(pagamento.id, pagamento)}
+                                    disabled={emitirNFSe.isPending}
+                                  >
+                                    <XCircle className="h-4 w-4 mr-1" />
+                                    {isThisEmitting ? 'Reenviando...' : 'Reenviar NF'}
+                                  </Button>
+                                );
+                              }
+
+                              // NF emitida com sucesso
                               return (
                                 <Button
                                   size="sm"
                                   variant="outline"
+                                  className="text-success border-success"
                                   onClick={() => setNfModal({ open: true, notaFiscal: nf })}
                                 >
                                   <FileText className="h-4 w-4 mr-1" />

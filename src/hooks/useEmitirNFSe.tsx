@@ -10,6 +10,14 @@ interface EmitirNFSeResponse {
   error?: string;
 }
 
+interface StatusNFSeResponse {
+  success: boolean;
+  status: 'emitida' | 'pendente' | 'erro';
+  updated?: boolean;
+  nota_fiscal?: any;
+  message?: string;
+}
+
 export function useEmitirNFSe() {
   const queryClient = useQueryClient();
 
@@ -93,15 +101,64 @@ export function useEmitirNFSe() {
           },
         });
       } else {
-        toast.success(data.message || 'Nota fiscal enviada para processamento!');
+        toast.success(data.message || 'Nota fiscal enviada para processamento!', {
+          description: 'A prefeitura está processando. Atualizaremos o status automaticamente.',
+          duration: 5000,
+        });
       }
       queryClient.invalidateQueries({ queryKey: ['notas-fiscais'] });
       queryClient.invalidateQueries({ queryKey: ['pagamentos'] });
       queryClient.invalidateQueries({ queryKey: ['nota-fiscal'] });
       queryClient.invalidateQueries({ queryKey: ['nota-fiscal-agendamento'] });
+      queryClient.invalidateQueries({ queryKey: ['nota-fiscal-agendamentos'] });
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Erro ao emitir nota fiscal');
+    },
+  });
+}
+
+// Hook para verificar status da NF no PlugNotas
+export function useVerificarStatusNFSe() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (params: { nota_fiscal_id?: string; pagamento_id?: string }): Promise<StatusNFSeResponse> => {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.access_token) {
+        throw new Error('Usuário não autenticado');
+      }
+
+      const { data, error } = await supabase.functions.invoke('nfse-status', {
+        body: params,
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Erro ao verificar status da NF');
+      }
+
+      return data as StatusNFSeResponse;
+    },
+    onSuccess: (data) => {
+      if (data.updated && data.status === 'emitida') {
+        toast.success('Nota Fiscal emitida com sucesso!', {
+          description: 'A NF foi processada pela prefeitura e está disponível para download.',
+          action: {
+            label: 'Ver NF',
+            onClick: () => {
+              // Invalidar queries para atualizar a UI
+              queryClient.invalidateQueries({ queryKey: ['notas-fiscais'] });
+              queryClient.invalidateQueries({ queryKey: ['nota-fiscal'] });
+              queryClient.invalidateQueries({ queryKey: ['nota-fiscal-agendamento'] });
+              queryClient.invalidateQueries({ queryKey: ['nota-fiscal-agendamentos'] });
+            },
+          },
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: ['notas-fiscais'] });
+      queryClient.invalidateQueries({ queryKey: ['nota-fiscal'] });
+      queryClient.invalidateQueries({ queryKey: ['nota-fiscal-agendamento'] });
+      queryClient.invalidateQueries({ queryKey: ['nota-fiscal-agendamentos'] });
     },
   });
 }
