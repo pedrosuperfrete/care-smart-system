@@ -70,11 +70,24 @@ export function VisualizarNFModal({ open, onOpenChange, notaFiscal }: Visualizar
     const fileName = `nfse-${(notaFiscal.numero_nf || notaFiscal.id).toString()}.pdf`;
 
     if (mode === "open" && newWindow) {
-      // Criar blob com tipo PDF para exibir no navegador
+      // Converter blob para base64 e exibir diretamente no navegador
       const pdfBlob = new Blob([blob], { type: "application/pdf" });
-      const url = URL.createObjectURL(pdfBlob);
-      newWindow.location.href = url;
-      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result as string;
+        newWindow.document.open();
+        newWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head><title>NF-e ${notaFiscal.numero_nf || ""}</title></head>
+            <body style="margin:0;padding:0;height:100vh;">
+              <embed src="${base64}" type="application/pdf" width="100%" height="100%" />
+            </body>
+          </html>
+        `);
+        newWindow.document.close();
+      };
+      reader.readAsDataURL(pdfBlob);
       return;
     }
 
