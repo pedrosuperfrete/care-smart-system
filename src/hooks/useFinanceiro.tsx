@@ -138,7 +138,8 @@ export function usePagamentos(startDate?: Date, endDate?: Date) {
               id,
               nome,
               email,
-              telefone
+              telefone,
+              cpf
             ),
             profissionais (
               id,
