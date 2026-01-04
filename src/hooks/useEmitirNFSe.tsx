@@ -65,11 +65,31 @@ export function useEmitirNFSe() {
     },
     onSuccess: (data) => {
       const link = (data as any)?.nota_fiscal?.link_nf as string | undefined;
-      if (link) {
+      const notaFiscalId = (data as any)?.nota_fiscal?.id as string | undefined;
+
+      if (link && notaFiscalId) {
         toast.success(data.message || 'Nota fiscal pronta!', {
           action: {
             label: 'Baixar NF',
-            onClick: () => window.open(link, '_blank', 'noopener,noreferrer'),
+            onClick: async () => {
+              const { data: blob, error } = await supabase.functions.invoke('nfse-download', {
+                body: { nota_fiscal_id: notaFiscalId },
+              });
+
+              if (error) {
+                toast.error((error as any)?.message || 'Não foi possível baixar a nota fiscal');
+                return;
+              }
+
+              const url = URL.createObjectURL(blob as Blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `nfse-${String((data as any)?.nota_fiscal?.numero_nf || notaFiscalId)}.pdf`;
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+              window.setTimeout(() => URL.revokeObjectURL(url), 5_000);
+            },
           },
         });
       } else {
