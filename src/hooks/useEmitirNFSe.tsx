@@ -64,7 +64,17 @@ export function useEmitirNFSe() {
       return data as EmitirNFSeResponse;
     },
     onSuccess: (data) => {
-      toast.success(data.message || 'Nota fiscal enviada para processamento!');
+      const link = (data as any)?.nota_fiscal?.link_nf as string | undefined;
+      if (link) {
+        toast.success(data.message || 'Nota fiscal pronta!', {
+          action: {
+            label: 'Baixar NF',
+            onClick: () => window.open(link, '_blank', 'noopener,noreferrer'),
+          },
+        });
+      } else {
+        toast.success(data.message || 'Nota fiscal enviada para processamento!');
+      }
       queryClient.invalidateQueries({ queryKey: ['notas-fiscais'] });
       queryClient.invalidateQueries({ queryKey: ['pagamentos'] });
     },
