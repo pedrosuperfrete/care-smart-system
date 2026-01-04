@@ -25,7 +25,9 @@ import { toast } from 'sonner';
 import { NovoPagamentoModal } from '@/components/financeiro/NovoPagamentoModal';
 import { DetalhesAgendamentoModal } from '@/components/financeiro/DetalhesAgendamentoModal';
 import { VisualizarNFModal } from '@/components/financeiro/VisualizarNFModal';
+import { EditarPacienteModal } from '@/components/pacientes/EditarPacienteModal';
 import { formatCurrency } from '@/lib/utils';
+import { Tables } from '@/integrations/supabase/types';
 
 export default function Financeiro() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -64,6 +66,13 @@ export default function Financeiro() {
     open: false,
     notaFiscal: null,
   });
+  const [editarPacienteModal, setEditarPacienteModal] = useState<{ 
+    open: boolean; 
+    paciente: Tables<'pacientes'> | null 
+  }>({
+    open: false,
+    paciente: null,
+  });
 
   console.log('User carregado:', user);
   console.log('Status do loading:', authLoading);
@@ -99,7 +108,12 @@ export default function Financeiro() {
         description: 'Para emitir NF é obrigatório que o paciente tenha um CPF válido cadastrado.',
         action: {
           label: 'Editar paciente',
-          onClick: () => navigate(`/app/pacientes?id=${pagamento?.agendamentos?.pacientes?.id}&edit=true`),
+          onClick: () => {
+            const pacienteData = pagamento?.agendamentos?.pacientes;
+            if (pacienteData) {
+              setEditarPacienteModal({ open: true, paciente: pacienteData });
+            }
+          },
         },
       });
       return;
@@ -612,6 +626,12 @@ export default function Financeiro() {
         open={nfModal.open}
         onOpenChange={(open) => setNfModal({ open, notaFiscal: open ? nfModal.notaFiscal : null })}
         notaFiscal={nfModal.notaFiscal}
+      />
+
+      <EditarPacienteModal
+        open={editarPacienteModal.open}
+        onOpenChange={(open) => setEditarPacienteModal({ open, paciente: open ? editarPacienteModal.paciente : null })}
+        paciente={editarPacienteModal.paciente}
       />
         </TabsContent>
 
