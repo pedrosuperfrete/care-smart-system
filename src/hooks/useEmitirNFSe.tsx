@@ -77,6 +77,8 @@ export function useEmitirNFSe() {
       }
       queryClient.invalidateQueries({ queryKey: ['notas-fiscais'] });
       queryClient.invalidateQueries({ queryKey: ['pagamentos'] });
+      queryClient.invalidateQueries({ queryKey: ['nota-fiscal'] });
+      queryClient.invalidateQueries({ queryKey: ['nota-fiscal-agendamento'] });
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Erro ao emitir nota fiscal');
@@ -104,5 +106,45 @@ export function useNotaFiscalByPagamento(pagamentoId: string | undefined) {
       return data;
     },
     enabled: !!pagamentoId,
+  });
+}
+
+// Fallback: se o pagamento atual foi recriado/alterado, buscamos NF por agendamento
+// (qualquer NF emitida para qualquer pagamento do mesmo agendamento)
+export function useNotaFiscalByAgendamento(agendamentoId: string | undefined) {
+  return useQuery({
+    queryKey: ['nota-fiscal-agendamento', agendamentoId],
+    queryFn: async () => {
+      if (!agendamentoId) return null;
+
+      const { data: pagamentos, error: pagamentosError } = await supabase
+        .from('pagamentos')
+        .select('id')
+        .eq('agendamento_id', agendamentoId);
+
+      if (pagamentosError) {
+        console.error('Erro ao buscar pagamentos do agendamento:', pagamentosError);
+        return null;
+      }
+
+      const ids = (pagamentos || []).map((p: any) => p.id).filter(Boolean);
+      if (!ids.length) return null;
+
+      const { data: nf, error: nfError } = await supabase
+        .from('notas_fiscais')
+        .select('*')
+        .in('pagamento_id', ids)
+        .order('criado_em', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (nfError) {
+        console.error('Erro ao buscar nota fiscal por agendamento:', nfError);
+        return null;
+      }
+
+      return nf;
+    },
+    enabled: !!agendamentoId,
   });
 }
