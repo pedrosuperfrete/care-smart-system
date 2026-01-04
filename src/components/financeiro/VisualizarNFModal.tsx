@@ -55,49 +55,52 @@ export function VisualizarNFModal({ open, onOpenChange, notaFiscal }: Visualizar
       }
     }
 
-    const { data, error } = await supabase.functions.invoke("nfse-download", {
-      body: { nota_fiscal_id: notaFiscal.id },
-      responseType: 'blob',
-    } as any);
+    try {
+      // Usar fetch diretamente para ter controle sobre o responseType
+      const session = await supabase.auth.getSession();
+      const token = session.data.session?.access_token;
+      
+      const response = await fetch(
+        `https://zxgkspeehamsrfhynbzr.supabase.co/functions/v1/nfse-download`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp4Z2tzcGVlaGFtc3JmaHluYnpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAxMjI5MTIsImV4cCI6MjA2NTY5ODkxMn0.4be3mie_aWh91sHAxLQz4WW1Xl00F3egMOY1BxrFg9c',
+          },
+          body: JSON.stringify({ nota_fiscal_id: notaFiscal.id }),
+        }
+      );
 
-    if (error) {
-      const message = (error as any)?.message || "Não foi possível baixar a nota fiscal";
-      toast.error(message);
-      if (newWindow) newWindow.close();
-      return;
-    }
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Erro ao baixar PDF');
+      }
 
-    // Garantir que temos um Blob válido
-    let pdfBlob: Blob;
-    if (data instanceof Blob) {
-      pdfBlob = data;
-    } else if (data instanceof ArrayBuffer) {
-      pdfBlob = new Blob([data], { type: "application/pdf" });
-    } else {
-      // Se for outro tipo, tentar converter
-      pdfBlob = new Blob([data], { type: "application/pdf" });
-    }
+      const pdfBlob = await response.blob();
 
-    const fileName = `nfse-${(notaFiscal.numero_nf || notaFiscal.id).toString()}.pdf`;
+      const fileName = `nfse-${(notaFiscal.numero_nf || notaFiscal.id).toString()}.pdf`;
 
-    if (mode === "open" && newWindow) {
-      // Criar URL do blob e abrir diretamente
+      if (mode === "open" && newWindow) {
+        const url = URL.createObjectURL(pdfBlob);
+        newWindow.location.href = url;
+        window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+        return;
+      }
+
       const url = URL.createObjectURL(pdfBlob);
-      newWindow.location.href = url;
-      // Limpar URL após 60 segundos
-      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
-      return;
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 5_000);
+    } catch (err: any) {
+      toast.error(err?.message || "Não foi possível baixar a nota fiscal");
+      if (newWindow) newWindow.close();
     }
-
-    const url = URL.createObjectURL(pdfBlob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    window.setTimeout(() => URL.revokeObjectURL(url), 5_000);
   };
 
   return (
