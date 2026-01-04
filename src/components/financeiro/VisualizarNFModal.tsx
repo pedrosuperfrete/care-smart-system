@@ -57,7 +57,8 @@ export function VisualizarNFModal({ open, onOpenChange, notaFiscal }: Visualizar
 
     const { data, error } = await supabase.functions.invoke("nfse-download", {
       body: { nota_fiscal_id: notaFiscal.id },
-    });
+      responseType: 'blob',
+    } as any);
 
     if (error) {
       const message = (error as any)?.message || "Não foi possível baixar a nota fiscal";
@@ -66,32 +67,29 @@ export function VisualizarNFModal({ open, onOpenChange, notaFiscal }: Visualizar
       return;
     }
 
-    const blob = data as Blob;
+    // Garantir que temos um Blob válido
+    let pdfBlob: Blob;
+    if (data instanceof Blob) {
+      pdfBlob = data;
+    } else if (data instanceof ArrayBuffer) {
+      pdfBlob = new Blob([data], { type: "application/pdf" });
+    } else {
+      // Se for outro tipo, tentar converter
+      pdfBlob = new Blob([data], { type: "application/pdf" });
+    }
+
     const fileName = `nfse-${(notaFiscal.numero_nf || notaFiscal.id).toString()}.pdf`;
 
     if (mode === "open" && newWindow) {
-      // Converter blob para base64 e exibir diretamente no navegador
-      const pdfBlob = new Blob([blob], { type: "application/pdf" });
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = reader.result as string;
-        newWindow.document.open();
-        newWindow.document.write(`
-          <!DOCTYPE html>
-          <html>
-            <head><title>NF-e ${notaFiscal.numero_nf || ""}</title></head>
-            <body style="margin:0;padding:0;height:100vh;">
-              <embed src="${base64}" type="application/pdf" width="100%" height="100%" />
-            </body>
-          </html>
-        `);
-        newWindow.document.close();
-      };
-      reader.readAsDataURL(pdfBlob);
+      // Criar URL do blob e abrir diretamente
+      const url = URL.createObjectURL(pdfBlob);
+      newWindow.location.href = url;
+      // Limpar URL após 60 segundos
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
       return;
     }
 
-    const url = URL.createObjectURL(blob);
+    const url = URL.createObjectURL(pdfBlob);
 
     const a = document.createElement("a");
     a.href = url;
