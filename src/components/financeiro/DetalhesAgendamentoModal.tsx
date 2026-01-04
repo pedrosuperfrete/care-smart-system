@@ -45,7 +45,7 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
   const navigate = useNavigate();
   const updatePagamento = useUpdatePagamento();
   const emitirNFSe = useEmitirNFSe();
-  const { data: notaFiscal, isLoading: nfLoading } = useNotaFiscalByPagamento(pagamento?.id);
+  const { data: notaFiscal, isLoading: nfLoading, refetch: refetchNotaFiscal } = useNotaFiscalByPagamento(pagamento?.id);
   const { certificate } = useCertificado();
   const { data: clinica } = useClinica();
 
@@ -204,6 +204,8 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
 
     try {
       await emitirNFSe.mutateAsync(pagamentoAtual.id);
+      // Atualiza a nota fiscal após emissão bem-sucedida
+      refetchNotaFiscal();
     } catch {
       // o toast já é mostrado no onError do hook; evitar unhandled rejection
     }
