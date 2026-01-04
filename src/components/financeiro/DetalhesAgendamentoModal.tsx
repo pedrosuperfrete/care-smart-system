@@ -42,10 +42,11 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
   const [dataVencimento, setDataVencimento] = useState<Date | undefined>(undefined);
   const [parcelasTotais, setParcelasTotais] = useState<number>(1);
   const [pagamentoAtual, setPagamentoAtual] = useState<any>(pagamento);
+  const [notaFiscalLocal, setNotaFiscalLocal] = useState<any | null>(null);
   const navigate = useNavigate();
   const updatePagamento = useUpdatePagamento();
   const emitirNFSe = useEmitirNFSe();
-  const { data: notaFiscal, isLoading: nfLoading, refetch: refetchNotaFiscal } = useNotaFiscalByPagamento(pagamento?.id);
+  const { data: notaFiscalRemote, isLoading: nfLoading, refetch: refetchNotaFiscal } = useNotaFiscalByPagamento(pagamentoAtual?.id);
   const { certificate } = useCertificado();
   const { data: clinica } = useClinica();
 
@@ -58,9 +59,12 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
   const isCertificateActive = certificate?.status === 'active';
   const canEmitNF = isNFConfigured && isCertificateActive;
 
+  const notaFiscal = notaFiscalLocal ?? notaFiscalRemote;
+
   useEffect(() => {
     if (pagamento) {
       setPagamentoAtual(pagamento);
+      setNotaFiscalLocal(null);
       setIsEditing(false);
       setFormaPagamento('');
       setDataVencimento(undefined);
@@ -203,7 +207,10 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
     }
 
     try {
-      await emitirNFSe.mutateAsync(pagamentoAtual.id);
+      const result = await emitirNFSe.mutateAsync(pagamentoAtual.id);
+      if ((result as any)?.nota_fiscal) {
+        setNotaFiscalLocal((result as any).nota_fiscal);
+      }
       // Atualiza a nota fiscal após emissão bem-sucedida
       refetchNotaFiscal();
     } catch {
@@ -512,7 +519,7 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
                     {emitirNFSe.isPending ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Emitindo...
+                        Processando...
                       </>
                     ) : (
                       <>
@@ -534,7 +541,7 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
                 {emitirNFSe.isPending ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Emitindo...
+                    Processando...
                   </>
                 ) : (
                   <>
