@@ -153,6 +153,8 @@ Deno.serve(async (req) => {
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/pdf',
+        'Content-Disposition': `inline; filename="${filename}"`,
+        'X-Content-Type-Options': 'nosniff',
         'Cache-Control': 'no-store',
       },
     });
