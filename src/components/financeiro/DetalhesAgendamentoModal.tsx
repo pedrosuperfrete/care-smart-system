@@ -212,6 +212,16 @@ export function DetalhesAgendamentoModal({ open, onOpenChange, pagamento }: Deta
       const result = await emitirNFSe.mutateAsync(pagamentoAtual.id);
       if ((result as any)?.nota_fiscal) {
         setNotaFiscalLocal((result as any).nota_fiscal);
+      } else {
+        // Se a emissão foi para processamento (sem link imediato), trocar o CTA para "Ver NF"
+        setNotaFiscalLocal({
+          id: 'local',
+          numero_nf: null,
+          status_emissao: 'pendente',
+          link_nf: null,
+          data_emissao: null,
+          valor_nf: null,
+        });
       }
       // Atualiza a nota fiscal após emissão bem-sucedida
       refetchNotaFiscal();

@@ -31,13 +31,13 @@ export function VisualizarNFModal({ open, onOpenChange, notaFiscal }: Visualizar
   const getStatusBadge = (status: string | null) => {
     switch (status) {
       case 'emitida':
-        return <Badge className="bg-green-500/10 text-green-600 border-green-500/20">Emitida</Badge>;
+        return <Badge>Emitida</Badge>;
       case 'pendente':
-        return <Badge className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20">Pendente</Badge>;
+        return <Badge variant="secondary">Pendente</Badge>;
       case 'erro':
-        return <Badge className="bg-red-500/10 text-red-600 border-red-500/20">Erro</Badge>;
+        return <Badge variant="destructive">Erro</Badge>;
       default:
-        return <Badge variant="secondary">-</Badge>;
+        return <Badge variant="outline">-</Badge>;
     }
   };
 
